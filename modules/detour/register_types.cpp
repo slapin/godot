@@ -33,7 +33,10 @@
 
 void register_detour_types() {
 	ClassDB::register_class<DetourNavigation>();
+	ClassDB::register_class<DetourNavigationOffmeshConnection>();
+	ClassDB::register_class<DetourNavigationArea>();
 	ClassDB::register_class<DetourNavigationMesh>();
+	ClassDB::register_class<DetourNavigationMeshInstance>();
 }
 
 void unregister_detour_types() {}

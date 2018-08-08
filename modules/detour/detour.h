@@ -38,46 +38,136 @@ class DetourNavigation : public Spatial {
 	DetourNavigation() : navmesh_query(NULL)
 	{
 	}
+	static void _bind_methods();
+};
+class DetourNavigationOffmeshConnection : public Spatial {
+	GDCLASS(DetourNavigationOffmeshConnection, Spatial);
+	static void _bind_methods();
+public:
+	Vector3 endpoint;
 };
 
+class DetourNavigationArea : public Spatial {
+	GDCLASS(DetourNavigationArea, Spatial);
+	static void _bind_methods();
+public:
+	AABB bounds;
+	int id;
+	unsigned int flags;
+};
+
+class dtNavMesh;
+class dtNavMeshParams;
+#define SETGET(x, t) \
+	t x; \
+	void set_ ## x(t v) { x = v; } \
+	t get_ ## x() { return x; }
 class DetourNavigationMesh : public Resource {
 	GDCLASS(DetourNavigationMesh, Resource);
-	real_t cell_size;
-	real_t cell_height;
-	real_t agent_height;
-	real_t agent_radius;
-	real_t agent_max_climb;
-	real_t agent_max_slope;
-	real_t region_min_size;
-	real_t region_merge_size;
-	real_t edge_max_length;
-	real_t edge_max_error;
-	real_t detail_sample_distance;
-	real_t detail_sample_max_error;
-	int tile_size;
-	Vector3 padding;
+	dtNavMesh *navmesh;
+	String group;
+	static void _bind_methods();
+protected:
+	void release_navmesh();
 	int num_tiles_x;
 	int num_tiles_z;
-	int partition_type;
-	void *navmesh;
+public:
+	enum {PARTITION_WATERSHED, PARTITION_MONOTONE};
+	void set_num_tiles(int gridW, int gridH)
+	{
+		num_tiles_x = (gridW + tile_size - 1) / tile_size;
+		num_tiles_z = (gridH + tile_size - 1) / tile_size;
+	}
+	int get_num_tiles_x()
+	{
+		return num_tiles_x;
+	}
+	int get_num_tiles_z()
+	{
+		return num_tiles_z;
+	}
+	SETGET(partition_type, int)
+	SETGET(tile_size, int)
+	SETGET(cell_size, real_t)
+	SETGET(cell_height, real_t)
+	// real_t cell_height;
+	SETGET(agent_height, real_t)
+	// real_t agent_height;
+	SETGET(agent_radius, real_t)
+	// real_t agent_radius;
+	SETGET(agent_max_climb, real_t)
+	// real_t agent_max_climb;
+	SETGET(agent_max_slope, real_t)
+	// real_t agent_max_slope;
+	SETGET(region_min_size, real_t)
+	// real_t region_min_size;
+	SETGET(region_merge_size, real_t)
+	// real_t region_merge_size;
+	SETGET(edge_max_length, real_t)
+	// real_t edge_max_length;
+	SETGET(edge_max_error, real_t)
+	// real_t edge_max_error;
+	SETGET(detail_sample_distance, real_t)
+	// real_t detail_sample_distance;
+	SETGET(detail_sample_max_error, real_t)
+	// real_t detail_sample_max_error;
 	AABB bounding_box;
-	String group;
-	Vector<Ref<Mesh> > geometries;
+	SETGET(padding, Vector3)
+	// Vector3 padding;
+	void set_group(const String& group);
+	bool alloc();
+	bool init(dtNavMeshParams *params);
+	const String& get_group() const
+	{
+		return group;
+	}
+	dtNavMesh *get_navmesh()
+	{
+		return navmesh;
+	}
+	DetourNavigationMesh();
+};
+#undef SETGET
+
+class DetourNavigationMeshInstance : public Spatial {
+	GDCLASS(DetourNavigationMeshInstance, Spatial);
+	Ref<DetourNavigationMesh> mesh;
+	static void _bind_methods();
 protected:
-	void get_tile_bounding_box(int x, int z, Vector3& bmin, Vector3& bmax);
-	void collect_geometries(Node *root_node, bool recursive);
-	void release_navmesh();
+	unsigned int build_tiles(int x1, int y1, int x2, int y2);
 	unsigned char *build_tile_mesh(int tx, int ty, const float* bmin, const float* bmax, int& dataSize, const Ref<Mesh>& mesh);
+	void get_tile_bounding_box(int x, int z, Vector3& bmin, Vector3& bmax);
+public:
+	void set_navmesh(const Ref<DetourNavigationMesh> &mesh)
+	{
+		if (this->mesh != mesh)
+			this->mesh = mesh;
+	}
+	Ref<DetourNavigationMesh> get_navmesh()
+	{
+		return mesh;
+	}
+	DetourNavigationMeshInstance() : Spatial(), mesh(0)
+	{
+	}
 	void add_meshdata(const Ref<Mesh> &p_mesh,
 			const Transform &p_xform,
 			Vector<float> &p_verticies,
 			Vector<int> &p_indices);
-	unsigned int build_tiles(int x1, int y1, int x2, int y2);
 	bool build_tile(int x, int z);
-public:
-	void set_group(const String& group);
 	void build();
-	void add_mesh(const Ref<Mesh>& mesh);
-	DetourNavigationMesh();
+	void add_mesh(const Ref<Mesh> &mesh, const Transform &transform);
+	void set_group(const String& group)
+	{
+		mesh->set_group(group);
+	}
+	const String& get_group() const
+	{
+		return mesh->get_group();
+	}
+	Vector<Ref<Mesh> > geometries;
+	Vector<Transform> xforms;
+	Vector<DetourNavigationArea> nav_areas;
+	void collect_geometries(bool recursive);
 };
 #endif
