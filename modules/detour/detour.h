@@ -34,8 +34,7 @@
 #include "resource.h"
 class DetourNavigation : public Spatial {
 	GDCLASS(DetourNavigation, Spatial);
-	void * navmesh_query;
-	DetourNavigation() : navmesh_query(NULL)
+	DetourNavigation() : Spatial()
 	{
 	}
 	static void _bind_methods();
@@ -58,6 +57,8 @@ public:
 
 class dtNavMesh;
 class dtNavMeshParams;
+class dtNavMeshQuery;
+class dtQueryFilter;
 #define SETGET(x, t) \
 	t x; \
 	void set_ ## x(t v) { x = v; } \
@@ -132,12 +133,17 @@ public:
 class DetourNavigationMeshInstance : public Spatial {
 	GDCLASS(DetourNavigationMeshInstance, Spatial);
 	Ref<DetourNavigationMesh> mesh;
+	dtNavMeshQuery * navmesh_query;
 	static void _bind_methods();
+	static const int MAX_POLYS = 2048;
+	dtQueryFilter *query_filter;
 protected:
 	unsigned int build_tiles(int x1, int y1, int x2, int y2);
 	unsigned char *build_tile_mesh(int tx, int ty, const float* bmin, const float* bmax, int& dataSize, const Ref<Mesh>& mesh);
 	void get_tile_bounding_box(int x, int z, Vector3& bmin, Vector3& bmax);
+	static float random();
 public:
+	void init_query();
 	void set_navmesh(const Ref<DetourNavigationMesh> &mesh)
 	{
 		if (this->mesh != mesh)
@@ -147,7 +153,7 @@ public:
 	{
 		return mesh;
 	}
-	DetourNavigationMeshInstance() : Spatial(), mesh(0)
+	DetourNavigationMeshInstance() : Spatial(), mesh(0), navmesh_query(0), query_filter(0)
 	{
 	}
 	void add_meshdata(const Ref<Mesh> &p_mesh,
@@ -169,5 +175,9 @@ public:
 	Vector<Transform> xforms;
 	Vector<DetourNavigationArea> nav_areas;
 	void collect_geometries(bool recursive);
+	/* Queries */
+	Vector3 nearest_point(const Vector3 &point, const Vector3 &extents);
+	Vector3 random_point();
+	Vector3 random_point_in_circle(const Vector3 &center, float radius, const Vector3 &extents);
 };
 #endif

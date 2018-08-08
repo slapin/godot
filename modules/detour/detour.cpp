@@ -3,6 +3,7 @@
 #include <Recast.h>
 #include <DetourNavMesh.h>
 #include <DetourNavMeshBuilder.h>
+#include <DetourNavMeshQuery.h>
 
 static const int DEFAULT_TILE_SIZE = 128;
 static const float DEFAULT_CELL_SIZE = 0.3f;
@@ -40,7 +41,7 @@ DetourNavigationMesh::DetourNavigationMesh() : Resource(), navmesh(NULL),
 void DetourNavigationMeshInstance::collect_geometries(bool recursive)
 {
 	if (!mesh.is_valid()) {
-		ERR_PRINT("No valid navmesh set, please set valid navmesh resource");
+		print_line("No valid navmesh set, please set valid navmesh resource");
 		return;
 	}
 	List<Node *> groupNodes;
@@ -52,7 +53,7 @@ void DetourNavigationMeshInstance::collect_geometries(bool recursive)
 		Node *groupNode = E->get();
 		node_queue.push_back(groupNode);
 	}
-	ERR_PRINTS(String() + "node_queue size: " + itos(node_queue.size()));
+	print_line(String() + "node_queue size: " + itos(node_queue.size()));
 	while (node_queue.size() > 0) {
 		Node *groupNode = node_queue.front()->get();
 		node_queue.pop_front();
@@ -67,7 +68,7 @@ void DetourNavigationMeshInstance::collect_geometries(bool recursive)
 			for (int i = 0; i < groupNode->get_child_count(); i++)
 				node_queue.push_back(groupNode->get_child(i));
 	}
-	ERR_PRINTS(String() + "geometries size: " + itos(geometries.size()));
+	print_line(String() + "geometries size: " + itos(geometries.size()));
 }
 void DetourNavigationMeshInstance::add_mesh(const Ref<Mesh>& mesh, const Transform& xform)
 {
@@ -104,10 +105,13 @@ void DetourNavigationMeshInstance::build()
 		return;
 	if (!mesh.is_valid())
 		return;
-	ERR_PRINT("Building");
+	print_line("Building");
 	for (int i = 0; i < geometries.size(); i++)
-		if (geometries[i].is_valid())
-			mesh->bounding_box.merge(geometries[i]->get_aabb());
+		if (geometries[i].is_valid()) {
+			AABB convbox = geometries[i]->get_aabb();
+			convbox.position = xforms[i].xform(convbox.position);
+			mesh->bounding_box.merge(convbox);
+		}
 	mesh->bounding_box.position -= mesh->padding;
 	mesh->bounding_box.size += mesh->padding * 2.0;
 	int gridH = 0, gridW = 0;
@@ -116,7 +120,7 @@ void DetourNavigationMeshInstance::build()
 	Vector3 bmax = mesh->bounding_box.position + mesh->bounding_box.size;
 	rcCalcGridSize(&bmin.coord[0], &bmax.coord[0], mesh->cell_size, &gridW, &gridH);
 	mesh->set_num_tiles(gridW, gridH);
-	ERR_PRINTS(String() + "tiles x: " + itos(mesh->get_num_tiles_x()) + " tiles z: " + itos(mesh->get_num_tiles_z()));
+	print_line(String() + "tiles x: " + itos(mesh->get_num_tiles_x()) + " tiles z: " + itos(mesh->get_num_tiles_z()));
 	unsigned int tile_bits = (unsigned int)ilog2(nextPow2(mesh->get_num_tiles_x() * mesh->get_num_tiles_z()));
 	if (tile_bits > 14)
 		tile_bits = 14;
@@ -134,7 +138,8 @@ void DetourNavigationMeshInstance::build()
 	if (!mesh->init(&params))
 		return;
 	unsigned int result = build_tiles(0, 0, mesh->get_num_tiles_x() - 1, mesh->get_num_tiles_z() - 1);
-	ERR_PRINTS(String() + "built tiles: " + itos(result));
+	print_line(String() + "built tiles: " + itos(result));
+	query_filter = new dtQueryFilter();
 }
 void DetourNavigationMeshInstance::add_meshdata(const Ref<Mesh> &p_mesh, const Transform &p_xform, Vector<float> &p_verticies, Vector<int> &p_indices) {
 	int current_vertex_count = 0;
@@ -245,7 +250,7 @@ void DetourNavigationMeshInstance::get_tile_bounding_box(int x, int z, Vector3& 
 		Vector3(tile_edge_length * (float)x,
 				0,
 			       	tile_edge_length * (float)z);
-	bmax = bmin + Vector3(tile_edge_length, 0, tile_edge_length);
+	bmax = bmin + Vector3(tile_edge_length, mesh->bounding_box.size.y, tile_edge_length);
 }
 bool DetourNavigationMeshInstance::build_tile(int x, int z)
 {
@@ -290,9 +295,12 @@ bool DetourNavigationMeshInstance::build_tile(int x, int z)
 	for (int idx; idx < geometries.size(); idx++) {
 		if (!geometries[idx].is_valid())
 			continue;
-		ERR_PRINT("valid geometry");
-		if (!geometries[idx]->get_aabb().intersects(expbox))
+		print_line("valid geometry");
+		if (!geometries[idx]->get_aabb().intersects_inclusive(expbox) && !expbox.encloses(geometries[idx]->get_aabb())) {
+			print_line(String(expbox));
+			print_line(String(geometries[idx]->get_aabb()));
 			continue;
+		}
 		// Add offmesh
 		// Add NavArea
 		// Add PhysicsBodies?
@@ -301,16 +309,18 @@ bool DetourNavigationMeshInstance::build_tile(int x, int z)
 		Transform xform = xforms[idx];
 		add_meshdata(mdata, xform, points, indices);
 	}
-	ERR_PRINTS(String() + "points: " + itos(points.size()) + " indices: " + itos(indices.size()));
+	print_line(String() + "points: " + itos(points.size()) + " indices: " + itos(indices.size()) + " tile_size: " + itos(mesh->tile_size));
 	if (points.size() == 0 || indices.size() == 0)
 		/* Nothing to do */
 		return true;
 	rcHeightfield *heightfield = rcAllocHeightfield();
 	if (!heightfield)
 		return false;
+	print_line("allocated heightfield");
 	rcContext *ctx = new rcContext(true);
 	if (!rcCreateHeightfield(ctx, *heightfield, cfg.width, cfg.height, cfg.bmin, cfg.bmax, cfg.cs, cfg.ch))
 		return false;
+	print_line("created heightfield");
 	int ntris = indices.size() / 3;
 	unsigned char tri_areas[ntris];
 	memset(tri_areas, 0, sizeof(tri_areas));
@@ -322,11 +332,14 @@ bool DetourNavigationMeshInstance::build_tile(int x, int z)
 	rcCompactHeightfield *compact_heightfield = rcAllocCompactHeightfield();
 	if (!compact_heightfield)
 		return false;
+	print_line("allocated compact heightfield");
 	if (!rcBuildCompactHeightfield(ctx, cfg.walkableHeight, cfg.walkableClimb, *heightfield,
 				*compact_heightfield))
 		return false;
+	print_line("created compact heightfield");
 	if (!rcErodeWalkableArea(ctx, cfg.walkableRadius, *compact_heightfield))
 		return false;
+	print_line("eroded walkable area");
 
 	for (unsigned int i = 0; i < nav_areas.size(); i++) {
 		Vector3 amin = nav_areas[i].bounds.position;
@@ -335,6 +348,7 @@ bool DetourNavigationMeshInstance::build_tile(int x, int z)
 		rcMarkBoxArea(ctx, &amin.coord[0], &amax.coord[0],
 			id, *compact_heightfield);
 	}
+	print_line("marked all areas");
 	if (mesh->partition_type == DetourNavigationMesh::PARTITION_WATERSHED) {
 		if (!rcBuildDistanceField(ctx, *compact_heightfield))
 			return false;
@@ -344,28 +358,36 @@ bool DetourNavigationMeshInstance::build_tile(int x, int z)
 	} else
 		if (!rcBuildRegionsMonotone(ctx, *compact_heightfield, cfg.borderSize, cfg.minRegionArea, cfg.mergeRegionArea))
 			return false;
+	print_line("created regions");
 	rcContourSet *contour_set = rcAllocContourSet();
 	if (!contour_set)
 		return false;
+	print_line("allocated contour set");
 	if (!rcBuildContours(ctx, *compact_heightfield, cfg.maxSimplificationError, cfg.maxEdgeLen,
 				*contour_set))
 		return false;
+	print_line("created contour set");
 	rcPolyMesh *poly_mesh = rcAllocPolyMesh();
 	if (!poly_mesh)
 		return false;
+	print_line("allocated polymesh");
 	if (!rcBuildPolyMesh(ctx, *contour_set, cfg.maxVertsPerPoly, *poly_mesh))
 		return false;
+	print_line("created polymesh");
 	rcPolyMeshDetail *poly_mesh_detail = rcAllocPolyMeshDetail();
 	if (!poly_mesh_detail)
 		return false;
+	print_line("allocated polymesh detail");
 	if (!rcBuildPolyMeshDetail(ctx, *poly_mesh, *compact_heightfield, cfg.detailSampleDist,
 				cfg.detailSampleMaxError, *poly_mesh_detail))
 		return false;
+	print_line("created polymesh detail");
 	/* Assign area flags TODO: use nav area assignment here */
 	for (int i = 0; i < poly_mesh->npolys; i++) {
 		if (poly_mesh->areas[i] != RC_NULL_AREA)
 			poly_mesh->flags[i] = 0x1;
 	}
+	print_line("created area flags");
 	unsigned char *nav_data = NULL;
 	int nav_data_size = 0;
 	dtNavMeshCreateParams params;
@@ -404,6 +426,7 @@ bool DetourNavigationMeshInstance::build_tile(int x, int z)
         params.offMeshConDir = &build.offMeshDir_[0];
     }
 #endif
+	print_line("setup offmesh connections");
 
 	if (!dtCreateNavMeshData(&params, &nav_data, &nav_data_size))
 		return false;
@@ -411,6 +434,7 @@ bool DetourNavigationMeshInstance::build_tile(int x, int z)
 		dtFree(nav_data);
 		return false;
 	}
+	print_line("created navmesh data");
 	return true;
 }
 bool DetourNavigationMesh::alloc()
@@ -425,6 +449,68 @@ bool DetourNavigationMesh::init(dtNavMeshParams *params)
 		return false;
 	}
 	return true;
+}
+
+void DetourNavigationMeshInstance::init_query()
+{
+	navmesh_query = dtAllocNavMeshQuery();
+	if (!navmesh_query) {
+		ERR_PRINT("failed to create navigation query");
+		return;
+	}
+	if (dtStatusFailed(navmesh_query->init(mesh->get_navmesh(), MAX_POLYS))) {
+		ERR_PRINT("failed to initialize navigation query");
+		return;
+	}
+}
+Vector3 DetourNavigationMeshInstance::nearest_point(const Vector3 &point, const Vector3 &extents)
+{
+	init_query();
+	if (!navmesh_query)
+		return point;
+	Transform transform = get_global_transform();
+	Vector3 local_point = transform.inverse().xform(point);
+	Vector3 nearest_point;
+	dtPolyRef pref;
+	// what is dtQueryFilter and how to work with it?
+	navmesh_query->findNearestPoly(&local_point.coord[0], &extents.coord[0], query_filter, &pref, &nearest_point.coord[0]);
+	if (pref)
+		return transform.xform(nearest_point);
+	else
+		return point;
+}
+
+float DetourNavigationMeshInstance::random()
+{
+	return (float)Math::randf();
+}
+
+Vector3 DetourNavigationMeshInstance::random_point()
+{
+	init_query();
+	if (!navmesh_query)
+		return Vector3();
+	dtPolyRef polyRef;
+	Vector3 point;
+	navmesh_query->findRandomPoint(query_filter, random, &polyRef, &point.coord[0]);
+	return get_global_transform().xform(point);
+}
+Vector3 DetourNavigationMeshInstance::random_point_in_circle(const Vector3 &center, float radius, const Vector3 &extents)
+{
+	init_query();
+	if (!navmesh_query)
+		return center;
+	Transform transform = get_global_transform();
+	Transform inverse = transform.inverse();
+	Vector3 local_center = inverse.xform(center);
+	dtPolyRef pref;
+	navmesh_query->findNearestPoly(&local_center.coord[0], &extents.coord[0], query_filter, &pref, NULL);
+	if (!pref)
+		return center;
+	dtPolyRef pref2;
+	Vector3 point = local_center;
+	navmesh_query->findRandomPointAroundCircle(pref, &local_center.coord[0], radius, query_filter, random, &pref2, &point.coord[0]);
+	return transform.xform(point);
 }
 
 void DetourNavigation::_bind_methods()
@@ -474,6 +560,9 @@ void DetourNavigationMesh::_bind_methods()
 void DetourNavigationMeshInstance::_bind_methods()
 {
 	ClassDB::bind_method(D_METHOD("build"), &DetourNavigationMeshInstance::build);
+	ClassDB::bind_method(D_METHOD("nearest_point", "point", "extents"), &DetourNavigationMeshInstance::nearest_point);
+	ClassDB::bind_method(D_METHOD("random_point"), &DetourNavigationMeshInstance::random_point);
+	ClassDB::bind_method(D_METHOD("random_point_in_circle", "center", "radius", "extents"), &DetourNavigationMeshInstance::random_point_in_circle);
 	ClassDB::bind_method(D_METHOD("collect_geometries", "recursive"), &DetourNavigationMeshInstance::collect_geometries);
 	ClassDB::bind_method(D_METHOD("set_navmesh", "navmesh"), &DetourNavigationMeshInstance::set_navmesh);
 	ClassDB::bind_method(D_METHOD("get_navmesh"), &DetourNavigationMeshInstance::get_navmesh);
