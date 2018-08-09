@@ -73,7 +73,10 @@ protected:
 	int num_tiles_x;
 	int num_tiles_z;
 public:
-	enum {PARTITION_WATERSHED, PARTITION_MONOTONE};
+	enum partition_t {
+		PARTITION_WATERSHED,
+		PARTITION_MONOTONE,
+	};
 	void set_num_tiles(int gridW, int gridH)
 	{
 		num_tiles_x = (gridW + tile_size - 1) / tile_size;
@@ -129,14 +132,18 @@ public:
 	DetourNavigationMesh();
 };
 #undef SETGET
+VARIANT_ENUM_CAST(DetourNavigationMesh::partition_t);
 
 class DetourNavigationMeshInstance : public Spatial {
+	class DetourNavigationQueryData;
 	GDCLASS(DetourNavigationMeshInstance, Spatial);
 	Ref<DetourNavigationMesh> mesh;
 	dtNavMeshQuery * navmesh_query;
 	static void _bind_methods();
 	static const int MAX_POLYS = 2048;
+	/* query data */
 	dtQueryFilter *query_filter;
+	DetourNavigationQueryData *query_data;
 protected:
 	unsigned int build_tiles(int x1, int y1, int x2, int y2);
 	unsigned char *build_tile_mesh(int tx, int ty, const float* bmin, const float* bmax, int& dataSize, const Ref<Mesh>& mesh);
@@ -153,14 +160,13 @@ public:
 	{
 		return mesh;
 	}
-	DetourNavigationMeshInstance() : Spatial(), mesh(0), navmesh_query(0), query_filter(0)
-	{
-	}
+	DetourNavigationMeshInstance();
 	void add_meshdata(const Ref<Mesh> &p_mesh,
 			const Transform &p_xform,
 			Vector<float> &p_verticies,
 			Vector<int> &p_indices);
 	bool build_tile(int x, int z);
+	void remove_tile(int x, int z);
 	void build();
 	void add_mesh(const Ref<Mesh> &mesh, const Transform &transform);
 	void set_group(const String& group)
@@ -179,5 +185,13 @@ public:
 	Vector3 nearest_point(const Vector3 &point, const Vector3 &extents);
 	Vector3 random_point();
 	Vector3 random_point_in_circle(const Vector3 &center, float radius, const Vector3 &extents);
+	float distance_to_wall(const Vector3 &point, float radius, const Vector3 &extents);
+	Dictionary distance_to_wall_detailed(const Vector3 &point, float radius, const Vector3 &extents);
+	Vector<Vector3> raycast(const Vector3 &start, const Vector3 &end, const Vector3 &extents);
+	Vector3 move_along_surface(const Vector3& start, const Vector3& end, const Vector3& extents, int max_visited);
+	Dictionary find_path(const Vector3& start, const Vector3& end, const Vector3& extents);
+	/* Filter */
+	void set_area_cost(int area_id, float cost);
+	float get_area_cost(int area_id);
 };
 #endif
