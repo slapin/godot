@@ -67,6 +67,7 @@ class DetourNavigationMesh : public Resource {
 	GDCLASS(DetourNavigationMesh, Resource);
 	dtNavMesh *navmesh;
 	String group;
+	bool initialized;
 	static void _bind_methods();
 protected:
 	void release_navmesh();
@@ -121,6 +122,8 @@ public:
 	void set_group(const String& group);
 	bool alloc();
 	bool init(dtNavMeshParams *params);
+	void set_data(const Dictionary &p_value);
+	Dictionary get_data();
 	const String& get_group() const
 	{
 		return group;
@@ -138,19 +141,13 @@ class DetourNavigationMeshInstance : public Spatial {
 	class DetourNavigationQueryData;
 	GDCLASS(DetourNavigationMeshInstance, Spatial);
 	Ref<DetourNavigationMesh> mesh;
-	dtNavMeshQuery * navmesh_query;
 	static void _bind_methods();
-	static const int MAX_POLYS = 2048;
-	/* query data */
-	dtQueryFilter *query_filter;
-	DetourNavigationQueryData *query_data;
 protected:
 	unsigned int build_tiles(int x1, int y1, int x2, int y2);
 	unsigned char *build_tile_mesh(int tx, int ty, const float* bmin, const float* bmax, int& dataSize, const Ref<Mesh>& mesh);
 	void get_tile_bounding_box(int x, int z, Vector3& bmin, Vector3& bmax);
 	static float random();
 public:
-	void init_query();
 	void set_navmesh(const Ref<DetourNavigationMesh> &mesh)
 	{
 		if (this->mesh != mesh)
@@ -181,17 +178,5 @@ public:
 	Vector<Transform> xforms;
 	Vector<DetourNavigationArea> nav_areas;
 	void collect_geometries(bool recursive);
-	/* Queries */
-	Vector3 nearest_point(const Vector3 &point, const Vector3 &extents);
-	Vector3 random_point();
-	Vector3 random_point_in_circle(const Vector3 &center, float radius, const Vector3 &extents);
-	float distance_to_wall(const Vector3 &point, float radius, const Vector3 &extents);
-	Dictionary distance_to_wall_detailed(const Vector3 &point, float radius, const Vector3 &extents);
-	Vector<Vector3> raycast(const Vector3 &start, const Vector3 &end, const Vector3 &extents);
-	Vector3 move_along_surface(const Vector3& start, const Vector3& end, const Vector3& extents, int max_visited);
-	Dictionary find_path(const Vector3& start, const Vector3& end, const Vector3& extents);
-	/* Filter */
-	void set_area_cost(int area_id, float cost);
-	float get_area_cost(int area_id);
 };
 #endif

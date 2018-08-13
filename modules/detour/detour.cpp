@@ -32,7 +32,8 @@ DetourNavigationMesh::DetourNavigationMesh() : Resource(), navmesh(NULL),
 		edge_max_error(DEFAULT_EDGE_MAX_ERROR),
 		detail_sample_distance(DEFAULT_DETAIL_SAMPLE_DISTANCE),
 		detail_sample_max_error(DEFAULT_DETAIL_SAMPLE_MAX_ERROR),
-		tile_size(DEFAULT_TILE_SIZE)
+		tile_size(DEFAULT_TILE_SIZE),
+		initialized(false)
 {
 	padding = Vector3(1.0f, 1.0f, 1.0f);
 	bounding_box = AABB();
@@ -139,7 +140,6 @@ void DetourNavigationMeshInstance::build()
 		return;
 	unsigned int result = build_tiles(0, 0, mesh->get_num_tiles_x() - 1, mesh->get_num_tiles_z() - 1);
 	print_line(String() + "built tiles: " + itos(result));
-	query_filter = new dtQueryFilter();
 }
 void DetourNavigationMeshInstance::add_meshdata(const Ref<Mesh> &p_mesh, const Transform &p_xform, Vector<float> &p_verticies, Vector<int> &p_indices) {
 	int current_vertex_count = 0;
@@ -448,227 +448,16 @@ bool DetourNavigationMesh::init(dtNavMeshParams *params)
 		release_navmesh();
 		return false;
 	}
+	initialized = true;
 	return true;
-}
-
-void DetourNavigationMeshInstance::init_query()
-{
-	navmesh_query = dtAllocNavMeshQuery();
-	if (!navmesh_query) {
-		ERR_PRINT("failed to create navigation query");
-		return;
-	}
-	if (dtStatusFailed(navmesh_query->init(mesh->get_navmesh(), MAX_POLYS))) {
-		ERR_PRINT("failed to initialize navigation query");
-		return;
-	}
-}
-Vector3 DetourNavigationMeshInstance::nearest_point(const Vector3 &point, const Vector3 &extents)
-{
-	init_query();
-	if (!navmesh_query)
-		return point;
-	Transform transform = get_global_transform();
-	Vector3 local_point = transform.inverse().xform(point);
-	Vector3 nearest_point;
-	dtPolyRef pref;
-	// what is dtQueryFilter and how to work with it?
-	navmesh_query->findNearestPoly(&local_point.coord[0], &extents.coord[0], query_filter, &pref, &nearest_point.coord[0]);
-	if (pref)
-		return transform.xform(nearest_point);
-	else
-		return point;
-}
-
-float DetourNavigationMeshInstance::random()
-{
-	return (float)Math::randf();
-}
-
-Vector3 DetourNavigationMeshInstance::random_point()
-{
-	init_query();
-	if (!navmesh_query)
-		return Vector3();
-	dtPolyRef polyRef;
-	Vector3 point;
-	navmesh_query->findRandomPoint(query_filter, random, &polyRef, &point.coord[0]);
-	return get_global_transform().xform(point);
-}
-Vector3 DetourNavigationMeshInstance::random_point_in_circle(const Vector3 &center, float radius, const Vector3 &extents)
-{
-	init_query();
-	if (!navmesh_query)
-		return center;
-	Transform transform = get_global_transform();
-	Transform inverse = transform.inverse();
-	Vector3 local_center = inverse.xform(center);
-	dtPolyRef pref;
-	navmesh_query->findNearestPoly(&local_center.coord[0], &extents.coord[0], query_filter, &pref, NULL);
-	if (!pref)
-		return center;
-	dtPolyRef pref2;
-	Vector3 point = local_center;
-	navmesh_query->findRandomPointAroundCircle(pref, &local_center.coord[0], radius, query_filter, random, &pref2, &point.coord[0]);
-	return transform.xform(point);
-}
-Dictionary DetourNavigationMeshInstance::distance_to_wall_detailed(
-		const Vector3 &point, float radius, const Vector3 &extents)
-{
-	Dictionary ret;
-	Vector3 hit_pos = Vector3(), hit_normal = Vector3(0.0, -1.0, 0.0);
-
-	ret["position"] = hit_pos;
-	ret["normal"] = hit_normal;
-	ret["distance"] = radius;
-	init_query();
-	if (!navmesh_query)
-		return ret;
-	Transform transform = get_global_transform();
-	Transform inverse = transform.inverse();
-	Vector3 local_point = inverse.xform(point);
-	dtPolyRef pref;
-	navmesh_query->findNearestPoly(&local_point.coord[0], &extents.coord[0], query_filter, &pref, NULL);
-	if (!pref)
-		return ret;
-	float dist = radius;
-	navmesh_query->findDistanceToWall(pref, &local_point.coord[0], radius, query_filter, &dist, &hit_pos.coord[0], &hit_normal.coord[0]);
-	ret["position"] = hit_pos;
-	ret["normal"] = hit_normal;
-	ret["distance"] = dist;
-	return ret;
-}
-float DetourNavigationMeshInstance::distance_to_wall(const Vector3 &point, float radius, const Vector3 &extents)
-{
-	Vector3 pos, normal;
-	Dictionary ret = distance_to_wall_detailed(point, radius, extents);
-	return ret["distance"];
 }
 
 /* More complicated queries follow */
 
-class DetourNavigationMeshInstance::DetourNavigationQueryData {
-public:
-	Vector3 path_points[MAX_POLYS];
-	unsigned char path_flags[MAX_POLYS];
-	dtPolyRef polys[MAX_POLYS];
-	dtPolyRef path_polys[MAX_POLYS];
-};
-
-Vector<Vector3> DetourNavigationMeshInstance::raycast(const Vector3 &start, const Vector3 &end, const Vector3 &extents)
-{
-	Vector<Vector3> ret;
-	Vector3 normal(0.0, -1.0, 0.0);
-	init_query();
-	if (!navmesh_query) {
-		ret.push_back(end);
-		ret.push_back(normal);
-		return ret;
-	}
-	Transform transform = get_global_transform();
-	Transform inverse = transform.inverse();
-	Vector3 local_start = inverse.xform(start);
-	Vector3 local_end = inverse.xform(end);
-	dtPolyRef pref;
-	float r;
-	int poly_count;
-	navmesh_query->findNearestPoly(&local_start.coord[0], &extents.coord[0], query_filter, &pref, NULL);
-	navmesh_query->raycast(pref, &local_start.coord[0], &local_end.coord[0], query_filter, &r, &normal.coord[0],
-			query_data->polys, &poly_count, MAX_POLYS);
-	if (r > 1.0f)
-		r = 1.0f;
-	ret.push_back(start.linear_interpolate(end, r));
-	ret.push_back(normal);
-	return ret;
-}
-void DetourNavigationMeshInstance::set_area_cost(int area_id, float cost)
-{
-	if (query_filter)
-		query_filter->setAreaCost(area_id, cost);
-}
-float DetourNavigationMeshInstance::get_area_cost(int area_id)
-{
-	if (query_filter)
-		return query_filter->getAreaCost(area_id);
-	return 1.0f;
-}
-
 DetourNavigationMeshInstance::DetourNavigationMeshInstance() :
 	Spatial(),
-	mesh(0),
-	navmesh_query(0),
-	query_filter(0),
-	query_data(new DetourNavigationQueryData)
+	mesh(0)
 {
-}
-
-Vector3 DetourNavigationMeshInstance::move_along_surface(const Vector3& start,
-		const Vector3& end, const Vector3& extents, int max_visited)
-{
-	init_query();
-	if (!navmesh_query)
-		return end;
-	Transform transform = get_global_transform();
-	Transform inverse = transform.inverse();
-	Vector3 local_start = inverse.xform(start);
-	Vector3 local_end = inverse.xform(end);
-	dtPolyRef pstart;
-	navmesh_query->findNearestPoly(&local_start.coord[0], &extents.coord[0], query_filter, &pstart, NULL);
-	if (!pstart)
-		return end;
-	Vector3 result;
-	int visited = 0;
-	Vector<dtPolyRef> visited_ref;
-	visited_ref.resize(max_visited);
-	navmesh_query->moveAlongSurface(pstart, &local_start.coord[0],
-			&local_end.coord[0], query_filter, &result.coord[0],
-			max_visited > 0 ? &visited_ref.write[0] : NULL,
-			&visited, max_visited);
-	return transform.xform(result);
-}
-
-Dictionary DetourNavigationMeshInstance::find_path(const Vector3& start, const Vector3& end, const Vector3& extents)
-{
-	Vector<Vector3> points;
-	Vector<int> flags;
-	Dictionary ret;
-	init_query();
-	if (!navmesh_query)
-		return ret;
-	Transform transform = get_global_transform();
-	Transform inverse = transform.inverse();
-	Vector3 local_start = inverse.xform(start);
-	Vector3 local_end = inverse.xform(end);
-	dtPolyRef pstart;
-	dtPolyRef pend;
-	int num_polys = 0;
-	int num_path_points = 0;
-	navmesh_query->findNearestPoly(&local_start.coord[0], &extents.coord[0], query_filter, &pstart, NULL);
-	navmesh_query->findNearestPoly(&local_end.coord[0], &extents.coord[0], query_filter, &pend, NULL);
-	if (!pstart || !pend)
-		return ret;
-	navmesh_query->findPath(pstart, pend, &local_start.coord[0],
-			&local_end.coord[0], query_filter,
-			query_data->polys, &num_polys, MAX_POLYS);
-	if (!num_polys)
-		return ret;
-	if (query_data->polys[num_polys - 1] != pend) {
-		Vector3 tmp;
-		navmesh_query->closestPointOnPoly(query_data->polys[num_polys - 1], &local_end.coord[0], &tmp.coord[0], NULL);
-		local_end = tmp;
-	}
-	navmesh_query->findStraightPath(&local_start.coord[0], &local_end.coord[0],
-			query_data->polys, num_polys,
-			&query_data->path_points[0].coord[0],
-			&query_data->path_flags[0],
-			query_data->path_polys, &num_path_points, MAX_POLYS);
-	for (int i = 0; i < num_path_points; i++) {
-		points.push_back(transform.xform(query_data->path_points[i]));
-		flags.push_back(query_data->path_flags[i]);
-	}
-	ret["points"] = points;
-	ret["flags"] = flags;
-	return ret;
 }
 
 void DetourNavigation::_bind_methods()
@@ -684,6 +473,71 @@ void DetourNavigationOffmeshConnection::_bind_methods()
 	ClassDB::bind_method(D_METHOD("set_" #v, #v), &DetourNavigationMesh::set_##v); \
 	ClassDB::bind_method(D_METHOD("get_" #v), &DetourNavigationMesh::get_##v); \
 	ADD_PROPERTY(PropertyInfo(Variant:: t, #v), "set_" #v, "get_" #v)
+
+void DetourNavigationMesh::set_data(const Dictionary &p_value)
+{
+        dtNavMeshParams params;
+	Vector3 orig = p_value["orig"];
+	rcVcopy(params.orig, &orig.coord[0]);
+	params.tileWidth = p_value["tile_edge_length"];
+	params.tileHeight = p_value["tile_edge_length"];
+	params.maxTiles = p_value["max_tiles"];
+	params.maxPolys = p_value["max_polys"];
+	if (navmesh) {
+		if (initialized)
+			dtFreeNavMesh(navmesh);
+		else
+			dtFree(navmesh);
+		navmesh = NULL;
+	}
+	if (!alloc())
+		return;
+	if (!init(&params))
+		return;
+}
+
+Dictionary DetourNavigationMesh::get_data()
+{
+	Dictionary t;
+	t["initialized"] = initialized;
+	if (!initialized) {
+		return t;
+	}
+        const dtNavMeshParams *params = navmesh->getParams();
+	Vector3 orig;
+	rcVcopy(&orig.coord[0], params->orig);
+	t["orig"] = orig;
+	t["tile_edge_length"] = params->tileWidth;
+	t["max_tiles"] = params->maxTiles;
+	t["max_polys"] = params->maxPolys;
+	PoolVector<uint8_t> data;
+	PoolVector<uint8_t>::Write data_w = data.write();
+	const dtNavMesh *nm = navmesh;
+	int pos = 0;
+	for (int z = 0; z < num_tiles_z; z++)
+		for (int x = 0; x < num_tiles_x; x++) {
+			const dtMeshTile* tile = nm->getTileAt(x, z, 0);
+			if (!tile)
+				continue;
+			if (pos >= data.size())
+				data.resize(data.size() + sizeof(int) * 2 + sizeof(unsigned int) * 2 + tile->dataSize);
+			memcpy(&data_w[pos], &x, sizeof(x));
+			pos += sizeof(x);
+			memcpy(&data_w[pos], &z, sizeof(x));
+			pos += sizeof(z);
+			uint32_t tile_ref = (uint32_t)nm->getTileRef(tile);
+			memcpy(&data_w[pos], &tile_ref, sizeof(tile_ref));
+			pos += sizeof(tile_ref);
+			uint32_t data_size = (uint32_t)tile->dataSize;
+			memcpy(&data_w[pos], &data_size, sizeof(data_size));
+			pos += sizeof(data_size);
+			memcpy(&data_w[pos], tile->data, data_size);
+			pos += data_size;
+		}
+	print_line("submitted: " + itos(data.size()));
+	t["data"] = data;
+	return t;
+}
 
 void DetourNavigationMesh::_bind_methods()
 {
@@ -705,7 +559,10 @@ void DetourNavigationMesh::_bind_methods()
 	BIND_ENUM_CONSTANT(PARTITION_MONOTONE);
 	ClassDB::bind_method(D_METHOD("set_partition_type", "type"), &DetourNavigationMesh::set_partition_type);
 	ClassDB::bind_method(D_METHOD("get_partition_type"), &DetourNavigationMesh::get_partition_type);
+	ClassDB::bind_method(D_METHOD("set_data", "data"), &DetourNavigationMesh::set_data);
+	ClassDB::bind_method(D_METHOD("get_data"), &DetourNavigationMesh::get_data);
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "partition_type", PROPERTY_HINT_ENUM, "watershed,monotone"), "set_partition_type", "get_partition_type");
+	ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "data", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_STORAGE), "set_data", "get_data");
 	// ADD_PROPERTY(PropertyInfo(Variant::REAL, "cell_size"), "set_cell_size", "get_cell_size");
 	// ADD_PROPERTY(PropertyInfo(Variant::REAL, "cell_height"), "set_cell_height", "get_cell_height");
 	// ADD_PROPERTY(PropertyInfo(Variant::REAL, "agent_height"), "set_agent_height", "get_agent_height");
@@ -728,18 +585,6 @@ void DetourNavigationMeshInstance::remove_tile(int x, int z)
 }
 void DetourNavigationMeshInstance::_bind_methods()
 {
-	/* Queries */
-	ClassDB::bind_method(D_METHOD("nearest_point", "point", "extents"), &DetourNavigationMeshInstance::nearest_point);
-	ClassDB::bind_method(D_METHOD("random_point"), &DetourNavigationMeshInstance::random_point);
-	ClassDB::bind_method(D_METHOD("random_point_in_circle", "center", "radius", "extents"), &DetourNavigationMeshInstance::random_point_in_circle);
-	ClassDB::bind_method(D_METHOD("distance_to_wall", "point", "radius", "extents"), &DetourNavigationMeshInstance::distance_to_wall);
-	ClassDB::bind_method(D_METHOD("distance_to_wall_detailed",
-				"point", "radius", "extents"), &DetourNavigationMeshInstance::distance_to_wall_detailed);
-	ClassDB::bind_method(D_METHOD("raycast", "start", "end", "extents"), &DetourNavigationMeshInstance::raycast);
-	ClassDB::bind_method(D_METHOD("set_area_cost", "area_id", "cost"), &DetourNavigationMeshInstance::set_area_cost);
-	ClassDB::bind_method(D_METHOD("get_area_cost", "area_id"), &DetourNavigationMeshInstance::get_area_cost);
-	ClassDB::bind_method(D_METHOD("move_along_surface", "start", "end", "extents", "max_visited"), &DetourNavigationMeshInstance::move_along_surface);
-	ClassDB::bind_method(D_METHOD("find_path", "start", "end", "extents"), &DetourNavigationMeshInstance::find_path);
 	/* Navmesh */
 	ClassDB::bind_method(D_METHOD("build"), &DetourNavigationMeshInstance::build);
 	ClassDB::bind_method(D_METHOD("collect_geometries", "recursive"), &DetourNavigationMeshInstance::collect_geometries);

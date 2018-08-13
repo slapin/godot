@@ -39,6 +39,7 @@ void register_detour_types() {
 	ClassDB::register_class<DetourNavigationMesh>();
 	ClassDB::register_class<DetourNavigationMeshInstance>();
 	ClassDB::register_class<DetourCrowdManager>();
+	ClassDB::register_class<Crowd>();
 }
 
 void unregister_detour_types() {}
