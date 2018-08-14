@@ -44,7 +44,7 @@ DetourNavigationQuery::DetourNavigationQuery() :
 DetourNavigationQuery::~DetourNavigationQuery()
 {
 }
-void DetourNavigationQuery::init(DetourNavigationMesh *mesh, const Transform &xform)
+void DetourNavigationQuery::init(Ref<DetourNavigationMesh> mesh, const Transform &xform)
 {
 	navmesh_query = dtAllocNavMeshQuery();
 	if (!navmesh_query) {
@@ -293,6 +293,7 @@ Dictionary DetourNavigationQuery::find_path(const Vector3& start, const Vector3&
 }
 void DetourNavigationQuery::_bind_methods()
 {
+	ClassDB::bind_method(D_METHOD("init", "navmesh", "xform"), &DetourNavigationQuery::init);
 	ClassDB::bind_method(D_METHOD("nearest_point", "point", "extents", "filter"), &DetourNavigationQuery::nearest_point);
 	ClassDB::bind_method(D_METHOD("random_point", "filter"), &DetourNavigationQuery::random_point);
 	ClassDB::bind_method(D_METHOD("random_point_in_circle", "center", "radius", "extents", "filter"), &DetourNavigationQuery::random_point_in_circle);

@@ -36,6 +36,7 @@ class dtQueryFilter;
 class dtNavMeshQuery;
 class DetourNavigationMesh;
 class DetourNavigationQueryFilter : public Reference {
+	GDCLASS(DetourNavigationQueryFilter, Reference);
 	/* Detour query filter */
 	dtQueryFilter *query_filter;
 	static void _bind_methods();
@@ -64,7 +65,7 @@ protected:
 public:
 	int get_max_polys() const {return MAX_POLYS;}
 	typedef uint64_t polyref_t;
-	void init(DetourNavigationMesh *mesh, const Transform &xform);
+	void init(Ref<DetourNavigationMesh> mesh, const Transform &xform);
 	Vector3 nearest_point_(const Vector3 &point, const Vector3 &extents, Ref<DetourNavigationQueryFilter> filter, polyref_t *ppref);
 	Vector3 nearest_point(const Vector3 &point, const Vector3 &extents, Ref<DetourNavigationQueryFilter> filter);
 	Vector3 random_point_(polyref_t *pref, Ref<DetourNavigationQueryFilter> filter);

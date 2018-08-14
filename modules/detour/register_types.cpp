@@ -30,6 +30,7 @@
 
 #include "register_types.h"
 #include "detour.h"
+#include "navmesh_query.h"
 #include "crowd.h"
 
 void register_detour_types() {
@@ -37,6 +38,8 @@ void register_detour_types() {
 	ClassDB::register_class<DetourNavigationOffmeshConnection>();
 	ClassDB::register_class<DetourNavigationArea>();
 	ClassDB::register_class<DetourNavigationMesh>();
+	ClassDB::register_class<DetourNavigationQuery>();
+	ClassDB::register_class<DetourNavigationQueryFilter>();
 	ClassDB::register_class<DetourNavigationMeshInstance>();
 	ClassDB::register_class<DetourCrowdManager>();
 	ClassDB::register_class<Crowd>();
