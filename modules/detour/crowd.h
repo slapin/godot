@@ -4,10 +4,13 @@
 
 class dtCrowd;
 class dtQueryFilter;
+class DetourNavigationQuery;
 struct dtCrowdAgent;
+#if 0
 class Crowd;
-class DetourCrowdManager : public Spatial {
-	GDCLASS(DetourCrowdManager, Spatial);
+#endif
+class DetourCrowdManager : public Node {
+	GDCLASS(DetourCrowdManager, Object);
 	class CrowdAgent;
 	struct AgentData {
 		Spatial *obj;
@@ -15,13 +18,20 @@ class DetourCrowdManager : public Spatial {
 		int id;
 		float radius;
 		float height;
-		Vector3 front;
+		float max_accel;
+		float max_speed;
+		int filter_id;
+		int oa_id;
+		AgentData();
+		~AgentData();
 	};
 	Vector<AgentData *> agents;
 	friend class CrowdAgent;
 	dtCrowd *crowd;
 	bool dirty, initialized;
 	static void _bind_methods();
+	DetourNavigationQuery *query;
+	Transform transform;
 protected:
 	void process_agent(dtCrowdAgent *agent);
 	void _notification(int p_what);
@@ -34,6 +44,7 @@ protected:
 	Ref<DetourNavigationMesh> navmesh;
 	void update_crowd(float delta);
 public:
+	typedef uint64_t polyref_t;
 	DetourCrowdManager();
 	~DetourCrowdManager();
 	void add_agent(Object *agent, int mode);
@@ -51,19 +62,21 @@ public:
 	int get_max_agents() const {return max_agents;}
 	void set_max_agent_radius(float radius);
 	float get_max_agent_radius() const {return max_agent_radius;}
-	void set_navigation_mesh(const Ref<DetourNavigationMesh> &mesh);
+	void set_navigation_mesh(const Ref<DetourNavigationMesh> &mesh, const Transform &xform);
+	Transform get_navigation_transform() const {return transform;}
 	Ref<DetourNavigationMesh> get_navigation_mesh() const;
 	/* Query filter */
-	void set_include_flags(int query_filter, unsigned short flags);
-	unsigned short get_include_flags(int query_filter);
+	void set_include_flags(int filter_id, unsigned short flags);
+	unsigned short get_include_flags(int filter_id);
 	void set_exclude_flags(int query_filter, unsigned short flags);
 	unsigned short get_exclude_flags(int query_filter);
-	void set_area_cost(int query_filter, int area_id, float cost);
+	void set_area_cost(int filter_id, int area_id, float cost);
+	float get_area_cost(int filter_id, int area_id);
 	int get_num_query_filters() const;
 	int get_num_aread(int query_filter) const;
 	/* Queries, FIXME */
-	Vector3 find_nearest_point(const Vector3 &point, int query_filter);
-	Vector3 _find_nearest_point(const Vector3 &point, int query_filter, uint64_t *nearest_ref);
+	Vector3 nearest_point(const Vector3 &point, int query_filter);
+	Vector3 _nearest_point(const Vector3 &point, int query_filter, polyref_t *nearest_ref);
 	Vector3 move_along_surface(const Vector3& start, const Vector3& end, int query_filter, int maxVisited = 3);
 	Vector<Vector3> find_path( const Vector3& start, const Vector3& end, int query_filter);
 	Vector3 get_random_point(int query_filter);
@@ -71,6 +84,7 @@ public:
 	float get_distance_to_wall(const Vector3& point, float radius, int query_filter);
 	Vector3 recast(const Vector3& start, const Vector3& end, int query_filter);
 };
+#if 0
 class Crowd : public Spatial {
 	GDCLASS(Crowd, Spatial);
 	Vector<NodePath> agent_paths;
@@ -88,4 +102,5 @@ public:
 	Crowd();
 	~Crowd();
 };
+#endif
 #endif

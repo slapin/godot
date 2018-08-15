@@ -42,7 +42,9 @@ void register_detour_types() {
 	ClassDB::register_class<DetourNavigationQueryFilter>();
 	ClassDB::register_class<DetourNavigationMeshInstance>();
 	ClassDB::register_class<DetourCrowdManager>();
+#if 0
 	ClassDB::register_class<Crowd>();
+#endif
 }
 
 void unregister_detour_types() {}

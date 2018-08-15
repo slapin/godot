@@ -63,13 +63,13 @@ float DetourNavigationQuery::random()
 	return (float)Math::randf();
 }
 
-Vector3 DetourNavigationQuery::nearest_point_(const Vector3 &point, const Vector3 &extents, Ref<DetourNavigationQueryFilter> filter, uint64_t *ppref)
+Vector3 DetourNavigationQuery::nearest_point_(const Vector3 &point, const Vector3 &extents, const dtQueryFilter *filter, uint64_t *ppref)
 {
 	if (!navmesh_query)
 		return point;
 	Vector3 nearest_point;
 	dtPolyRef dtppref = ppref ? (dtPolyRef)(*ppref) : 0;
-	navmesh_query->findNearestPoly(&point.coord[0], &extents.coord[0], filter->get(), &dtppref, &nearest_point.coord[0]);
+	navmesh_query->findNearestPoly(&point.coord[0], &extents.coord[0], filter, &dtppref, &nearest_point.coord[0]);
 	*ppref = dtppref;
 	if (*ppref)
 		return nearest_point;

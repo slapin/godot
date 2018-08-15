@@ -66,7 +66,11 @@ public:
 	int get_max_polys() const {return MAX_POLYS;}
 	typedef uint64_t polyref_t;
 	void init(Ref<DetourNavigationMesh> mesh, const Transform &xform);
-	Vector3 nearest_point_(const Vector3 &point, const Vector3 &extents, Ref<DetourNavigationQueryFilter> filter, polyref_t *ppref);
+	Vector3 nearest_point_(const Vector3 &point, const Vector3 &extents, const dtQueryFilter *filter, polyref_t *ppref);
+	inline Vector3 nearest_point_(const Vector3 &point, const Vector3 &extents, Ref<DetourNavigationQueryFilter> filter, polyref_t *ppref)
+	{
+		return nearest_point_(point, extents, filter->get(), ppref);
+	}
 	Vector3 nearest_point(const Vector3 &point, const Vector3 &extents, Ref<DetourNavigationQueryFilter> filter);
 	Vector3 random_point_(polyref_t *pref, Ref<DetourNavigationQueryFilter> filter);
 	Vector3 random_point(Ref<DetourNavigationQueryFilter> filter);
