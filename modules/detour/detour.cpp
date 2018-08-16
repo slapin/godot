@@ -110,8 +110,11 @@ void DetourNavigationMeshInstance::build()
 	for (int i = 0; i < geometries.size(); i++)
 		if (geometries[i].is_valid()) {
 			AABB convbox = geometries[i]->get_aabb();
+			print_line("geometry bb: " + String(convbox));
 			convbox.position = xforms[i].xform(convbox.position);
-			mesh->bounding_box.merge(convbox);
+			print_line("transformed bb: " + String(convbox));
+			mesh->bounding_box.merge_with(convbox);
+			print_line("mesh bb: " + String(mesh->bounding_box));
 		}
 	mesh->bounding_box.position -= mesh->padding;
 	mesh->bounding_box.size += mesh->padding * 2.0;
@@ -251,6 +254,8 @@ void DetourNavigationMeshInstance::get_tile_bounding_box(int x, int z, Vector3& 
 				0,
 			       	tile_edge_length * (float)z);
 	bmax = bmin + Vector3(tile_edge_length, mesh->bounding_box.size.y, tile_edge_length);
+	print_line("tile bounding box: " +itos(x) + " " + itos(z) + ": " + String(bmin) + "/" + String(bmax));
+	print_line("mesh bounding box: " + String(mesh->bounding_box));
 }
 bool DetourNavigationMeshInstance::build_tile(int x, int z)
 {
@@ -292,6 +297,7 @@ bool DetourNavigationMeshInstance::build_tile(int x, int z)
 	expbox.size.z += 2.0 * cfg.borderSize * cfg.cs;
 	Vector<float> points;
 	Vector<int> indices;
+	Transform base = get_global_transform().inverse();
 	for (int idx; idx < geometries.size(); idx++) {
 		if (!geometries[idx].is_valid())
 			continue;
@@ -306,10 +312,15 @@ bool DetourNavigationMeshInstance::build_tile(int x, int z)
 		// Add PhysicsBodies?
 		Ref<Mesh> mdata = geometries[idx];
 		// FIXME
-		Transform xform = xforms[idx];
+		Transform xform = base * xforms[idx];
 		add_meshdata(mdata, xform, points, indices);
 	}
 	print_line(String() + "points: " + itos(points.size()) + " indices: " + itos(indices.size()) + " tile_size: " + itos(mesh->tile_size));
+#if 0
+	print_line("mesh points:");
+	for (int k = 0; k < points.size(); k += 3)
+		print_line("point: " + itos(k) + ": " + rtos(points[k]) + ", " + rtos(points[k + 1]) + ", " + rtos(points[k + 2]));
+#endif
 	if (points.size() == 0 || indices.size() == 0)
 		/* Nothing to do */
 		return true;
@@ -555,6 +566,7 @@ void DetourNavigationMesh::_bind_methods()
 	SETGET(detail_sample_max_error, REAL);
 	SETGET(group, STRING);
 	SETGET(padding, VECTOR3);
+	SETGET(tile_size, INT);
 	BIND_ENUM_CONSTANT(PARTITION_WATERSHED);
 	BIND_ENUM_CONSTANT(PARTITION_MONOTONE);
 	ClassDB::bind_method(D_METHOD("set_partition_type", "type"), &DetourNavigationMesh::set_partition_type);
@@ -563,19 +575,6 @@ void DetourNavigationMesh::_bind_methods()
 	ClassDB::bind_method(D_METHOD("get_data"), &DetourNavigationMesh::get_data);
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "partition_type", PROPERTY_HINT_ENUM, "watershed,monotone"), "set_partition_type", "get_partition_type");
 	ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "data", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_STORAGE), "set_data", "get_data");
-	// ADD_PROPERTY(PropertyInfo(Variant::REAL, "cell_size"), "set_cell_size", "get_cell_size");
-	// ADD_PROPERTY(PropertyInfo(Variant::REAL, "cell_height"), "set_cell_height", "get_cell_height");
-	// ADD_PROPERTY(PropertyInfo(Variant::REAL, "agent_height"), "set_agent_height", "get_agent_height");
-	// ADD_PROPERTY(PropertyInfo(Variant::REAL, "agent_radius"), "set_agent_radius", "get_agent_radius");
-	// ADD_PROPERTY(PropertyInfo(Variant::REAL, "agent_max_climb"), "set_agent_max_climb", "get_agent_max_climb");
-	// ADD_PROPERTY(PropertyInfo(Variant::REAL, "agent_max_slope"), "set_agent_max_slope", "get_agent_max_slope");
-	// ADD_PROPERTY(PropertyInfo(Variant::REAL, "region_min_size"), "set_region_min_size", "get_region_min_size");
-	// ADD_PROPERTY(PropertyInfo(Variant::REAL, "region_merge_size"), "set_region_merge_size", "get_region_merge_size");
-	// ADD_PROPERTY(PropertyInfo(Variant::REAL, "edge_max_length"), "set_edge_max_length", "get_edge_max_length");
-	// ADD_PROPERTY(PropertyInfo(Variant::REAL, "edge_max_error"), "set_edge_max_error", "get_edge_max_error");
-	// ADD_PROPERTY(PropertyInfo(Variant::REAL, "detail_sample_distance"), "set_detail_sample_distance", "get_detail_sample_distance");
-	// ADD_PROPERTY(PropertyInfo(Variant::REAL, "detail_sample_max_error"), "set_detail_sample_max_error", "get_detail_sample_max_error");
-	// ADD_PROPERTY(PropertyInfo(Variant::STRING, "group"), "set_group", "get_group");
 }
 void DetourNavigationMeshInstance::remove_tile(int x, int z)
 {
