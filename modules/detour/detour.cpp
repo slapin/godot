@@ -80,9 +80,11 @@ void DetourNavigationMeshInstance::_notification(int p_what) {
 
 	switch (p_what) {
 		case NOTIFICATION_ENTER_TREE: {
-			if (mesh.is_valid() && get_tree()->is_debugging_navigation_hint()) {
+			if (get_tree()->is_debugging_navigation_hint()) {
+				print_line("set up debug_view");
 				MeshInstance *dm = memnew(MeshInstance);
-				dm->set_mesh(mesh->get_debug_mesh());
+				if (mesh.is_valid())
+					dm->set_mesh(mesh->get_debug_mesh());
 				dm->set_material_override(get_tree()->get_debug_navigation_material());
 				add_child(dm);
 				debug_view = dm;
@@ -165,6 +167,7 @@ void DetourNavigationMeshInstance::build()
 	unsigned int result = build_tiles(0, 0, mesh->get_num_tiles_x() - 1, mesh->get_num_tiles_z() - 1);
 	print_line(String() + "built tiles: " + itos(result));
 	if (debug_view && mesh.is_valid()) {
+		print_line("rebuilding debug navmesh");
 		mesh->clear_debug_mesh();
 		Object::cast_to<MeshInstance>(debug_view)->set_mesh(mesh->get_debug_mesh());
 	}
@@ -279,8 +282,8 @@ void DetourNavigationMeshInstance::get_tile_bounding_box(int x, int z, Vector3& 
 				0,
 			       	tile_edge_length * (float)z);
 	bmax = bmin + Vector3(tile_edge_length, mesh->bounding_box.size.y, tile_edge_length);
-	print_line("tile bounding box: " +itos(x) + " " + itos(z) + ": " + String(bmin) + "/" + String(bmax));
-	print_line("mesh bounding box: " + String(mesh->bounding_box));
+	// print_line("tile bounding box: " +itos(x) + " " + itos(z) + ": " + String(bmin) + "/" + String(bmax));
+	// print_line("mesh bounding box: " + String(mesh->bounding_box));
 }
 bool DetourNavigationMeshInstance::build_tile(int x, int z)
 {
@@ -490,6 +493,7 @@ Ref<ArrayMesh> DetourNavigationMesh::get_debug_mesh()
 		return debug_mesh;
 	if (!navmesh)
 		return debug_mesh;
+	print_line("building debug navmesh");
 	List<Vector3> lines;
 	const dtNavMesh *navm = navmesh;
 	for (int i = 0; i < navm->getMaxTiles(); i++) {
@@ -504,7 +508,7 @@ Ref<ArrayMesh> DetourNavigationMesh::get_debug_mesh()
 			}
 		}
 	}
-	print_line("debug mesh: " + itos(lines.size()));
+	print_line("debug mesh lines: " + itos(lines.size()));
 
 	PoolVector<Vector3> varr;
 	varr.resize(lines.size());
@@ -529,7 +533,8 @@ Ref<ArrayMesh> DetourNavigationMesh::get_debug_mesh()
 
 DetourNavigationMeshInstance::DetourNavigationMeshInstance() :
 	Spatial(),
-	mesh(0)
+	mesh(0),
+	debug_view(0)
 {
 }
 
