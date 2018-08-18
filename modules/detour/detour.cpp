@@ -76,6 +76,27 @@ void DetourNavigationMeshInstance::add_mesh(const Ref<Mesh>& mesh, const Transfo
 	geometries.push_back(mesh);
 	xforms.push_back(xform);
 }
+void DetourNavigationMeshInstance::_notification(int p_what) {
+
+	switch (p_what) {
+		case NOTIFICATION_ENTER_TREE: {
+			if (mesh.is_valid() && get_tree()->is_debugging_navigation_hint()) {
+				MeshInstance *dm = memnew(MeshInstance);
+				dm->set_mesh(mesh->get_debug_mesh());
+				dm->set_material_override(get_tree()->get_debug_navigation_material());
+				add_child(dm);
+				debug_view = dm;
+			}
+		} break;
+		case NOTIFICATION_EXIT_TREE: {
+			if (debug_view) {
+				debug_view->queue_delete();
+				debug_view = NULL;
+			}
+		} break;
+	}
+}
+
 inline unsigned int nextPow2(unsigned int v)
 {
 	v--;
@@ -143,6 +164,10 @@ void DetourNavigationMeshInstance::build()
 		return;
 	unsigned int result = build_tiles(0, 0, mesh->get_num_tiles_x() - 1, mesh->get_num_tiles_z() - 1);
 	print_line(String() + "built tiles: " + itos(result));
+	if (debug_view && mesh.is_valid()) {
+		mesh->clear_debug_mesh();
+		Object::cast_to<MeshInstance>(debug_view)->set_mesh(mesh->get_debug_mesh());
+	}
 }
 void DetourNavigationMeshInstance::add_meshdata(const Ref<Mesh> &p_mesh, const Transform &p_xform, Vector<float> &p_verticies, Vector<int> &p_indices) {
 	int current_vertex_count = 0;
@@ -301,10 +326,7 @@ bool DetourNavigationMeshInstance::build_tile(int x, int z)
 	for (int idx; idx < geometries.size(); idx++) {
 		if (!geometries[idx].is_valid())
 			continue;
-		print_line("valid geometry");
 		if (!geometries[idx]->get_aabb().intersects_inclusive(expbox) && !expbox.encloses(geometries[idx]->get_aabb())) {
-			print_line(String(expbox));
-			print_line(String(geometries[idx]->get_aabb()));
 			continue;
 		}
 		// Add offmesh
@@ -462,6 +484,46 @@ bool DetourNavigationMesh::init(dtNavMeshParams *params)
 	initialized = true;
 	return true;
 }
+Ref<ArrayMesh> DetourNavigationMesh::get_debug_mesh()
+{
+	if (debug_mesh.is_valid())
+		return debug_mesh;
+	if (!navmesh)
+		return debug_mesh;
+	List<Vector3> lines;
+	const dtNavMesh *navm = navmesh;
+	for (int i = 0; i < navm->getMaxTiles(); i++) {
+		const dtMeshTile *tile = navm->getTile(i);
+		if (!tile || !tile->header)
+			continue;
+		for (int j = 0; j <  tile->header->polyCount; j++) {
+			dtPoly* poly = tile->polys + j;
+			for (int k = 0; k < poly->vertCount; k++) {
+				lines.push_back(*reinterpret_cast<const Vector3*>(&tile->verts[poly->verts[k] * 3]));
+				lines.push_back(*reinterpret_cast<const Vector3*>(&tile->verts[poly->verts[(k + 1) % poly->vertCount] * 3]));
+			}
+		}
+	}
+	print_line("debug mesh: " + itos(lines.size()));
+
+	PoolVector<Vector3> varr;
+	varr.resize(lines.size());
+	PoolVector<Vector3>::Write w = varr.write();
+	int idx = 0;
+	for (List<Vector3>::Element *E = lines.front(); E; E = E->next()) {
+		w[idx++] = E->get();
+	}
+
+	debug_mesh = Ref<ArrayMesh>(memnew(ArrayMesh));
+
+	Array arr;
+	arr.resize(Mesh::ARRAY_MAX);
+	arr[Mesh::ARRAY_VERTEX] = varr;
+
+	debug_mesh->add_surface_from_arrays(Mesh::PRIMITIVE_LINES, arr);
+
+	return debug_mesh;
+}
 
 /* More complicated queries follow */
 
@@ -580,6 +642,14 @@ void DetourNavigationMeshInstance::remove_tile(int x, int z)
 {
 	if (mesh.is_valid()) {
 		mesh->get_navmesh();
+	}
+}
+void DetourNavigationMeshInstance::set_navmesh(const Ref<DetourNavigationMesh> &mesh)
+{
+	if (this->mesh != mesh) {
+		this->mesh = mesh;
+		if (debug_view && this->mesh.is_valid())
+			Object::cast_to<MeshInstance>(debug_view)->set_mesh(this->mesh->get_debug_mesh());
 	}
 }
 void DetourNavigationMeshInstance::_bind_methods()

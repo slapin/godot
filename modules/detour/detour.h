@@ -69,6 +69,7 @@ class DetourNavigationMesh : public Resource {
 	String group;
 	bool initialized;
 	static void _bind_methods();
+	Ref<ArrayMesh> debug_mesh;
 protected:
 	void release_navmesh();
 	int num_tiles_x;
@@ -124,6 +125,11 @@ public:
 	bool init(dtNavMeshParams *params);
 	void set_data(const Dictionary &p_value);
 	Dictionary get_data();
+	Ref<ArrayMesh> get_debug_mesh();
+	void clear_debug_mesh()
+	{
+		debug_mesh.unref();
+	}
 	const String& get_group() const
 	{
 		return group;
@@ -142,17 +148,15 @@ class DetourNavigationMeshInstance : public Spatial {
 	GDCLASS(DetourNavigationMeshInstance, Spatial);
 	Ref<DetourNavigationMesh> mesh;
 	static void _bind_methods();
+	void _notification(int p_what);
+	Node *debug_view;
 protected:
 	unsigned int build_tiles(int x1, int y1, int x2, int y2);
 	unsigned char *build_tile_mesh(int tx, int ty, const float* bmin, const float* bmax, int& dataSize, const Ref<Mesh>& mesh);
 	void get_tile_bounding_box(int x, int z, Vector3& bmin, Vector3& bmax);
 	static float random();
 public:
-	void set_navmesh(const Ref<DetourNavigationMesh> &mesh)
-	{
-		if (this->mesh != mesh)
-			this->mesh = mesh;
-	}
+	void set_navmesh(const Ref<DetourNavigationMesh> &mesh);
 	Ref<DetourNavigationMesh> get_navmesh()
 	{
 		return mesh;

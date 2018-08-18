@@ -35,7 +35,7 @@ Ref<DetourNavigationMesh> DetourCrowdManager::get_navigation_mesh() const
 {
 	return navmesh;
 }
-void DetourCrowdManager::add_agent(Object *agent, int mode)
+void DetourCrowdManager::add_agent(Object *agent, int mode, bool signals)
 {
 	Spatial *obj = Object::cast_to<Spatial>(agent);
 	if (!obj)
@@ -49,6 +49,8 @@ void DetourCrowdManager::add_agent(Object *agent, int mode)
 	new_agent->max_speed = 100.0f;
 	new_agent->filter_id = 0;
 	new_agent->oa_id = 0;
+	new_agent->mode = mode;
+	new_agent->send_signals = signals;
 	Vector3 pos = obj->get_global_transform().origin;
 	dtCrowdAgentParams params{};
 	params.radius = new_agent->radius;
@@ -67,6 +69,8 @@ void DetourCrowdManager::add_agent(Object *agent, int mode)
 		max_agents = agents.size() + 20;
 		create_crowd();
 	}
+	if (signals)
+		obj->emit_signal("agent_added", id);
 }
 void DetourCrowdManager::remove_agent(Object *agent)
 {
@@ -165,7 +169,10 @@ void DetourCrowdManager::process_agent(dtCrowdAgent *agent)
 	Transform transform = data->obj->get_global_transform();
 	if (velocity.length() == 0.0f)
 		velocity = transform.basis[2];
-	data->obj->look_at_from_position(position, position + velocity, Vector3(0, 1, 0));
+	if (data->mode == 0)
+		data->obj->look_at_from_position(position, position + velocity, Vector3(0, 1, 0));
+	if (data->send_signals)
+		data->obj->emit_signal("agent_position", position, velocity, desired_velocity, (int)agent->state);
 }
 Vector3 DetourCrowdManager::_nearest_point(const Vector3 &point, int query_filter, polyref_t *nearest_ref)
 {
@@ -289,7 +296,7 @@ void DetourCrowdManager::_bind_methods()
 {
 	ClassDB::bind_method(D_METHOD("set_navigation_mesh", "navmesh", "xform"), &DetourCrowdManager::set_navigation_mesh);
 	ClassDB::bind_method(D_METHOD("get_navigation_mesh"), &DetourCrowdManager::get_navigation_mesh);
-	ClassDB::bind_method(D_METHOD("add_agent", "agent"), &DetourCrowdManager::add_agent);
+	ClassDB::bind_method(D_METHOD("add_agent", "agent", "mode", "signals"), &DetourCrowdManager::add_agent, DEFVAL(0), DEFVAL(false));
 	ClassDB::bind_method(D_METHOD("remove_agent", "agent"), &DetourCrowdManager::remove_agent);
 	ClassDB::bind_method(D_METHOD("clear_agent_list"), &DetourCrowdManager::clear_agent_list);
 	ClassDB::bind_method(D_METHOD("get_agent_obj", "id"), &DetourCrowdManager::get_agent_obj);

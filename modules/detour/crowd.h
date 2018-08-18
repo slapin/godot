@@ -22,6 +22,7 @@ class DetourCrowdManager : public Node {
 		float max_speed;
 		int filter_id;
 		int oa_id;
+		bool send_signals;
 		AgentData();
 		~AgentData();
 	};
@@ -47,7 +48,7 @@ public:
 	typedef uint64_t polyref_t;
 	DetourCrowdManager();
 	~DetourCrowdManager();
-	void add_agent(Object *agent, int mode);
+	void add_agent(Object *agent, int mode = 0, bool signals = false);
 	void remove_agent(Object *agent);
 	void clear_agent_list();
 	Spatial *get_agent_obj(int id) const {return agents[id]->obj;}
