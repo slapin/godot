@@ -33,11 +33,11 @@ DetourNavigationMesh::DetourNavigationMesh() : Resource(), navmesh(NULL),
 		detail_sample_distance(DEFAULT_DETAIL_SAMPLE_DISTANCE),
 		detail_sample_max_error(DEFAULT_DETAIL_SAMPLE_MAX_ERROR),
 		tile_size(DEFAULT_TILE_SIZE),
-		initialized(false)
+		initialized(false),
+		bounding_box(AABB()),
+		padding(Vector3(1.0f, 1.0f, 1.0f)),
+		group("")
 {
-	padding = Vector3(1.0f, 1.0f, 1.0f);
-	bounding_box = AABB();
-	group = "";
 }
 void DetourNavigationMeshInstance::collect_geometries(bool recursive)
 {
@@ -81,7 +81,6 @@ void DetourNavigationMeshInstance::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_ENTER_TREE: {
 			if (get_tree()->is_debugging_navigation_hint()) {
-				print_line("set up debug_view");
 				MeshInstance *dm = memnew(MeshInstance);
 				if (mesh.is_valid())
 					dm->set_mesh(mesh->get_debug_mesh());
@@ -133,12 +132,10 @@ void DetourNavigationMeshInstance::build()
 	for (int i = 0; i < geometries.size(); i++)
 		if (geometries[i].is_valid()) {
 			AABB convbox = geometries[i]->get_aabb();
-			print_line("geometry bb: " + String(convbox));
-			convbox.position = xforms[i].xform(convbox.position);
-			print_line("transformed bb: " + String(convbox));
+			convbox = xforms[i].xform(convbox);
 			mesh->bounding_box.merge_with(convbox);
-			print_line("mesh bb: " + String(mesh->bounding_box));
 		}
+	print_line("mesh bb: " + String(mesh->bounding_box));
 	mesh->bounding_box.position -= mesh->padding;
 	mesh->bounding_box.size += mesh->padding * 2.0;
 	int gridH = 0, gridW = 0;
@@ -166,6 +163,7 @@ void DetourNavigationMeshInstance::build()
 		return;
 	unsigned int result = build_tiles(0, 0, mesh->get_num_tiles_x() - 1, mesh->get_num_tiles_z() - 1);
 	print_line(String() + "built tiles: " + itos(result));
+	print_line("mesh final bb: " + String(mesh->bounding_box));
 	if (debug_view && mesh.is_valid()) {
 		print_line("rebuilding debug navmesh");
 		mesh->clear_debug_mesh();
@@ -329,7 +327,10 @@ bool DetourNavigationMeshInstance::build_tile(int x, int z)
 	for (int idx; idx < geometries.size(); idx++) {
 		if (!geometries[idx].is_valid())
 			continue;
-		if (!geometries[idx]->get_aabb().intersects_inclusive(expbox) && !expbox.encloses(geometries[idx]->get_aabb())) {
+		AABB mesh_aabb = geometries[idx]->get_aabb();
+		Transform xform = base * xforms[idx];
+		mesh_aabb = xform.xform(mesh_aabb);
+		if (!mesh_aabb.intersects_inclusive(expbox) && !expbox.encloses(mesh_aabb)) {
 			continue;
 		}
 		// Add offmesh
@@ -337,10 +338,9 @@ bool DetourNavigationMeshInstance::build_tile(int x, int z)
 		// Add PhysicsBodies?
 		Ref<Mesh> mdata = geometries[idx];
 		// FIXME
-		Transform xform = base * xforms[idx];
 		add_meshdata(mdata, xform, points, indices);
 	}
-	print_line(String() + "points: " + itos(points.size()) + " indices: " + itos(indices.size()) + " tile_size: " + itos(mesh->tile_size));
+	// print_line(String() + "points: " + itos(points.size()) + " indices: " + itos(indices.size()) + " tile_size: " + itos(mesh->tile_size));
 #if 0
 	print_line("mesh points:");
 	for (int k = 0; k < points.size(); k += 3)
