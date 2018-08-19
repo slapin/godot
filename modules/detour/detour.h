@@ -170,6 +170,14 @@ public:
 	{
 		return navmesh;
 	}
+	dtTileCache *get_tile_cache()
+	{
+		return tile_cache;
+	}
+	dtTileCacheCompressor *get_tile_cache_compressor()
+	{
+		return tile_cache_compressor;
+	}
 	DetourNavigationMesh();
 };
 #undef SETGET

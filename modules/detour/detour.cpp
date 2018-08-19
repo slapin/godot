@@ -248,9 +248,10 @@ unsigned int DetourNavigationMeshInstance::build_tiles(int x1, int z1, int x2, i
 {
 	unsigned ret = 0;
 	for (int z = z1; z <= z2; z++) {
-		for (int x = x1; x <= x2; x++)
+		for (int x = x1; x <= x2; x++) {
 			if (build_tile(x, z))
 				ret++;
+		}
 	}
 	return ret;
 }
@@ -274,7 +275,12 @@ bool DetourNavigationMeshInstance::build_tile(int x, int z)
 		return false;
 	get_tile_bounding_box(x, z, bmin, bmax);
 	dtNavMesh *nav = mesh->get_navmesh();
+#ifdef TILE_CACHE
+	dtTileCache *tile_cache = mesh->get_tile_cache();
+	tile_cache->removeTile(nav->getTileRefAt(x, z, 0), NULL, NULL);
+#else
 	nav->removeTile(nav->getTileRefAt(x, z, 0), NULL, NULL);
+#endif
 	rcConfig cfg;
 	cfg.cs = mesh->cell_size;
 	cfg.ch = mesh->cell_height;
@@ -334,32 +340,40 @@ bool DetourNavigationMeshInstance::build_tile(int x, int z)
 		/* Nothing to do */
 		return true;
 	rcHeightfield *heightfield = rcAllocHeightfield();
-	if (!heightfield)
+	if (!heightfield) {
+		ERR_PRINT("Failed to allocate height field");
 		return false;
-	print_line("allocated heightfield");
+	}
 	rcContext *ctx = new rcContext(true);
-	if (!rcCreateHeightfield(ctx, *heightfield, cfg.width, cfg.height, cfg.bmin, cfg.bmax, cfg.cs, cfg.ch))
+	if (!rcCreateHeightfield(ctx, *heightfield, cfg.width, cfg.height, cfg.bmin, cfg.bmax, cfg.cs, cfg.ch)) {
+		ERR_PRINT("Failed to create height field");
 		return false;
-	print_line("created heightfield");
+	}
 	int ntris = indices.size() / 3;
 	unsigned char tri_areas[ntris];
 	memset(tri_areas, 0, sizeof(tri_areas));
 	rcMarkWalkableTriangles(ctx, cfg.walkableSlopeAngle, &points[0], points.size() / 3, &indices[0], ntris, tri_areas);
 	rcRasterizeTriangles(ctx, &points[0], points.size() / 3, &indices[0], tri_areas, ntris, *heightfield, cfg.walkableClimb);
 	rcFilterLowHangingWalkableObstacles(ctx, cfg.walkableClimb, *heightfield);
-	rcFilterWalkableLowHeightSpans(ctx, cfg.walkableHeight, *heightfield);
+
+
 	rcFilterLedgeSpans(ctx, cfg.walkableHeight, cfg.walkableClimb, *heightfield);
+	rcFilterWalkableLowHeightSpans(ctx, cfg.walkableHeight, *heightfield);
+
 	rcCompactHeightfield *compact_heightfield = rcAllocCompactHeightfield();
-	if (!compact_heightfield)
+	if (!compact_heightfield) {
+		ERR_PRINT("Failed to allocate compact height field");
 		return false;
-	print_line("allocated compact heightfield");
+	}
 	if (!rcBuildCompactHeightfield(ctx, cfg.walkableHeight, cfg.walkableClimb, *heightfield,
-				*compact_heightfield))
+				*compact_heightfield)) {
+		ERR_PRINT("Could not build compact height field");
 		return false;
-	print_line("created compact heightfield");
-	if (!rcErodeWalkableArea(ctx, cfg.walkableRadius, *compact_heightfield))
+	}
+	if (!rcErodeWalkableArea(ctx, cfg.walkableRadius, *compact_heightfield)) {
+		ERR_PRINT("Could not erode walkable area");
 		return false;
-	print_line("eroded walkable area");
+	}
 
 	for (unsigned int i = 0; i < nav_areas.size(); i++) {
 		Vector3 amin = nav_areas[i].bounds.position;
@@ -368,7 +382,6 @@ bool DetourNavigationMeshInstance::build_tile(int x, int z)
 		rcMarkBoxArea(ctx, &amin.coord[0], &amax.coord[0],
 			id, *compact_heightfield);
 	}
-	print_line("marked all areas");
 	if (mesh->partition_type == DetourNavigationMesh::PARTITION_WATERSHED) {
 		if (!rcBuildDistanceField(ctx, *compact_heightfield))
 			return false;
@@ -378,7 +391,52 @@ bool DetourNavigationMeshInstance::build_tile(int x, int z)
 	} else
 		if (!rcBuildRegionsMonotone(ctx, *compact_heightfield, cfg.borderSize, cfg.minRegionArea, cfg.mergeRegionArea))
 			return false;
-	print_line("created regions");
+#ifdef TILE_CACHE
+	rcHeightfieldLayerSet * heightfield_layer_set = rcAllocHeightfieldLayerSet();
+	if (!heightfield_layer_set) {
+		ERR_PRINT("Could not allocate height field layer set");
+		return false;
+	}
+	if (!rcBuildHeightfieldLayers(ctx, *compact_heightfield, cfg.borderSize, cfg.walkableHeight,
+				*heightfield_layer_set)) {
+		ERR_PRINT("Could not build heightfield layers");
+		return false;
+	}
+	for (int i = 0; i < heightfield_layer_set->nlayers; i++) {
+		dtTileCacheLayerHeader header;
+		header.magic = DT_TILECACHE_MAGIC;
+		header.version = DT_TILECACHE_VERSION;
+		header.tx = x;
+		header.ty = z;
+		header.tlayer = i;
+		rcHeightfieldLayer* layer = &heightfield_layer_set->layers[i];
+		rcVcopy(header.bmin, layer->bmin);
+		rcVcopy(header.bmax, layer->bmax);
+		header.width = (unsigned char)layer->width;
+		header.height = (unsigned char)layer->height;
+		header.minx = (unsigned char)layer->minx;
+		header.maxx = (unsigned char)layer->maxx;
+		header.miny = (unsigned char)layer->miny;
+		header.maxy = (unsigned char)layer->maxy;
+		header.hmin = (unsigned short)layer->hmin;
+		header.hmax = (unsigned short)layer->hmax;
+		unsigned char *tile_data;
+		int tile_data_size;
+		if (dtStatusFailed(dtBuildTileCacheLayer(mesh->get_tile_cache_compressor(), &header, layer->heights, layer->areas, layer->cons,
+						&tile_data, &tile_data_size))) {
+			ERR_PRINT("Failed to build tile cache layers");
+			return false;
+		}
+		dtCompressedTileRef tileRef;
+		int status = tile_cache->addTile(tile_data, tile_data_size, DT_COMPRESSEDTILE_FREE_DATA, &tileRef);
+		if (dtStatusFailed((dtStatus)status)) {
+			dtFree(tile_data);
+			tile_data = NULL;
+		}
+                tile_cache->buildNavMeshTilesAt(x, z, nav);
+
+	}
+#else
 	rcContourSet *contour_set = rcAllocContourSet();
 	if (!contour_set)
 		return false;
@@ -455,6 +513,7 @@ bool DetourNavigationMeshInstance::build_tile(int x, int z)
 		return false;
 	}
 	print_line("created navmesh data");
+#endif
 	return true;
 }
 bool DetourNavigationMesh::alloc()
