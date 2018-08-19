@@ -4,6 +4,8 @@
 #include <DetourNavMesh.h>
 #include <DetourNavMeshBuilder.h>
 #include <DetourNavMeshQuery.h>
+#include <DetourTileCache.h>
+#include <DetourTileCacheBuilder.h>
 
 static const int DEFAULT_TILE_SIZE = 128;
 static const float DEFAULT_CELL_SIZE = 0.3f;
@@ -33,69 +35,15 @@ DetourNavigationMesh::DetourNavigationMesh() : Resource(), navmesh(NULL),
 		detail_sample_distance(DEFAULT_DETAIL_SAMPLE_DISTANCE),
 		detail_sample_max_error(DEFAULT_DETAIL_SAMPLE_MAX_ERROR),
 		tile_size(DEFAULT_TILE_SIZE),
+		tile_cache(0),
+		tile_cache_alloc(0),
+		tile_cache_compressor(0),
+		mesh_process(0),
 		initialized(false),
 		bounding_box(AABB()),
 		padding(Vector3(1.0f, 1.0f, 1.0f)),
 		group("")
 {
-}
-void DetourNavigationMeshInstance::collect_geometries(bool recursive)
-{
-	if (!mesh.is_valid()) {
-		print_line("No valid navmesh set, please set valid navmesh resource");
-		return;
-	}
-	List<Node *> groupNodes;
-	Set<Node *> processedNodes;
-	List<Node *> node_queue;
-	geometries.clear();
-	get_tree()->get_nodes_in_group(mesh->get_group(), &groupNodes);
-	for (const List<Node *>::Element *E = groupNodes.front(); E; E = E->next()) {
-		Node *groupNode = E->get();
-		node_queue.push_back(groupNode);
-	}
-	print_line(String() + "node_queue size: " + itos(node_queue.size()));
-	while (node_queue.size() > 0) {
-		Node *groupNode = node_queue.front()->get();
-		node_queue.pop_front();
-		if (Object::cast_to<MeshInstance>(groupNode)) {
-			MeshInstance *mi = Object::cast_to<MeshInstance>(groupNode);
-			Ref<Mesh> mesh = mi->get_mesh();
-			Transform xform = mi->get_global_transform();
-			if (mesh.is_valid())
-				add_mesh(mesh, xform);
-		}
-		if (recursive)
-			for (int i = 0; i < groupNode->get_child_count(); i++)
-				node_queue.push_back(groupNode->get_child(i));
-	}
-	print_line(String() + "geometries size: " + itos(geometries.size()));
-}
-void DetourNavigationMeshInstance::add_mesh(const Ref<Mesh>& mesh, const Transform& xform)
-{
-	geometries.push_back(mesh);
-	xforms.push_back(xform);
-}
-void DetourNavigationMeshInstance::_notification(int p_what) {
-
-	switch (p_what) {
-		case NOTIFICATION_ENTER_TREE: {
-			if (get_tree()->is_debugging_navigation_hint()) {
-				MeshInstance *dm = memnew(MeshInstance);
-				if (mesh.is_valid())
-					dm->set_mesh(mesh->get_debug_mesh());
-				dm->set_material_override(get_tree()->get_debug_navigation_material());
-				add_child(dm);
-				debug_view = dm;
-			}
-		} break;
-		case NOTIFICATION_EXIT_TREE: {
-			if (debug_view) {
-				debug_view->queue_delete();
-				debug_view = NULL;
-			}
-		} break;
-	}
 }
 
 inline unsigned int nextPow2(unsigned int v)
@@ -642,6 +590,64 @@ void DetourNavigationMesh::_bind_methods()
 	ClassDB::bind_method(D_METHOD("get_data"), &DetourNavigationMesh::get_data);
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "partition_type", PROPERTY_HINT_ENUM, "watershed,monotone"), "set_partition_type", "get_partition_type");
 	ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "data", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_STORAGE), "set_data", "get_data");
+}
+void DetourNavigationMeshInstance::collect_geometries(bool recursive)
+{
+	if (!mesh.is_valid()) {
+		print_line("No valid navmesh set, please set valid navmesh resource");
+		return;
+	}
+	List<Node *> groupNodes;
+	Set<Node *> processedNodes;
+	List<Node *> node_queue;
+	geometries.clear();
+	get_tree()->get_nodes_in_group(mesh->get_group(), &groupNodes);
+	for (const List<Node *>::Element *E = groupNodes.front(); E; E = E->next()) {
+		Node *groupNode = E->get();
+		node_queue.push_back(groupNode);
+	}
+	print_line(String() + "node_queue size: " + itos(node_queue.size()));
+	while (node_queue.size() > 0) {
+		Node *groupNode = node_queue.front()->get();
+		node_queue.pop_front();
+		if (Object::cast_to<MeshInstance>(groupNode)) {
+			MeshInstance *mi = Object::cast_to<MeshInstance>(groupNode);
+			Ref<Mesh> mesh = mi->get_mesh();
+			Transform xform = mi->get_global_transform();
+			if (mesh.is_valid())
+				add_mesh(mesh, xform);
+		}
+		if (recursive)
+			for (int i = 0; i < groupNode->get_child_count(); i++)
+				node_queue.push_back(groupNode->get_child(i));
+	}
+	print_line(String() + "geometries size: " + itos(geometries.size()));
+}
+void DetourNavigationMeshInstance::add_mesh(const Ref<Mesh>& mesh, const Transform& xform)
+{
+	geometries.push_back(mesh);
+	xforms.push_back(xform);
+}
+void DetourNavigationMeshInstance::_notification(int p_what) {
+
+	switch (p_what) {
+		case NOTIFICATION_ENTER_TREE: {
+			if (get_tree()->is_debugging_navigation_hint()) {
+				MeshInstance *dm = memnew(MeshInstance);
+				if (mesh.is_valid())
+					dm->set_mesh(mesh->get_debug_mesh());
+				dm->set_material_override(get_tree()->get_debug_navigation_material());
+				add_child(dm);
+				debug_view = dm;
+			}
+		} break;
+		case NOTIFICATION_EXIT_TREE: {
+			if (debug_view) {
+				debug_view->queue_delete();
+				debug_view = NULL;
+			}
+		} break;
+	}
 }
 void DetourNavigationMeshInstance::remove_tile(int x, int z)
 {

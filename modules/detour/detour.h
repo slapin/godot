@@ -59,6 +59,13 @@ class dtNavMesh;
 class dtNavMeshParams;
 class dtNavMeshQuery;
 class dtQueryFilter;
+class dtTileCache;
+struct dtTileCacheAlloc;
+struct dtTileCacheCompressor;
+struct dtTileCacheMeshProcess;
+struct dtTileCacheLayer;
+struct dtTileCacheContourSet;
+struct dtTileCachePolyMesh;
 #define SETGET(x, t) \
 	t x; \
 	void set_ ## x(t v) { x = v; } \
@@ -66,10 +73,15 @@ class dtQueryFilter;
 class DetourNavigationMesh : public Resource {
 	GDCLASS(DetourNavigationMesh, Resource);
 	dtNavMesh *navmesh;
+	dtTileCache *tile_cache;
+	dtTileCacheAlloc *tile_cache_alloc;
+	dtTileCacheCompressor *tile_cache_compressor;
+	dtTileCacheMeshProcess *mesh_process;
 	String group;
 	bool initialized;
 	static void _bind_methods();
 	Ref<ArrayMesh> debug_mesh;
+	Vector<int> tile_queue;
 protected:
 	void release_navmesh();
 	int num_tiles_x;

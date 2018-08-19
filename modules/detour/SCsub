@@ -43,10 +43,16 @@ thirdparty_sources += [
         "DetourCrowd/Source/DetourProximityGrid.cpp",
 ]
 
+# DetiurTileCache source files
+thirdparty_sources += [
+        "DetourTileCache/Source/DetourTileCacheBuilder.cpp",
+        "DetourTileCache/Source/DetourTileCache.cpp",
+]
+
 thirdparty_sources = [thirdparty_dir + file for file in thirdparty_sources]
 
 env_detour.add_source_files(env.modules_sources, thirdparty_sources)
-env_detour.Append(CPPPATH=[thirdparty_dir + "/Recast/Include", thirdparty_dir + "/Detour/Include", thirdparty_dir + "/DetourCrowd/Include"])
+env_detour.Append(CPPPATH=[thirdparty_dir + "/Recast/Include", thirdparty_dir + "/Detour/Include", thirdparty_dir + "/DetourCrowd/Include", thirdparty_dir + "/DetourTileCache/Include"])
 env_detour.Append(CPPFLAGS=["-DNDEBUG"])
 
 
