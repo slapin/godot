@@ -32,6 +32,13 @@
 #include "scene/3d/spatial.h"
 #include "scene/resources/mesh.h"
 #include "resource.h"
+
+#define TILE_CACHE
+#ifdef TILE_CACHE
+#define TILECACHE_MAXLAYERS 255
+#define DEFAULT_MAX_OBSTACLES 1024
+#define DEFAULT_MAX_LAYERS 16
+#endif
 class DetourNavigation : public Spatial {
 	GDCLASS(DetourNavigation, Spatial);
 	DetourNavigation() : Spatial()
@@ -59,6 +66,7 @@ class dtNavMesh;
 class dtNavMeshParams;
 class dtNavMeshQuery;
 class dtQueryFilter;
+#ifdef TILE_CACHE
 class dtTileCache;
 struct dtTileCacheAlloc;
 struct dtTileCacheCompressor;
@@ -66,6 +74,8 @@ struct dtTileCacheMeshProcess;
 struct dtTileCacheLayer;
 struct dtTileCacheContourSet;
 struct dtTileCachePolyMesh;
+class dtTileCacheParams;
+#endif
 #define SETGET(x, t) \
 	t x; \
 	void set_ ## x(t v) { x = v; } \
@@ -73,10 +83,12 @@ struct dtTileCachePolyMesh;
 class DetourNavigationMesh : public Resource {
 	GDCLASS(DetourNavigationMesh, Resource);
 	dtNavMesh *navmesh;
+#ifdef TILE_CACHE
 	dtTileCache *tile_cache;
 	dtTileCacheAlloc *tile_cache_alloc;
 	dtTileCacheCompressor *tile_cache_compressor;
 	dtTileCacheMeshProcess *mesh_process;
+#endif
 	String group;
 	bool initialized;
 	static void _bind_methods();
@@ -87,6 +99,10 @@ protected:
 	int num_tiles_x;
 	int num_tiles_z;
 public:
+#ifdef TILE_CACHE
+	int max_obstacles;
+	int max_layers;
+#endif
 	enum partition_t {
 		PARTITION_WATERSHED,
 		PARTITION_MONOTONE,
@@ -136,6 +152,10 @@ public:
 	bool alloc();
 	bool init(dtNavMeshParams *params);
 	void set_data(const Dictionary &p_value);
+#ifdef TILE_CACHE
+	bool alloc_tile_cache();
+	bool init_tile_cache(dtTileCacheParams *param);
+#endif
 	Dictionary get_data();
 	Ref<ArrayMesh> get_debug_mesh();
 	void clear_debug_mesh()

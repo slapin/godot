@@ -7,6 +7,8 @@
 #include <DetourTileCache.h>
 #include <DetourTileCacheBuilder.h>
 
+#define TILE_CACHE
+
 static const int DEFAULT_TILE_SIZE = 128;
 static const float DEFAULT_CELL_SIZE = 0.3f;
 static const float DEFAULT_CELL_HEIGHT = 0.2f;
@@ -35,10 +37,14 @@ DetourNavigationMesh::DetourNavigationMesh() : Resource(), navmesh(NULL),
 		detail_sample_distance(DEFAULT_DETAIL_SAMPLE_DISTANCE),
 		detail_sample_max_error(DEFAULT_DETAIL_SAMPLE_MAX_ERROR),
 		tile_size(DEFAULT_TILE_SIZE),
+#ifdef TILE_CACHE
 		tile_cache(0),
 		tile_cache_alloc(0),
 		tile_cache_compressor(0),
 		mesh_process(0),
+		max_obstacles(DEFAULT_MAX_OBSTACLES),
+		max_layers(DEFAULT_MAX_LAYERS),
+#endif
 		initialized(false),
 		bounding_box(AABB()),
 		padding(Vector3(1.0f, 1.0f, 1.0f)),
@@ -68,6 +74,17 @@ inline unsigned int ilog2(unsigned int v)
 	shift = (v > 0x3) << 1; v >>= shift; r |= shift;
 	r |= (v >> 1);
 	return r;
+}
+
+bool DetourNavigationMesh::alloc_tile_cache()
+{
+	tile_cache = dtAllocTileCache();
+	if (!tile_cache) {
+		ERR_PRINT("Could not allocate tile cache");
+		release_navmesh();
+		return false;
+	}
+	return true;
 }
 
 void DetourNavigationMeshInstance::build()
@@ -109,6 +126,25 @@ void DetourNavigationMeshInstance::build()
 		return;
 	if (!mesh->init(&params))
 		return;
+#ifdef TILE_CACHE
+	dtTileCacheParams tile_cache_params;
+	memset(&tile_cache_params, 0, sizeof(tile_cache_params));
+	rcVcopy(tile_cache_params.orig, &bmin.coord[0]);
+	tile_cache_params.ch = mesh->cell_height;
+	tile_cache_params.cs = mesh->cell_size;
+	tile_cache_params.width = mesh->tile_size;
+	tile_cache_params.height = mesh->tile_size;
+	tile_cache_params.maxSimplificationError = mesh->edge_max_error;
+	tile_cache_params.maxTiles = mesh->get_num_tiles_x() * mesh->get_num_tiles_z() * mesh->max_layers;
+	tile_cache_params.maxObstacles = mesh->max_obstacles;
+	tile_cache_params.walkableClimb = mesh->agent_max_climb;
+	tile_cache_params.walkableHeight = mesh->agent_height;
+	tile_cache_params.walkableRadius = mesh->agent_radius;
+	if (!mesh->alloc_tile_cache())
+		return;
+	if (!mesh->init_tile_cache(&tile_cache_params))
+		return;
+#endif
 	unsigned int result = build_tiles(0, 0, mesh->get_num_tiles_x() - 1, mesh->get_num_tiles_z() - 1);
 	print_line(String() + "built tiles: " + itos(result));
 	print_line("mesh final bb: " + String(mesh->bounding_box));
@@ -435,6 +471,17 @@ bool DetourNavigationMesh::init(dtNavMeshParams *params)
 	initialized = true;
 	return true;
 }
+#ifdef TILE_CACHE
+bool DetourNavigationMesh::init_tile_cache(dtTileCacheParams *params)
+{
+	if (dtStatusFailed(tile_cache->init(params, tile_cache_alloc, tile_cache_compressor, mesh_process))) {
+		ERR_PRINT("Could not initialize tile cache");
+		release_navmesh();
+		return false;
+	}
+	return true;
+}
+#endif
 Ref<ArrayMesh> DetourNavigationMesh::get_debug_mesh()
 {
 	if (debug_mesh.is_valid())
