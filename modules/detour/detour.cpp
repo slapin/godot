@@ -9,7 +9,7 @@
 
 #define TILE_CACHE
 
-static const int DEFAULT_TILE_SIZE = 128;
+static const int DEFAULT_TILE_SIZE = 64;
 static const float DEFAULT_CELL_SIZE = 0.3f;
 static const float DEFAULT_CELL_HEIGHT = 0.2f;
 static const float DEFAULT_AGENT_HEIGHT = 2.0f;
