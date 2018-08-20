@@ -6,6 +6,7 @@ Import('env_modules')
 env_detour = env_modules.Clone()
 
 # Thirdparty source files
+# TODO: clean this up for recastnav+fastlz
 thirdparty_sources = []
 thirdparty_dir = "#thirdparty/recastnavigation/"
 if env['builtin_recast'] and not env["tools"]:
@@ -50,9 +51,14 @@ thirdparty_sources += [
 ]
 
 thirdparty_sources = [thirdparty_dir + file for file in thirdparty_sources]
+thirdparty_sources += ["#thirdparty/fastlz/fastlz.c"]
 
 env_detour.add_source_files(env.modules_sources, thirdparty_sources)
-env_detour.Append(CPPPATH=[thirdparty_dir + "/Recast/Include", thirdparty_dir + "/Detour/Include", thirdparty_dir + "/DetourCrowd/Include", thirdparty_dir + "/DetourTileCache/Include"])
+env_detour.Append(CPPPATH=[thirdparty_dir + "/Recast/Include",
+    thirdparty_dir + "/Detour/Include",
+    thirdparty_dir + "/DetourCrowd/Include",
+    thirdparty_dir + "/DetourTileCache/Include",
+    "#thirdparty/fastlz"])
 env_detour.Append(CPPFLAGS=["-DNDEBUG"])
 
 

@@ -6,6 +6,7 @@
 #include <DetourNavMeshQuery.h>
 #include <DetourTileCache.h>
 #include <DetourTileCacheBuilder.h>
+#include <fastlz.h>
 
 #define TILE_CACHE
 
@@ -23,6 +24,77 @@ static const float DEFAULT_EDGE_MAX_ERROR = 1.3f;
 static const float DEFAULT_DETAIL_SAMPLE_DISTANCE = 6.0f;
 static const float DEFAULT_DETAIL_SAMPLE_MAX_ERROR = 1.0f;
 
+#ifdef TILE_CACHE
+struct FastLZCompressor : public dtTileCacheCompressor
+{
+	virtual int maxCompressedSize(const int bufferSize)
+	{
+		return (int)(bufferSize* 1.05f);
+	}
+
+	virtual dtStatus compress(const unsigned char* buffer, const int bufferSize,
+							  unsigned char* compressed, const int /*maxCompressedSize*/, int* compressedSize)
+	{
+		*compressedSize = fastlz_compress((const void *const)buffer, bufferSize, compressed);
+		return DT_SUCCESS;
+	}
+
+	virtual dtStatus decompress(const unsigned char* compressed, const int compressedSize,
+								unsigned char* buffer, const int maxBufferSize, int* bufferSize)
+	{
+		*bufferSize = fastlz_decompress(compressed, compressedSize, buffer, maxBufferSize);
+		return *bufferSize < 0 ? DT_FAILURE : DT_SUCCESS;
+	}
+};
+struct LinearAllocator : public dtTileCacheAlloc
+{
+	unsigned char* buffer;
+	size_t capacity;
+	size_t top;
+	size_t high;
+
+	LinearAllocator(const size_t cap) : buffer(0), capacity(0), top(0), high(0)
+	{
+		resize(cap);
+	}
+
+	~LinearAllocator()
+	{
+		dtFree(buffer);
+	}
+
+	void resize(const size_t cap)
+	{
+		if (buffer) dtFree(buffer);
+		buffer = (unsigned char*)dtAlloc(cap, DT_ALLOC_PERM);
+		capacity = cap;
+	}
+
+	virtual void reset()
+	{
+		high = MAX(high, top);
+		top = 0;
+	}
+
+	virtual void* alloc(const size_t size)
+	{
+		if (!buffer)
+			return 0;
+		if (top+size > capacity)
+			return 0;
+		unsigned char* mem = &buffer[top];
+		top += size;
+		return mem;
+	}
+
+	virtual void free(void* /*ptr*/)
+	{
+		// Empty
+	}
+};
+
+#endif
+
 DetourNavigationMesh::DetourNavigationMesh() : Resource(), navmesh(NULL),
 		cell_size(DEFAULT_CELL_SIZE),
 		cell_height(DEFAULT_CELL_HEIGHT),
@@ -39,8 +111,8 @@ DetourNavigationMesh::DetourNavigationMesh() : Resource(), navmesh(NULL),
 		tile_size(DEFAULT_TILE_SIZE),
 #ifdef TILE_CACHE
 		tile_cache(0),
-		tile_cache_alloc(0),
-		tile_cache_compressor(0),
+		tile_cache_alloc(new LinearAllocator(64000)),
+		tile_cache_compressor(new FastLZCompressor),
 		mesh_process(0),
 		max_obstacles(DEFAULT_MAX_OBSTACLES),
 		max_layers(DEFAULT_MAX_LAYERS),
