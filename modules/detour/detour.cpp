@@ -146,6 +146,9 @@ void DetourNavigationMeshInstance::build()
 		return;
 #endif
 	unsigned int result = build_tiles(0, 0, mesh->get_num_tiles_x() - 1, mesh->get_num_tiles_z() - 1);
+#ifdef TILE_CACHE
+	mesh->get_tile_cache()->update(0, mesh->get_navmesh());
+#endif
 	print_line(String() + "built tiles: " + itos(result));
 	print_line("mesh final bb: " + String(mesh->bounding_box));
 	if (debug_view && mesh.is_valid()) {
