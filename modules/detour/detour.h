@@ -205,6 +205,8 @@ public:
 		offmesh_areas.clear();
 		offmesh_dir.clear();
 	}
+	unsigned int add_obstacle(const Vector3 &pos, real_t radius, real_t height);
+	void remove_obstacle(unsigned int id);
 	DetourNavigationMesh();
 };
 #undef SETGET

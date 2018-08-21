@@ -349,6 +349,29 @@ void DetourNavigationMesh::set_group(const String& group)
 	this->group = group;
 }
 
+unsigned int DetourNavigationMesh::add_obstacle(const Vector3 &pos, real_t radius, real_t height)
+{
+	/* Need to test how this works and why this needed at all */
+	/* TODO implement navmesh changes queue */
+//	while (tile_cache->isObstacleQueueFull())
+//		tile_cache->update(1, navMesh_);
+	dtObstacleRef ref = 0;
+	if (dtStatusFailed(tile_cache->addObstacle(&pos.coord[0], radius, height, &ref))) {
+		ERR_PRINT("can't add obstacle");
+		return 0;
+	}
+	return (unsigned int)ref;
+}
+void DetourNavigationMesh::remove_obstacle(unsigned int id)
+{
+	/* Need to test how this works and why this needed at all */
+	/* TODO implement navmesh changes queue */
+//	while (tile_cache->isObstacleQueueFull())
+//		tile_cache->update(1, navMesh_);
+	if (dtStatusFailed(tile_cache->removeObstacle(id)))
+		ERR_PRINT("failed to remove obstacle");
+}
+
 unsigned int DetourNavigationMeshInstance::build_tiles(int x1, int z1, int x2, int z2)
 {
 	unsigned ret = 0;
