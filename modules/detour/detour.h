@@ -46,11 +46,27 @@ class DetourNavigation : public Spatial {
 	}
 	static void _bind_methods();
 };
+class DetourNavigationMeshInstance;
 class DetourNavigationOffmeshConnection : public Spatial {
 	GDCLASS(DetourNavigationOffmeshConnection, Spatial);
+	friend class DetourNavigationMeshInstance;
+	Vector3 end;
+	float radius;
+	unsigned short flags;
+	unsigned char area;
+	bool bidirectional;
 	static void _bind_methods();
 public:
 	Vector3 endpoint;
+	DetourNavigationOffmeshConnection() :
+		Spatial(),
+		end(Vector3(0, 0, 10.0f)),
+		radius(5.0f),
+		flags(1),
+		area(1),
+		bidirectional(true)
+	{
+	}
 };
 
 class DetourNavigationArea : public Spatial {
@@ -212,6 +228,9 @@ public:
 #undef SETGET
 VARIANT_ENUM_CAST(DetourNavigationMesh::partition_t);
 
+#ifdef TILE_CACHE
+class DetourNavigationObstacle;
+#endif
 class DetourNavigationMeshInstance : public Spatial {
 	class DetourNavigationQueryData;
 	GDCLASS(DetourNavigationMeshInstance, Spatial);
@@ -219,6 +238,9 @@ class DetourNavigationMeshInstance : public Spatial {
 	static void _bind_methods();
 	void _notification(int p_what);
 	Node *debug_view;
+#ifdef TILE_CACHE
+	Vector<DetourNavigationObstacle *> obstacles;
+#endif
 protected:
 	unsigned int build_tiles(int x1, int y1, int x2, int y2);
 	unsigned char *build_tile_mesh(int tx, int ty, const float* bmin, const float* bmax, int& dataSize, const Ref<Mesh>& mesh);

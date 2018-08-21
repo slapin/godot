@@ -1,4 +1,5 @@
 #include "detour.h"
+#include "obstacle.h"
 #include "scene/3d/mesh_instance.h"
 #include <Recast.h>
 #include <DetourNavMesh.h>
@@ -253,6 +254,13 @@ void DetourNavigationMeshInstance::build()
 #endif
 	print_line(String() + "built tiles: " + itos(result));
 	print_line("mesh final bb: " + String(mesh->bounding_box));
+#ifdef TILE_CACHE
+	for (int i = 0; i < obstacles.size(); i++) {
+		DetourNavigationObstacle *obstacle = obstacles[i];
+		unsigned int id = mesh->add_obstacle(obstacle->get_global_transform().origin, obstacle->get_radius(), obstacle->get_height());
+		obstacle->id = id;
+	}
+#endif
 	if (debug_view && mesh.is_valid()) {
 		print_line("rebuilding debug navmesh");
 		mesh->clear_debug_mesh();
@@ -759,6 +767,7 @@ void DetourNavigationMesh::set_data(const Dictionary &p_value)
 Dictionary DetourNavigationMesh::get_data()
 {
 	Dictionary t;
+#if 0
 	t["initialized"] = initialized;
 	if (!initialized) {
 		return t;
@@ -796,6 +805,7 @@ Dictionary DetourNavigationMesh::get_data()
 		}
 	print_line("submitted: " + itos(data.size()));
 	t["data"] = data;
+#endif
 	return t;
 }
 
@@ -850,6 +860,18 @@ void DetourNavigationMeshInstance::collect_geometries(bool recursive)
 			Transform xform = mi->get_global_transform();
 			if (mesh.is_valid())
 				add_mesh(mesh, xform);
+#ifdef TILE_CACHE
+		} else if (Object::cast_to<DetourNavigationObstacle>(groupNode)) {
+			DetourNavigationObstacle *obstacle = Object::cast_to<DetourNavigationObstacle>(groupNode);
+			obstacles.push_back(obstacle);
+#endif
+		} else if (Object::cast_to<DetourNavigationOffmeshConnection>(groupNode)) {
+			DetourNavigationOffmeshConnection *offcon = Object::cast_to<DetourNavigationOffmeshConnection>(groupNode);
+			Transform xform = offcon->get_global_transform();
+			Transform base = get_global_transform().inverse();
+			Vector3 start = (base * xform).xform(Vector3());
+			Vector3 end = (base * xform).xform(offcon->end);
+			mesh->add_offmesh_connection(start, end, offcon->radius, offcon->flags, offcon->area, offcon->bidirectional);
 		}
 		if (recursive)
 			for (int i = 0; i < groupNode->get_child_count(); i++)
@@ -890,7 +912,9 @@ void DetourNavigationMeshInstance::_notification(int p_what) {
 #ifdef TILE_CACHE
 		case NOTIFICATION_PROCESS: {
 			float delta = get_process_delta_time();
-			mesh->get_tile_cache()->update(delta, mesh->get_navmesh());
+			dtTileCache *tile_cache = mesh->get_tile_cache();
+			if (tile_cache)
+				tile_cache->update(delta, mesh->get_navmesh());
 	   	} break;
 #endif
 	}

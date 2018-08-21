@@ -13,3 +13,7 @@ DetourNavigationObstacle::~DetourNavigationObstacle()
 	if (mesh && id > 0)
 		mesh->remove_obstacle(id);
 }
+void DetourNavigationObstacle::_bind_methods()
+{
+}
+

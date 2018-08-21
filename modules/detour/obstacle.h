@@ -33,7 +33,7 @@
 class DetourNavigationMesh;
 class DetourNavigationObstacle: public Spatial {
 	GDCLASS(DetourNavigationObstacle, Spatial);
-	friend class DetourNavigationMesh;
+	friend class DetourNavigationMeshInstance;
 	unsigned int id;
 	real_t radius;
 	real_t height;
