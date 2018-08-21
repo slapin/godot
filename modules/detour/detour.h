@@ -75,6 +75,7 @@ struct dtTileCacheLayer;
 struct dtTileCacheContourSet;
 struct dtTileCachePolyMesh;
 class dtTileCacheParams;
+class NavMeshProcess;
 #endif
 #define SETGET(x, t) \
 	t x; \
@@ -94,6 +95,14 @@ class DetourNavigationMesh : public Resource {
 	static void _bind_methods();
 	Ref<ArrayMesh> debug_mesh;
 	Vector<int> tile_queue;
+	Vector<Vector3> offmesh_vertices;
+	Vector<float> offmesh_radii;
+	Vector<unsigned short> offmesh_flags;
+	Vector<unsigned char> offmesh_areas;
+	Vector<unsigned char> offmesh_dir;
+#ifdef TILE_CACHE
+	friend class NavMeshProcess;
+#endif
 protected:
 	void release_navmesh();
 	int num_tiles_x;
@@ -177,6 +186,24 @@ public:
 	dtTileCacheCompressor *get_tile_cache_compressor()
 	{
 		return tile_cache_compressor;
+	}
+	inline void add_offmesh_connection(Vector3 start, Vector3 end, real_t radius,
+			unsigned short flags, unsigned char area, bool bidirectional = false)
+	{
+		offmesh_vertices.push_back(start);
+		offmesh_vertices.push_back(end);
+		offmesh_radii.push_back(radius);
+		offmesh_flags.push_back(flags);
+		offmesh_areas.push_back(area);
+		offmesh_dir.push_back(bidirectional ? 1 /* DT_OFFMESH_CON_BIDIR */ : 0);
+	}
+	void clear_offmesh_connections()
+	{
+		offmesh_vertices.clear();
+		offmesh_radii.clear();
+		offmesh_flags.clear();
+		offmesh_areas.clear();
+		offmesh_dir.clear();
 	}
 	DetourNavigationMesh();
 };

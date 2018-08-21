@@ -106,7 +106,20 @@ struct NavMeshProcess: public dtTileCacheMeshProcess {
 			if (polyAreas[i] != RC_NULL_AREA)
 				polyFlags[i] = RC_WALKABLE_AREA;
 		}
-		params->offMeshConCount = 0;
+		params->offMeshConCount = nav->offmesh_radii.size();
+		if (params->offMeshConCount > 0) {
+			params->offMeshConVerts = reinterpret_cast<const float *>(&nav->offmesh_vertices[0]);
+			params->offMeshConRad = &nav->offmesh_radii[0];
+			params->offMeshConFlags = &nav->offmesh_flags[0];
+			params->offMeshConAreas = &nav->offmesh_areas[0];
+			params->offMeshConDir = &nav->offmesh_dir[0];
+		} else {
+			params->offMeshConVerts = NULL;
+			params->offMeshConRad = NULL;
+			params->offMeshConFlags = NULL;
+			params->offMeshConAreas = NULL;
+			params->offMeshConDir = NULL;
+		}
 	}
 };
 
