@@ -874,13 +874,25 @@ void DetourNavigationMeshInstance::_notification(int p_what) {
 				add_child(dm);
 				debug_view = dm;
 			}
+#ifdef TILE_CACHE
+			set_process(true);
+#endif
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
 			if (debug_view) {
 				debug_view->queue_delete();
 				debug_view = NULL;
 			}
+#ifdef TILE_CACHE
+			set_process(false);
+#endif
 		} break;
+#ifdef TILE_CACHE
+		case NOTIFICATION_PROCESS: {
+			float delta = get_process_delta_time();
+			mesh->get_tile_cache()->update(delta, mesh->get_navmesh());
+	   	} break;
+#endif
 	}
 }
 void DetourNavigationMeshInstance::remove_tile(int x, int z)
