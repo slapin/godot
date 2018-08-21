@@ -93,6 +93,23 @@ struct LinearAllocator : public dtTileCacheAlloc
 	}
 };
 
+struct NavMeshProcess: public dtTileCacheMeshProcess {
+	DetourNavigationMesh *nav;
+	inline explicit NavMeshProcess(DetourNavigationMesh *mesh) :
+		nav(mesh)
+	{
+	}
+	virtual void process(struct dtNavMeshCreateParams* params, unsigned char* polyAreas, unsigned short* polyFlags)
+	{
+		/* Add proper flags and offmesh connections here */
+		for (int i = 0; i < params->polyCount; i++) {
+			if (polyAreas[i] != RC_NULL_AREA)
+				polyFlags[i] = RC_WALKABLE_AREA;
+		}
+		params->offMeshConCount = 0;
+	}
+};
+
 #endif
 
 DetourNavigationMesh::DetourNavigationMesh() : Resource(), navmesh(NULL),
@@ -113,7 +130,7 @@ DetourNavigationMesh::DetourNavigationMesh() : Resource(), navmesh(NULL),
 		tile_cache(0),
 		tile_cache_alloc(new LinearAllocator(64000)),
 		tile_cache_compressor(new FastLZCompressor),
-		mesh_process(0),
+		mesh_process(new NavMeshProcess(this)),
 		max_obstacles(DEFAULT_MAX_OBSTACLES),
 		max_layers(DEFAULT_MAX_LAYERS),
 #endif
