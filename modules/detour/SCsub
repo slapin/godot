@@ -59,7 +59,7 @@ env_detour.Append(CPPPATH=[thirdparty_dir + "/Recast/Include",
     thirdparty_dir + "/DetourCrowd/Include",
     thirdparty_dir + "/DetourTileCache/Include",
     "#thirdparty/fastlz"])
-env_detour.Append(CPPFLAGS=["-DNDEBUG"])
+env_detour.Append(CPPFLAGS=["-DNDEBUG", "-DTILE_CACHE"])
 
 
 # Godot source files
