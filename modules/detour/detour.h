@@ -102,9 +102,6 @@ class DetourNavigationMeshInstance : public Spatial {
 	Vector<DetourNavigationObstacle *> obstacles;
 #endif
 protected:
-	unsigned int build_tiles(int x1, int y1, int x2, int y2);
-	unsigned char *build_tile_mesh(int tx, int ty, const float* bmin, const float* bmax, int& dataSize, const Ref<Mesh>& mesh);
-	void get_tile_bounding_box(int x, int z, Vector3& bmin, Vector3& bmax);
 	static float random();
 public:
 	void set_navmesh(const Ref<DetourNavigationMesh> &mesh);
@@ -113,12 +110,6 @@ public:
 		return mesh;
 	}
 	DetourNavigationMeshInstance();
-	void add_meshdata(const Ref<Mesh> &p_mesh,
-			const Transform &p_xform,
-			Vector<float> &p_verticies,
-			Vector<int> &p_indices);
-	bool build_tile(int x, int z);
-	void remove_tile(int x, int z);
 	void build();
 	void add_mesh(const Ref<Mesh> &mesh, const Transform &transform);
 	void set_group(const String& group)

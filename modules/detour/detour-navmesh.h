@@ -68,6 +68,7 @@ protected:
 	void release_navmesh();
 	int num_tiles_x;
 	int num_tiles_z;
+	void get_tile_bounding_box(int x, int z, Vector3& bmin, Vector3& bmax);
 public:
 #ifdef TILE_CACHE
 	int max_obstacles;
@@ -168,6 +169,16 @@ public:
 		offmesh_areas.clear();
 		offmesh_dir.clear();
 	}
+	void add_meshdata(const Ref<Mesh> &p_mesh,
+			const Transform &p_xform,
+			Vector<float> &p_verticies,
+			Vector<int> &p_indices);
+	unsigned int build_tiles(const Transform &xform, const Vector<Ref<Mesh> > &geometries, const Vector<Transform> &xforms, int x1, int y1, int x2, int y2);
+	inline real_t get_tile_edge_length() const {
+		return ((real_t)tile_size * cell_size);
+	}
+	bool build_tile(const Transform &xform, const Vector<Ref<Mesh> > &geometries, const Vector<Transform> &xforms, int x, int z);
+	void remove_tile(int x, int z);
 	unsigned int add_obstacle(const Vector3 &pos, real_t radius, real_t height);
 	void remove_obstacle(unsigned int id);
 	DetourNavigationMesh();

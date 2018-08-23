@@ -400,3 +400,358 @@ void DetourNavigationMesh::_bind_methods()
 }
 #undef SETGET
 
+void DetourNavigationMesh::get_tile_bounding_box(int x, int z, Vector3& bmin, Vector3& bmax)
+{
+	const float tile_edge_length = (float)tile_size * cell_size;
+	bmin = bounding_box.position +
+		Vector3(tile_edge_length * (float)x,
+				0,
+			       	tile_edge_length * (float)z);
+	bmax = bmin + Vector3(tile_edge_length, bounding_box.size.y, tile_edge_length);
+	// print_line("tile bounding box: " +itos(x) + " " + itos(z) + ": " + String(bmin) + "/" + String(bmax));
+	// print_line("mesh bounding box: " + String(mesh->bounding_box));
+}
+bool DetourNavigationMesh::build_tile(const Transform &xform, const Vector<Ref<Mesh> > &geometries, const Vector<Transform> &xforms, int x, int z)
+{
+	Vector3 bmin, bmax;
+	get_tile_bounding_box(x, z, bmin, bmax);
+	dtNavMesh *nav = get_navmesh();
+#ifdef TILE_CACHE
+	dtTileCache *tile_cache = get_tile_cache();
+	tile_cache->removeTile(nav->getTileRefAt(x, z, 0), NULL, NULL);
+#else
+	nav->removeTile(nav->getTileRefAt(x, z, 0), NULL, NULL);
+#endif
+	rcConfig cfg;
+	cfg.cs = cell_size;
+	cfg.ch = cell_height;
+	cfg.walkableSlopeAngle = agent_max_slope;
+	cfg.walkableHeight = (int)ceil(agent_height / cfg.ch);
+	cfg.walkableClimb = (int)floor(agent_max_climb / cfg.ch);
+	cfg.walkableRadius = (int)ceil(agent_radius / cfg.cs);
+	cfg.maxEdgeLen = (int)(edge_max_length / cfg.cs);
+	cfg.maxSimplificationError = edge_max_error;
+	cfg.minRegionArea = (int)sqrtf(region_min_size);
+	cfg.mergeRegionArea = (int)sqrtf(region_merge_size);
+	cfg.maxVertsPerPoly = 6;
+	cfg.tileSize = tile_size;
+	cfg.borderSize = cfg.walkableRadius + 3;
+	cfg.width = cfg.tileSize + cfg.borderSize * 2;
+	cfg.height = cfg.tileSize + cfg.borderSize * 2;
+	cfg.detailSampleDist = detail_sample_distance < 0.9f ? 0.0f : cell_size * detail_sample_distance;
+	cfg.detailSampleMaxError = cell_height * detail_sample_max_error;
+	rcVcopy(cfg.bmin, &bmin.coord[0]);
+	rcVcopy(cfg.bmax, &bmax.coord[0]);
+	cfg.bmin[0] -= cfg.borderSize * cfg.cs;
+	cfg.bmin[2] -= cfg.borderSize * cfg.cs;
+	cfg.bmax[0] += cfg.borderSize * cfg.cs;
+	cfg.bmax[2] += cfg.borderSize * cfg.cs;
+
+	AABB expbox(bmin, bmax - bmin);
+	expbox.position.x -= cfg.borderSize * cfg.cs;
+	expbox.position.z -= cfg.borderSize * cfg.cs;
+	expbox.size.x += 2.0 * cfg.borderSize * cfg.cs;
+	expbox.size.z += 2.0 * cfg.borderSize * cfg.cs;
+	Vector<float> points;
+	Vector<int> indices;
+	Transform base = xform.inverse();
+	for (int idx; idx < geometries.size(); idx++) {
+		if (!geometries[idx].is_valid())
+			continue;
+		AABB mesh_aabb = geometries[idx]->get_aabb();
+		Transform xform = base * xforms[idx];
+		mesh_aabb = xform.xform(mesh_aabb);
+		if (!mesh_aabb.intersects_inclusive(expbox) && !expbox.encloses(mesh_aabb)) {
+			continue;
+		}
+		// Add offmesh
+		// Add NavArea
+		// Add PhysicsBodies?
+		Ref<Mesh> mdata = geometries[idx];
+		// FIXME
+		add_meshdata(mdata, xform, points, indices);
+	}
+	// print_line(String() + "points: " + itos(points.size()) + " indices: " + itos(indices.size()) + " tile_size: " + itos(mesh->tile_size));
+#if 0
+	print_line("mesh points:");
+	for (int k = 0; k < points.size(); k += 3)
+		print_line("point: " + itos(k) + ": " + rtos(points[k]) + ", " + rtos(points[k + 1]) + ", " + rtos(points[k + 2]));
+#endif
+	if (points.size() == 0 || indices.size() == 0)
+		/* Nothing to do */
+		return true;
+	rcHeightfield *heightfield = rcAllocHeightfield();
+	if (!heightfield) {
+		ERR_PRINT("Failed to allocate height field");
+		return false;
+	}
+	rcContext *ctx = new rcContext(true);
+	if (!rcCreateHeightfield(ctx, *heightfield, cfg.width, cfg.height, cfg.bmin, cfg.bmax, cfg.cs, cfg.ch)) {
+		ERR_PRINT("Failed to create height field");
+		return false;
+	}
+	int ntris = indices.size() / 3;
+	unsigned char tri_areas[ntris];
+	memset(tri_areas, 0, sizeof(tri_areas));
+	rcMarkWalkableTriangles(ctx, cfg.walkableSlopeAngle, &points[0], points.size() / 3, &indices[0], ntris, tri_areas);
+	rcRasterizeTriangles(ctx, &points[0], points.size() / 3, &indices[0], tri_areas, ntris, *heightfield, cfg.walkableClimb);
+	rcFilterLowHangingWalkableObstacles(ctx, cfg.walkableClimb, *heightfield);
+
+
+	rcFilterLedgeSpans(ctx, cfg.walkableHeight, cfg.walkableClimb, *heightfield);
+	rcFilterWalkableLowHeightSpans(ctx, cfg.walkableHeight, *heightfield);
+
+	rcCompactHeightfield *compact_heightfield = rcAllocCompactHeightfield();
+	if (!compact_heightfield) {
+		ERR_PRINT("Failed to allocate compact height field");
+		return false;
+	}
+	if (!rcBuildCompactHeightfield(ctx, cfg.walkableHeight, cfg.walkableClimb, *heightfield,
+				*compact_heightfield)) {
+		ERR_PRINT("Could not build compact height field");
+		return false;
+	}
+	if (!rcErodeWalkableArea(ctx, cfg.walkableRadius, *compact_heightfield)) {
+		ERR_PRINT("Could not erode walkable area");
+		return false;
+	}
+
+	// TODO: Implement area storage in navmesh data and build from that data
+	// populate at collect_geometry stage
+	// areas should indicate if walkable
+#if 0
+	for (unsigned int i = 0; i < nav_areas.size(); i++) {
+		Vector3 amin = nav_areas[i].bounds.position;
+		Vector3 amax = amin + nav_areas[i].bounds.size;
+		int id = nav_areas[i].id;
+		rcMarkBoxArea(ctx, &amin.coord[0], &amax.coord[0],
+			id, *compact_heightfield);
+	}
+#endif
+	if (partition_type == DetourNavigationMesh::PARTITION_WATERSHED) {
+		if (!rcBuildDistanceField(ctx, *compact_heightfield))
+			return false;
+		if (!rcBuildRegions(ctx, *compact_heightfield, cfg.borderSize, cfg.minRegionArea,
+					cfg.mergeRegionArea))
+			return false;
+	} else
+		if (!rcBuildRegionsMonotone(ctx, *compact_heightfield, cfg.borderSize, cfg.minRegionArea, cfg.mergeRegionArea))
+			return false;
+#ifdef TILE_CACHE
+	rcHeightfieldLayerSet * heightfield_layer_set = rcAllocHeightfieldLayerSet();
+	if (!heightfield_layer_set) {
+		ERR_PRINT("Could not allocate height field layer set");
+		return false;
+	}
+	if (!rcBuildHeightfieldLayers(ctx, *compact_heightfield, cfg.borderSize, cfg.walkableHeight,
+				*heightfield_layer_set)) {
+		ERR_PRINT("Could not build heightfield layers");
+		return false;
+	}
+	for (int i = 0; i < heightfield_layer_set->nlayers; i++) {
+		dtTileCacheLayerHeader header;
+		header.magic = DT_TILECACHE_MAGIC;
+		header.version = DT_TILECACHE_VERSION;
+		header.tx = x;
+		header.ty = z;
+		header.tlayer = i;
+		rcHeightfieldLayer* layer = &heightfield_layer_set->layers[i];
+		rcVcopy(header.bmin, layer->bmin);
+		rcVcopy(header.bmax, layer->bmax);
+		header.width = (unsigned char)layer->width;
+		header.height = (unsigned char)layer->height;
+		header.minx = (unsigned char)layer->minx;
+		header.maxx = (unsigned char)layer->maxx;
+		header.miny = (unsigned char)layer->miny;
+		header.maxy = (unsigned char)layer->maxy;
+		header.hmin = (unsigned short)layer->hmin;
+		header.hmax = (unsigned short)layer->hmax;
+		unsigned char *tile_data;
+		int tile_data_size;
+		if (dtStatusFailed(dtBuildTileCacheLayer(get_tile_cache_compressor(), &header, layer->heights, layer->areas, layer->cons,
+						&tile_data, &tile_data_size))) {
+			ERR_PRINT("Failed to build tile cache layers");
+			return false;
+		}
+		dtCompressedTileRef tileRef;
+		int status = tile_cache->addTile(tile_data, tile_data_size, DT_COMPRESSEDTILE_FREE_DATA, &tileRef);
+		if (dtStatusFailed((dtStatus)status)) {
+			dtFree(tile_data);
+			tile_data = NULL;
+		}
+                tile_cache->buildNavMeshTilesAt(x, z, nav);
+
+	}
+#else
+	rcContourSet *contour_set = rcAllocContourSet();
+	if (!contour_set)
+		return false;
+	print_line("allocated contour set");
+	if (!rcBuildContours(ctx, *compact_heightfield, cfg.maxSimplificationError, cfg.maxEdgeLen,
+				*contour_set))
+		return false;
+	print_line("created contour set");
+	rcPolyMesh *poly_mesh = rcAllocPolyMesh();
+	if (!poly_mesh)
+		return false;
+	print_line("allocated polymesh");
+	if (!rcBuildPolyMesh(ctx, *contour_set, cfg.maxVertsPerPoly, *poly_mesh))
+		return false;
+	print_line("created polymesh");
+	rcPolyMeshDetail *poly_mesh_detail = rcAllocPolyMeshDetail();
+	if (!poly_mesh_detail)
+		return false;
+	print_line("allocated polymesh detail");
+	if (!rcBuildPolyMeshDetail(ctx, *poly_mesh, *compact_heightfield, cfg.detailSampleDist,
+				cfg.detailSampleMaxError, *poly_mesh_detail))
+		return false;
+	print_line("created polymesh detail");
+	/* Assign area flags TODO: use nav area assignment here */
+	for (int i = 0; i < poly_mesh->npolys; i++) {
+		if (poly_mesh->areas[i] != RC_NULL_AREA)
+			poly_mesh->flags[i] = 0x1;
+	}
+	print_line("created area flags");
+	unsigned char *nav_data = NULL;
+	int nav_data_size = 0;
+	dtNavMeshCreateParams params;
+	memset(&params, 0, sizeof params);
+	params.verts = poly_mesh->verts;
+	params.vertCount = poly_mesh->nverts;
+	params.polys = poly_mesh->polys;
+	params.polyAreas = poly_mesh->areas;
+	params.polyFlags = poly_mesh->flags;
+	params.polyCount = poly_mesh->npolys;
+	params.nvp = poly_mesh->nvp;
+	params.detailMeshes = poly_mesh_detail->meshes;
+	params.detailVerts = poly_mesh_detail->verts;
+	params.detailVertsCount = poly_mesh_detail->nverts;
+	params.detailTris = poly_mesh_detail->tris;
+	params.detailTriCount = poly_mesh_detail->ntris;
+	params.walkableHeight = mesh->agent_height;
+	params.walkableRadius = mesh->agent_radius;
+	params.walkableClimb = mesh->agent_max_climb;
+	params.tileX = x;
+	params.tileY = z;
+	rcVcopy(params.bmin, poly_mesh->bmin);
+	rcVcopy(params.bmax, poly_mesh->bmax);
+	params.cs = cfg.cs;
+	params.ch = cfg.ch;
+	params.buildBvTree = true;
+#if 0
+	// building offmesh conections
+    if (build.offMeshRadii_.Size())
+    {
+        params.offMeshConCount = build.offMeshRadii_.Size();
+        params.offMeshConVerts = &build.offMeshVertices_[0].x_;
+        params.offMeshConRad = &build.offMeshRadii_[0];
+        params.offMeshConFlags = &build.offMeshFlags_[0];
+        params.offMeshConAreas = &build.offMeshAreas_[0];
+        params.offMeshConDir = &build.offMeshDir_[0];
+    }
+#endif
+	print_line("setup offmesh connections");
+
+	if (!dtCreateNavMeshData(&params, &nav_data, &nav_data_size))
+		return false;
+	if (dtStatusFailed(mesh->get_navmesh()->addTile(nav_data, nav_data_size, DT_TILE_FREE_DATA, 0, NULL))) {
+		dtFree(nav_data);
+		return false;
+	}
+	print_line("created navmesh data");
+#endif
+	return true;
+}
+
+void DetourNavigationMesh::add_meshdata(const Ref<Mesh> &p_mesh, const Transform &p_xform, Vector<float> &p_verticies, Vector<int> &p_indices) {
+	int current_vertex_count = 0;
+
+	for (int i = 0; i < p_mesh->get_surface_count(); i++) {
+		current_vertex_count = p_verticies.size() / 3;
+
+		if (p_mesh->surface_get_primitive_type(i) != Mesh::PRIMITIVE_TRIANGLES)
+			continue;
+
+		int index_count = 0;
+		if (p_mesh->surface_get_format(i) & Mesh::ARRAY_FORMAT_INDEX) {
+			index_count = p_mesh->surface_get_array_index_len(i);
+		} else {
+			index_count = p_mesh->surface_get_array_len(i);
+		}
+
+		ERR_CONTINUE((index_count == 0 || (index_count % 3) != 0));
+
+		int face_count = index_count / 3;
+
+		Array a = p_mesh->surface_get_arrays(i);
+
+		PoolVector<Vector3> mesh_vertices = a[Mesh::ARRAY_VERTEX];
+		PoolVector<Vector3>::Read vr = mesh_vertices.read();
+
+		if (p_mesh->surface_get_format(i) & Mesh::ARRAY_FORMAT_INDEX) {
+
+			PoolVector<int> mesh_indices = a[Mesh::ARRAY_INDEX];
+			PoolVector<int>::Read ir = mesh_indices.read();
+
+			for (int i = 0; i < mesh_vertices.size(); i++) {
+				Vector3 p_vec3 = p_xform.xform(vr[i]);
+				p_verticies.push_back(p_vec3.x);
+				p_verticies.push_back(p_vec3.y);
+				p_verticies.push_back(p_vec3.z);
+			}
+
+			for (int i = 0; i < face_count; i++) {
+				// CCW
+				p_indices.push_back(current_vertex_count + (ir[i * 3 + 0]));
+				p_indices.push_back(current_vertex_count + (ir[i * 3 + 2]));
+				p_indices.push_back(current_vertex_count + (ir[i * 3 + 1]));
+			}
+		} else {
+			face_count = mesh_vertices.size() / 3;
+			for (int i = 0; i < face_count; i++) {
+				Vector3 p_vec3 = p_xform.xform(vr[i * 3 + 0]);
+				p_verticies.push_back(p_vec3.x);
+				p_verticies.push_back(p_vec3.y);
+				p_verticies.push_back(p_vec3.z);
+				p_vec3 = p_xform.xform(vr[i * 3 + 2]);
+				p_verticies.push_back(p_vec3.x);
+				p_verticies.push_back(p_vec3.y);
+				p_verticies.push_back(p_vec3.z);
+				p_vec3 = p_xform.xform(vr[i * 3 + 1]);
+				p_verticies.push_back(p_vec3.x);
+				p_verticies.push_back(p_vec3.y);
+				p_verticies.push_back(p_vec3.z);
+
+				p_indices.push_back(current_vertex_count + (i * 3 + 0));
+				p_indices.push_back(current_vertex_count + (i * 3 + 1));
+				p_indices.push_back(current_vertex_count + (i * 3 + 2));
+			}
+		}
+	}
+}
+
+void DetourNavigationMesh::remove_tile(int x, int z)
+{
+#ifdef TILE_CACHE
+	dtTileCache *tile_cache = get_tile_cache();
+	tile_cache->removeTile(navmesh->getTileRefAt(x, z, 0), NULL, NULL);
+#else
+	nav->removeTile(navmesh->getTileRefAt(x, z, 0), NULL, NULL);
+#endif
+}
+
+unsigned int DetourNavigationMesh::build_tiles(const Transform &xform, const Vector<Ref<Mesh> > &geometries, const Vector<Transform> &xforms, int x1, int z1, int x2, int z2)
+{
+	unsigned ret = 0;
+	for (int z = z1; z <= z2; z++) {
+		for (int x = x1; x <= x2; x++) {
+			if (build_tile(xform, geometries, xforms, x, z))
+				ret++;
+		}
+	}
+#ifdef TILE_CACHE
+	get_tile_cache()->update(0, get_navmesh());
+#endif
+	return ret;
+}
+
