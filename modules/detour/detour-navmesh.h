@@ -29,7 +29,7 @@
 /*************************************************************************/
 #ifndef DETOUR_NAVMESH_H
 #define DETOUR_NAVMESH_H
-#include "resource.h"
+#include "core/resource.h"
 #include "scene/resources/mesh.h"
 #define SETGET(x, t) \
 	t x; \

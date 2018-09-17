@@ -29,9 +29,9 @@
 /*************************************************************************/
 #ifndef NAVMESH_QUERY_H
 #define NAVMESH_QUERY_H
-#include "object.h"
-#include "reference.h"
-#include "math/transform.h"
+#include "core/object.h"
+#include "core/reference.h"
+#include "core/math/transform.h"
 class dtQueryFilter;
 class dtNavMeshQuery;
 class DetourNavigationMesh;

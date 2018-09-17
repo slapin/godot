@@ -30,7 +30,7 @@
 
 #ifndef KDTREE_H
 #define KDTREE_H
-#include "resource.h"
+#include "core/resource.h"
 
 class KDTree2D : public Reference {
 	GDCLASS(KDTree2D, Reference)

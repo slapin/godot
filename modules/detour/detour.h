@@ -31,7 +31,7 @@
 #define DETOUR_H
 #include "scene/3d/spatial.h"
 #include "scene/resources/mesh.h"
-#include "resource.h"
+#include "core/resource.h"
 
 #include "detour-navmesh.h"
 class DetourNavigation : public Spatial {
