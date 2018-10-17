@@ -54,6 +54,8 @@ GLuint RasterizerStorageGLES2::system_fbo = 0;
 
 #define _EXT_TEXTURE_CUBE_MAP_SEAMLESS 0x884F
 
+#define _DEPTH_COMPONENT24_OES 0x81A6
+
 void RasterizerStorageGLES2::bind_quad_array() const {
 	glBindBuffer(GL_ARRAY_BUFFER, resources.quadie);
 	glVertexAttribPointer(VS::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, 0);
@@ -899,26 +901,27 @@ void RasterizerStorageGLES2::sky_set_texture(RID p_sky, RID p_panorama, int p_ra
 	// attachements for it, so we can fill them by issuing draw calls.
 	GLuint tmp_fb;
 
-	glGenFramebuffers(1, &tmp_fb);
-	glBindFramebuffer(GL_FRAMEBUFFER, tmp_fb);
-
 	int size = p_radiance_size;
 
 	int lod = 0;
-
-	shaders.cubemap_filter.set_conditional(CubemapFilterShaderGLES2::USE_SOURCE_PANORAMA, texture->target == GL_TEXTURE_2D);
-
-	shaders.cubemap_filter.bind();
 
 	int mipmaps = 6;
 
 	int mm_level = mipmaps;
 
-	GLenum internal_format = GL_RGBA;
-	GLenum format = GL_RGBA;
-	GLenum type = GL_UNSIGNED_BYTE; // This is suboptimal... TODO other format for FBO?
+	GLenum internal_format = GL_RGB;
+	GLenum format = GL_RGB;
+	GLenum type = GL_UNSIGNED_BYTE;
 
 	// Set the initial (empty) mipmaps
+#if 1
+	//Mobile hardware (PowerVR specially) prefers this approach, the other one kills the game
+	for (int i = 0; i < 6; i++) {
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internal_format, size, size, 0, format, type, NULL);
+	}
+
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+#else
 	while (size >= 1) {
 
 		for (int i = 0; i < 6; i++) {
@@ -929,7 +932,14 @@ void RasterizerStorageGLES2::sky_set_texture(RID p_sky, RID p_panorama, int p_ra
 
 		size >>= 1;
 	}
+#endif
+	//framebuffer
+	glGenFramebuffers(1, &tmp_fb);
+	glBindFramebuffer(GL_FRAMEBUFFER, tmp_fb);
 
+	shaders.cubemap_filter.set_conditional(CubemapFilterShaderGLES2::USE_SOURCE_PANORAMA, texture->target == GL_TEXTURE_2D);
+
+	shaders.cubemap_filter.bind();
 	lod = 0;
 	mm_level = mipmaps;
 
@@ -948,6 +958,7 @@ void RasterizerStorageGLES2::sky_set_texture(RID p_sky, RID p_panorama, int p_ra
 			shaders.cubemap_filter.set_uniform(CubemapFilterShaderGLES2::FACE_ID, i);
 
 			float roughness = mm_level ? lod / (float)(mipmaps - 1) : 1;
+			roughness = MIN(1.0, roughness); //keep max at 1
 			shaders.cubemap_filter.set_uniform(CubemapFilterShaderGLES2::ROUGHNESS, roughness);
 
 			glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
@@ -3151,6 +3162,9 @@ void RasterizerStorageGLES2::light_set_reverse_cull_face_mode(RID p_light, bool 
 	ERR_FAIL_COND(!light);
 
 	light->reverse_cull = p_enabled;
+
+	light->version++;
+	light->instance_change_notify();
 }
 
 void RasterizerStorageGLES2::light_omni_set_shadow_mode(RID p_light, VS::LightOmniShadowMode p_mode) {
@@ -3914,7 +3928,7 @@ void RasterizerStorageGLES2::_render_target_allocate(RenderTarget *rt) {
 
 	glGenRenderbuffers(1, &rt->depth);
 	glBindRenderbuffer(GL_RENDERBUFFER, rt->depth);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, rt->width, rt->height);
+	glRenderbufferStorage(GL_RENDERBUFFER, _DEPTH_COMPONENT24_OES, rt->width, rt->height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rt->depth);
 
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -4492,13 +4506,13 @@ void RasterizerStorageGLES2::initialize() {
 
 	// radical inverse vdc cache texture
 	// used for cubemap filtering
-	if (config.float_texture_supported) {
+	if (true /*||config.float_texture_supported*/) { //uint8 is similar and works everywhere
 		glGenTextures(1, &resources.radical_inverse_vdc_cache_tex);
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, resources.radical_inverse_vdc_cache_tex);
 
-		float radical_inverse[512];
+		uint8_t radical_inverse[512];
 
 		for (uint32_t i = 0; i < 512; i++) {
 			uint32_t bits = i;
@@ -4510,11 +4524,10 @@ void RasterizerStorageGLES2::initialize() {
 			bits = ((bits & 0x00FF00FF) << 8) | ((bits & 0xFF00FF00) >> 8);
 
 			float value = float(bits) * 2.3283064365386963e-10;
-
-			radical_inverse[i] = value;
+			radical_inverse[i] = uint8_t(CLAMP(value * 255.0, 0, 255));
 		}
 
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, 512, 1, 0, GL_LUMINANCE, GL_FLOAT, radical_inverse);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, 512, 1, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, radical_inverse);
 
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}

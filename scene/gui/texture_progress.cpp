@@ -59,14 +59,14 @@ Ref<Texture> TextureProgress::get_over_texture() const {
 }
 
 void TextureProgress::set_stretch_margin(Margin p_margin, int p_size) {
-	ERR_FAIL_INDEX(p_margin, 4);
+	ERR_FAIL_INDEX((int)p_margin, 4);
 	stretch_margin[p_margin] = p_size;
 	update();
 	minimum_size_changed();
 }
 
 int TextureProgress::get_stretch_margin(Margin p_margin) const {
-	ERR_FAIL_INDEX_V(p_margin, 4, 0);
+	ERR_FAIL_INDEX_V((int)p_margin, 4, 0);
 	return stretch_margin[p_margin];
 }
 
@@ -148,9 +148,9 @@ Point2 TextureProgress::unit_val_to_uv(float val) {
 	float angle = (val * Math_TAU) - Math_PI * 0.5;
 	Point2 dir = Vector2(Math::cos(angle), Math::sin(angle));
 	float t1 = 1.0;
-	float cp;
-	float cq;
-	float cr;
+	float cp = 0;
+	float cq = 0;
+	float cr = 0;
 	float edgeLeft = 0.0;
 	float edgeRight = 1.0;
 	float edgeBottom = 0.0;

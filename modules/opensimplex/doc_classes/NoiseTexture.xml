@@ -12,24 +12,6 @@
 	<demos>
 	</demos>
 	<methods>
-		<method name="set_height">
-			<return type="void">
-			</return>
-			<argument index="0" name="height" type="int">
-			</argument>
-			<description>
-				Set texture height.
-			</description>
-		</method>
-		<method name="set_width">
-			<return type="void">
-			</return>
-			<argument index="0" name="width" type="int">
-			</argument>
-			<description>
-				Set texture width.
-			</description>
-		</method>
 	</methods>
 	<members>
 		<member name="as_normalmap" type="bool" setter="set_as_normalmap" getter="is_normalmap">
@@ -41,8 +23,11 @@
 		<member name="seamless" type="bool" setter="set_seamless" getter="get_seamless">
 			Whether the texture can be tiled without visible seams or not. Seamless textures take longer to generate.
 		</member>
-		<member name="size" type="Vector2" setter="set_size" getter="get_size">
-			Size of the generated texture.
+		<member name="width" type="int" setter="set_width" getter="get_width">
+			Width of the generated texture.
+		</member>
+		<member name="height" type="int" setter="set_height" getter="get_height">
+			Height of the generated texture.
 		</member>
 	</members>
 	<constants>

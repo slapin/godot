@@ -36,7 +36,6 @@
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
 #include "core/io/stream_peer_ssl.h"
-#include "core/io/zip_io.h"
 #include "core/message_queue.h"
 #include "core/os/file_access.h"
 #include "core/os/input.h"
@@ -226,12 +225,6 @@ void EditorNode::_unhandled_input(const Ref<InputEvent> &p_event) {
 			_editor_select_next();
 		} else if (ED_IS_SHORTCUT("editor/editor_prev", p_event)) {
 			_editor_select_prev();
-		}
-
-		if (k->get_scancode() == KEY_ESCAPE) {
-			for (int i = 0; i < bottom_panel_items.size(); i++) {
-				_bottom_panel_switch(false, i);
-			}
 		}
 
 		if (old_editor != editor_plugin_screen) {
@@ -1739,13 +1732,13 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 		} break;
 		case FILE_QUICK_OPEN_SCENE: {
 
-			quick_open->popup("PackedScene", true);
+			quick_open->popup_dialog("PackedScene", true);
 			quick_open->set_title(TTR("Quick Open Scene..."));
 
 		} break;
 		case FILE_QUICK_OPEN_SCRIPT: {
 
-			quick_open->popup("Script", true);
+			quick_open->popup_dialog("Script", true);
 			quick_open->set_title(TTR("Quick Open Script..."));
 
 		} break;
@@ -2003,7 +1996,7 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 		case RUN_PLAY_CUSTOM_SCENE: {
 			if (run_custom_filename.empty() || editor_run.get_status() == EditorRun::STATUS_STOP) {
 				_menu_option_confirm(RUN_STOP, true);
-				quick_run->popup("PackedScene", true);
+				quick_run->popup_dialog("PackedScene", true);
 				quick_run->set_title(TTR("Quick Run Scene..."));
 				play_custom_scene_button->set_pressed(false);
 			} else {
@@ -3202,7 +3195,7 @@ Ref<Texture> EditorNode::get_class_icon(const String &p_class, const String &p_f
 		}
 	}
 
-	if (p_fallback.length())
+	if (p_fallback.length() && gui_base->has_icon(p_fallback, "EditorIcons"))
 		return gui_base->get_icon(p_fallback, "EditorIcons");
 
 	return NULL;
@@ -3890,7 +3883,7 @@ void EditorNode::_scene_tab_closed(int p_tab) {
 }
 
 void EditorNode::_scene_tab_hover(int p_tab) {
-	if (bool(EDITOR_GET("interface/scene_tabs/show_thumbnail_on_hover")) == false) {
+	if (!bool(EDITOR_GET("interface/scene_tabs/show_thumbnail_on_hover"))) {
 		return;
 	}
 	int current_tab = scene_tabs->get_current_tab();
@@ -4850,7 +4843,7 @@ EditorNode::EditorNode() {
 	EDITOR_DEF_RST("interface/inspector/capitalize_properties", true);
 	EDITOR_DEF_RST("interface/inspector/disable_folding", false);
 	EDITOR_DEF("interface/inspector/horizontal_vector2_editing", false);
-	EDITOR_DEF("interface/inspector/horizontal_vector3_editing", true);
+	EDITOR_DEF("interface/inspector/horizontal_vector_types_editing", true);
 	EDITOR_DEF("interface/inspector/open_resources_in_current_inspector", true);
 	EDITOR_DEF("interface/inspector/resources_types_to_open_in_new_inspector", "SpatialMaterial,Script");
 	EDITOR_DEF("run/auto_save/save_before_running", true);

@@ -96,7 +96,7 @@ public:
 		}
 	}
 
-	RES get_cached_resource(const String &p_path) {
+	virtual RES get_cached_resource(const String &p_path) {
 
 		Map<String, Cache>::Element *E = cached.find(p_path);
 		if (!E) {
@@ -134,9 +134,11 @@ public:
 		max_cache_size = 128;
 		max_time_cache = 5 * 60 * 1000; //minutes, five
 	}
+
+	virtual ~EditorScriptCodeCompletionCache() {}
 };
 
-void ScriptEditorQuickOpen::popup(const Vector<String> &p_functions, bool p_dontclear) {
+void ScriptEditorQuickOpen::popup_dialog(const Vector<String> &p_functions, bool p_dontclear) {
 
 	popup_centered_ratio(0.6);
 	if (p_dontclear)
@@ -968,11 +970,11 @@ void ScriptEditor::_menu_option(int p_option) {
 		} break;
 		case SEARCH_HELP: {
 
-			help_search_dialog->popup();
+			help_search_dialog->popup_dialog();
 		} break;
 		case SEARCH_CLASSES: {
 
-			help_index->popup();
+			help_index->popup_dialog();
 		} break;
 		case SEARCH_WEBSITE: {
 
@@ -1204,7 +1206,7 @@ void ScriptEditor::_menu_option(int p_option) {
 
 				case SEARCH_CLASSES: {
 
-					help_index->popup();
+					help_index->popup_dialog();
 					help_index->call_deferred("select_class", help->get_class());
 				} break;
 				case HELP_SEARCH_FIND: {
@@ -1412,21 +1414,6 @@ void ScriptEditor::notify_script_close(const Ref<Script> &p_script) {
 
 void ScriptEditor::notify_script_changed(const Ref<Script> &p_script) {
 	emit_signal("editor_script_changed", p_script);
-}
-
-static const Node *_find_node_with_script(const Node *p_node, const RefPtr &p_script) {
-
-	if (p_node->get_script() == p_script)
-		return p_node;
-
-	for (int i = 0; i < p_node->get_child_count(); i++) {
-
-		const Node *result = _find_node_with_script(p_node->get_child(i), p_script);
-		if (result)
-			return result;
-	}
-
-	return NULL;
 }
 
 void ScriptEditor::get_breakpoints(List<String> *p_breakpoints) {
@@ -1973,7 +1960,7 @@ bool ScriptEditor::edit(const RES &p_resource, int p_line, int p_col, bool p_gra
 
 	// doesn't have it, make a new one
 
-	ScriptEditorBase *se;
+	ScriptEditorBase *se = NULL;
 
 	for (int i = script_editor_func_count - 1; i >= 0; i--) {
 		se = script_editor_funcs[i](p_resource);
@@ -2742,11 +2729,11 @@ void ScriptEditor::set_live_auto_reload_running_scripts(bool p_enabled) {
 }
 
 void ScriptEditor::_help_index(String p_text) {
-	help_index->popup();
+	help_index->popup_dialog();
 }
 
 void ScriptEditor::_help_search(String p_text) {
-	help_search_dialog->popup(p_text);
+	help_search_dialog->popup_dialog(p_text);
 }
 
 void ScriptEditor::_open_script_request(const String &p_path) {
@@ -3186,9 +3173,9 @@ ScriptEditor::ScriptEditor(EditorNode *p_editor) {
 	find_in_files_dialog->connect(FindInFilesDialog::SIGNAL_REPLACE_REQUESTED, this, "_start_find_in_files", varray(true));
 	add_child(find_in_files_dialog);
 	find_in_files = memnew(FindInFilesPanel);
-	find_in_files_button = editor->add_bottom_panel_item(TTR("Search results"), find_in_files);
+	find_in_files_button = editor->add_bottom_panel_item(TTR("Search Results"), find_in_files);
 	find_in_files_button->set_tooltip(TTR("Search in files"));
-	find_in_files->set_custom_minimum_size(Size2(0, 200));
+	find_in_files->set_custom_minimum_size(Size2(0, 200) * EDSCALE);
 	find_in_files->connect(FindInFilesPanel::SIGNAL_RESULT_SELECTED, this, "_on_find_in_files_result_selected");
 	find_in_files->connect(FindInFilesPanel::SIGNAL_FILES_MODIFIED, this, "_on_find_in_files_modified_files");
 	find_in_files->hide();

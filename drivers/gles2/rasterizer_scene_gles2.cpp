@@ -42,6 +42,8 @@
 #define glClearDepth glClearDepthf
 #endif
 
+#define _DEPTH_COMPONENT24_OES 0x81A6
+
 static const GLenum _cube_side_enum[6] = {
 
 	GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
@@ -461,7 +463,8 @@ RID RasterizerSceneGLES2::reflection_probe_instance_create(RID p_probe) {
 
 	glGenFramebuffers(1, &rpi->fbo_blur);
 	glGenRenderbuffers(1, &rpi->depth);
-	glGenTextures(1, &rpi->cubemap);
+	rpi->cubemap = 0;
+	//glGenTextures(1, &rpi->cubemap);
 
 	return rpi->self;
 }
@@ -502,14 +505,37 @@ bool RasterizerSceneGLES2::reflection_probe_instance_begin_render(RID p_instance
 		int size = rpi->probe_ptr->resolution;
 		rpi->current_resolution = size;
 
-		int lod = 0;
-
-		GLenum internal_format = GL_RGBA;
-		GLenum format = GL_RGBA;
+		GLenum internal_format = GL_RGB;
+		GLenum format = GL_RGB;
 		GLenum type = GL_UNSIGNED_BYTE;
 
 		glActiveTexture(GL_TEXTURE0);
+		if (rpi->cubemap != 0) {
+			glDeleteTextures(1, &rpi->cubemap);
+		}
+		glGenTextures(1, &rpi->cubemap);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, rpi->cubemap);
+#if 1
+		//Mobile hardware (PowerVR specially) prefers this approach, the other one kills the game
+		for (int i = 0; i < 6; i++) {
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internal_format, size, size, 0, format, type, NULL);
+		}
+
+		glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+		glBindRenderbuffer(GL_RENDERBUFFER, rpi->depth); //resize depth buffer
+		glRenderbufferStorage(GL_RENDERBUFFER, _DEPTH_COMPONENT24_OES, size, size);
+
+		for (int i = 0; i < 6; i++) {
+			glBindFramebuffer(GL_FRAMEBUFFER, rpi->fbo[i]);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, _cube_side_enum[i], rpi->cubemap, 0);
+			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rpi->depth);
+		}
+
+#else
+		int lod = 0;
+
+		//the approach below is fatal for powervr
 
 		// Set the initial (empty) mipmaps, all need to be set for this to work in GLES2, even if later wont be used.
 		while (size >= 1) {
@@ -521,7 +547,7 @@ bool RasterizerSceneGLES2::reflection_probe_instance_begin_render(RID p_instance
 					glBindFramebuffer(GL_FRAMEBUFFER, rpi->fbo[i]);
 					glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, _cube_side_enum[i], rpi->cubemap, 0);
 					glBindRenderbuffer(GL_RENDERBUFFER, rpi->depth);
-					glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, size, size);
+					glRenderbufferStorage(GL_RENDERBUFFER, _DEPTH_COMPONENT24_OES, size, size);
 					glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rpi->depth);
 
 #ifdef DEBUG_ENABLED
@@ -535,7 +561,7 @@ bool RasterizerSceneGLES2::reflection_probe_instance_begin_render(RID p_instance
 
 			size >>= 1;
 		}
-
+#endif
 		glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -716,20 +742,38 @@ void RasterizerSceneGLES2::environment_set_adjustment(RID p_env, bool p_enable, 
 }
 
 void RasterizerSceneGLES2::environment_set_fog(RID p_env, bool p_enable, const Color &p_color, const Color &p_sun_color, float p_sun_amount) {
+
 	Environment *env = environment_owner.getornull(p_env);
 	ERR_FAIL_COND(!env);
+
+	env->fog_enabled = p_enable;
+	env->fog_color = p_color;
+	env->fog_sun_color = p_sun_color;
+	env->fog_sun_amount = p_sun_amount;
 }
 
 void RasterizerSceneGLES2::environment_set_fog_depth(RID p_env, bool p_enable, float p_depth_begin, float p_depth_curve, bool p_transmit, float p_transmit_curve) {
+
 	Environment *env = environment_owner.getornull(p_env);
 	ERR_FAIL_COND(!env);
+
+	env->fog_depth_enabled = p_enable;
+	env->fog_depth_begin = p_depth_begin;
+	env->fog_depth_curve = p_depth_curve;
+	env->fog_transmit_enabled = p_transmit;
+	env->fog_transmit_curve = p_transmit_curve;
 }
 
 void RasterizerSceneGLES2::environment_set_fog_height(RID p_env, bool p_enable, float p_min_height, float p_max_height, float p_height_curve) {
+
 	Environment *env = environment_owner.getornull(p_env);
 	ERR_FAIL_COND(!env);
-}
 
+	env->fog_height_enabled = p_enable;
+	env->fog_height_min = p_min_height;
+	env->fog_height_max = p_max_height;
+	env->fog_height_curve = p_height_curve;
+}
 bool RasterizerSceneGLES2::is_environment(RID p_env) {
 	return environment_owner.owns(p_env);
 }
@@ -1804,8 +1848,7 @@ void RasterizerSceneGLES2::_setup_light(LightInstance *light, ShadowAtlas *shado
 			float range = light_ptr->param[VS::LIGHT_PARAM_RANGE];
 			state.scene_shader.set_uniform(SceneShaderGLES2::LIGHT_RANGE, range);
 
-			Color attenuation = Color(0.0, 0.0, 0.0, 0.0);
-			attenuation.a = light_ptr->param[VS::LIGHT_PARAM_ATTENUATION];
+			float attenuation = light_ptr->param[VS::LIGHT_PARAM_ATTENUATION];
 			state.scene_shader.set_uniform(SceneShaderGLES2::LIGHT_ATTENUATION, attenuation);
 
 			if (!state.render_no_shadows && light_ptr->shadow && shadow_atlas && shadow_atlas->shadow_owners.has(light->self)) {
@@ -1858,8 +1901,7 @@ void RasterizerSceneGLES2::_setup_light(LightInstance *light, ShadowAtlas *shado
 
 			Vector3 direction = p_view_transform.inverse().basis.xform(light->transform.basis.xform(Vector3(0, 0, -1))).normalized();
 			state.scene_shader.set_uniform(SceneShaderGLES2::LIGHT_DIRECTION, direction);
-			Color attenuation = Color(0.0, 0.0, 0.0, 0.0);
-			attenuation.a = light_ptr->param[VS::LIGHT_PARAM_ATTENUATION];
+			float attenuation = light_ptr->param[VS::LIGHT_PARAM_ATTENUATION];
 			float range = light_ptr->param[VS::LIGHT_PARAM_RANGE];
 			float spot_attenuation = light_ptr->param[VS::LIGHT_PARAM_SPOT_ATTENUATION];
 			float angle = light_ptr->param[VS::LIGHT_PARAM_SPOT_ANGLE];
@@ -2007,6 +2049,15 @@ void RasterizerSceneGLES2::_render_render_list(RenderList::Element **p_elements,
 		glDisable(GL_BLEND);
 	}
 
+	float fog_max_distance = 0;
+	bool using_fog = false;
+	if (p_env && !p_shadow && p_env->fog_enabled && (p_env->fog_depth_enabled || p_env->fog_height_enabled)) {
+		state.scene_shader.set_conditional(SceneShaderGLES2::FOG_DEPTH_ENABLED, p_env->fog_depth_enabled);
+		state.scene_shader.set_conditional(SceneShaderGLES2::FOG_HEIGHT_ENABLED, p_env->fog_height_enabled);
+		fog_max_distance = p_projection.get_z_far();
+		using_fog = true;
+	}
+
 	RasterizerStorageGLES2::Texture *prev_lightmap = NULL;
 	float lightmap_energy = 1.0;
 	bool prev_use_lightmap_capture = false;
@@ -2024,6 +2075,9 @@ void RasterizerSceneGLES2::_render_render_list(RenderList::Element **p_elements,
 		ReflectionProbeInstance *refprobe_2 = NULL;
 		RasterizerStorageGLES2::Texture *lightmap = NULL;
 		bool use_lightmap_capture = false;
+		bool rebind_light = false;
+		bool rebind_reflection = false;
+		bool rebind_lightmap = false;
 
 		if (!p_shadow) {
 
@@ -2059,6 +2113,7 @@ void RasterizerSceneGLES2::_render_render_list(RenderList::Element **p_elements,
 
 				_setup_light_type(light, shadow_atlas);
 				rebind = true;
+				rebind_light = true;
 			}
 
 			int blend_mode = p_alpha_pass ? material->shader->spatial.blend_mode : -1; // -1 no blend, no mix
@@ -2114,7 +2169,7 @@ void RasterizerSceneGLES2::_render_render_list(RenderList::Element **p_elements,
 			}
 
 			//condition to enable vertex lighting on this object
-			bool vertex_lit = light && (material->shader->spatial.uses_vertex_lighting || storage->config.force_vertex_shading) && !unshaded;
+			bool vertex_lit = (material->shader->spatial.uses_vertex_lighting || storage->config.force_vertex_shading) && ((!unshaded && light) || using_fog); //fog forces vertex lighting because it still applies even if unshaded or no fog
 
 			if (vertex_lit != prev_vertex_lit) {
 				state.scene_shader.set_conditional(SceneShaderGLES2::USE_VERTEX_LIGHTING, vertex_lit);
@@ -2142,6 +2197,7 @@ void RasterizerSceneGLES2::_render_render_list(RenderList::Element **p_elements,
 					glBindTexture(GL_TEXTURE_CUBE_MAP, refprobe_2->cubemap);
 				}
 				rebind = true;
+				rebind_reflection = true;
 			}
 
 			use_lightmap_capture = !unshaded && !accum_pass && !e->instance->lightmap_capture_data.empty();
@@ -2171,6 +2227,7 @@ void RasterizerSceneGLES2::_render_render_list(RenderList::Element **p_elements,
 					glBindTexture(GL_TEXTURE_2D, lightmap->tex_id);
 				}
 				rebind = true;
+				rebind_lightmap = true;
 			}
 		}
 
@@ -2223,6 +2280,7 @@ void RasterizerSceneGLES2::_render_render_list(RenderList::Element **p_elements,
 				if (p_env) {
 					state.scene_shader.set_uniform(SceneShaderGLES2::BG_ENERGY, p_env->bg_energy);
 					state.scene_shader.set_uniform(SceneShaderGLES2::AMBIENT_SKY_CONTRIBUTION, p_env->ambient_sky_contribution);
+
 					state.scene_shader.set_uniform(SceneShaderGLES2::AMBIENT_COLOR, p_env->ambient_color);
 					state.scene_shader.set_uniform(SceneShaderGLES2::AMBIENT_ENERGY, p_env->ambient_energy);
 
@@ -2233,21 +2291,38 @@ void RasterizerSceneGLES2::_render_render_list(RenderList::Element **p_elements,
 					state.scene_shader.set_uniform(SceneShaderGLES2::AMBIENT_ENERGY, 1.0);
 				}
 
-				if (light) {
-					_setup_light(light, shadow_atlas, p_view_transform);
-				}
+				//rebind all these
+				rebind_light = true;
+				rebind_reflection = true;
+				rebind_lightmap = true;
 
-				if (refprobe_1 || refprobe_2) {
-					_setup_refprobes(refprobe_1, refprobe_2, p_view_transform, p_env);
-				}
+				if (using_fog) {
 
-				if (lightmap) {
-					state.scene_shader.set_uniform(SceneShaderGLES2::LIGHTMAP_ENERGY, lightmap_energy);
+					state.scene_shader.set_uniform(SceneShaderGLES2::FOG_COLOR_BASE, p_env->fog_color);
+					Color sun_color_amount = p_env->fog_sun_color;
+					sun_color_amount.a = p_env->fog_sun_amount;
+
+					state.scene_shader.set_uniform(SceneShaderGLES2::FOG_SUN_COLOR_AMOUNT, sun_color_amount);
+					state.scene_shader.set_uniform(SceneShaderGLES2::FOG_TRANSMIT_ENABLED, p_env->fog_transmit_enabled);
+					state.scene_shader.set_uniform(SceneShaderGLES2::FOG_TRANSMIT_CURVE, p_env->fog_transmit_curve);
+
+					if (p_env->fog_depth_enabled) {
+						state.scene_shader.set_uniform(SceneShaderGLES2::FOG_DEPTH_BEGIN, p_env->fog_depth_begin);
+						state.scene_shader.set_uniform(SceneShaderGLES2::FOG_DEPTH_CURVE, p_env->fog_depth_curve);
+						state.scene_shader.set_uniform(SceneShaderGLES2::FOG_MAX_DISTANCE, fog_max_distance);
+					}
+
+					if (p_env->fog_height_enabled) {
+						state.scene_shader.set_uniform(SceneShaderGLES2::FOG_HEIGHT_MIN, p_env->fog_height_min);
+						state.scene_shader.set_uniform(SceneShaderGLES2::FOG_HEIGHT_MAX, p_env->fog_height_max);
+						state.scene_shader.set_uniform(SceneShaderGLES2::FOG_HEIGHT_MAX, p_env->fog_height_max);
+						state.scene_shader.set_uniform(SceneShaderGLES2::FOG_HEIGHT_CURVE, p_env->fog_height_curve);
+					}
 				}
 			}
 
-			state.scene_shader.set_uniform(SceneShaderGLES2::CAMERA_MATRIX, view_transform_inverse);
-			state.scene_shader.set_uniform(SceneShaderGLES2::CAMERA_INVERSE_MATRIX, p_view_transform);
+			state.scene_shader.set_uniform(SceneShaderGLES2::CAMERA_MATRIX, p_view_transform);
+			state.scene_shader.set_uniform(SceneShaderGLES2::CAMERA_INVERSE_MATRIX, view_transform_inverse);
 			state.scene_shader.set_uniform(SceneShaderGLES2::PROJECTION_MATRIX, p_projection);
 			state.scene_shader.set_uniform(SceneShaderGLES2::PROJECTION_INVERSE_MATRIX, projection_inverse);
 
@@ -2255,6 +2330,18 @@ void RasterizerSceneGLES2::_render_render_list(RenderList::Element **p_elements,
 
 			state.scene_shader.set_uniform(SceneShaderGLES2::SCREEN_PIXEL_SIZE, screen_pixel_size);
 			state.scene_shader.set_uniform(SceneShaderGLES2::NORMAL_MULT, 1.0); // TODO mirror?
+		}
+
+		if (rebind_light && light) {
+			_setup_light(light, shadow_atlas, p_view_transform);
+		}
+
+		if (rebind_reflection && (refprobe_1 || refprobe_2)) {
+			_setup_refprobes(refprobe_1, refprobe_2, p_view_transform, p_env);
+		}
+
+		if (rebind_lightmap && lightmap) {
+			state.scene_shader.set_uniform(SceneShaderGLES2::LIGHTMAP_ENERGY, lightmap_energy);
 		}
 
 		state.scene_shader.set_uniform(SceneShaderGLES2::WORLD_TRANSFORM, e->instance->transform);
@@ -2292,6 +2379,8 @@ void RasterizerSceneGLES2::_render_render_list(RenderList::Element **p_elements,
 	state.scene_shader.set_conditional(SceneShaderGLES2::USE_REFLECTION_PROBE2, false);
 	state.scene_shader.set_conditional(SceneShaderGLES2::USE_LIGHTMAP, false);
 	state.scene_shader.set_conditional(SceneShaderGLES2::USE_LIGHTMAP_CAPTURE, false);
+	state.scene_shader.set_conditional(SceneShaderGLES2::FOG_DEPTH_ENABLED, false);
+	state.scene_shader.set_conditional(SceneShaderGLES2::FOG_HEIGHT_ENABLED, false);
 }
 
 void RasterizerSceneGLES2::_draw_sky(RasterizerStorageGLES2::Sky *p_sky, const CameraMatrix &p_projection, const Transform &p_transform, bool p_vflip, float p_custom_fov, float p_energy) {
@@ -2530,7 +2619,6 @@ void RasterizerSceneGLES2::render_scene(const Transform &p_cam_transform, const 
 
 	_render_render_list(&render_list.elements[render_list.max_elements - render_list.alpha_element_count], render_list.alpha_element_count, p_cam_transform, p_cam_projection, p_shadow_atlas, env, env_radiance_tex, 0.0, 0.0, false, true, false);
 
-	glDepthMask(GL_FALSE);
 	glDisable(GL_DEPTH_TEST);
 
 	//#define GLES2_SHADOW_ATLAS_DEBUG_VIEW
@@ -2974,7 +3062,7 @@ void RasterizerSceneGLES2::initialize() {
 			glBindTexture(GL_TEXTURE_CUBE_MAP, cube.cubemap);
 
 			for (int i = 0; i < 6; i++) {
-				glTexImage2D(_cube_side_enum[i], 0, GL_DEPTH_COMPONENT, cube_size, cube_size, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT, NULL);
+				glTexImage2D(_cube_side_enum[i], 0, GL_DEPTH_COMPONENT, cube_size, cube_size, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, NULL);
 			}
 
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);

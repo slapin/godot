@@ -56,7 +56,9 @@ T *GDScriptParser::alloc_node() {
 	return t;
 }
 
+#ifdef DEBUG_ENABLED
 static String _find_function_name(const GDScriptParser::OperatorNode *p_call);
+#endif // DEBUG_ENABLED
 
 bool GDScriptParser::_end_statement() {
 
@@ -677,7 +679,7 @@ GDScriptParser::Node *GDScriptParser::_parse_expression(Node *p_parent, bool p_s
 
 			if (tokenizer->get_token() == GDScriptTokenizer::TK_BUILT_IN_TYPE) {
 				Variant::Type ct = tokenizer->get_token_type();
-				if (p_parsing_constant == false) {
+				if (!p_parsing_constant) {
 					if (ct == Variant::ARRAY) {
 						if (tokenizer->get_token(2) == GDScriptTokenizer::TK_PARENTHESIS_CLOSE) {
 							ArrayNode *arr = alloc_node<ArrayNode>();
@@ -747,7 +749,6 @@ GDScriptParser::Node *GDScriptParser::_parse_expression(Node *p_parent, bool p_s
 			while (!bfn && b) {
 				if (b->variables.has(identifier)) {
 					IdentifierNode *id = alloc_node<IdentifierNode>();
-					LocalVarNode *lv = b->variables[identifier];
 					id->name = identifier;
 					id->declared_block = b;
 					id->line = id_line;
@@ -755,6 +756,7 @@ GDScriptParser::Node *GDScriptParser::_parse_expression(Node *p_parent, bool p_s
 					bfn = true;
 
 #ifdef DEBUG_ENABLED
+					LocalVarNode *lv = b->variables[identifier];
 					switch (tokenizer->get_token()) {
 						case GDScriptTokenizer::TK_OP_ASSIGN_ADD:
 						case GDScriptTokenizer::TK_OP_ASSIGN_BIT_AND:
@@ -7835,7 +7837,7 @@ void GDScriptParser::_check_block_types(BlockNode *p_block) {
 							// Figure out function name for warning
 							String func_name = _find_function_name(op);
 							if (func_name.empty()) {
-								func_name == "<undetected name>";
+								func_name = "<undetected name>";
 							}
 							_add_warning(GDScriptWarning::RETURN_VALUE_DISCARDED, op->line, func_name);
 						}

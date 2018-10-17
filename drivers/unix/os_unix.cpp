@@ -74,7 +74,7 @@ static void _setup_clock() {
 	kern_return_t ret = mach_timebase_info(&info);
 	ERR_EXPLAIN("OS CLOCK IS NOT WORKING!");
 	ERR_FAIL_COND(ret != 0);
-	_clock_scale = (double)info.numer / (double)info.denom;
+	_clock_scale = ((double)info.numer / (double)info.denom) / 1000.0;
 	_clock_start = mach_absolute_time() * _clock_scale;
 }
 #else
@@ -487,9 +487,11 @@ String OS_Unix::get_executable_path() const {
 	//fix for running from a symlink
 	char buf[256];
 	memset(buf, 0, 256);
-	readlink("/proc/self/exe", buf, sizeof(buf));
+	ssize_t len = readlink("/proc/self/exe", buf, sizeof(buf));
 	String b;
-	b.parse_utf8(buf);
+	if (len > 0) {
+		b.parse_utf8(buf, len);
+	}
 	if (b == "") {
 		WARN_PRINT("Couldn't get executable path from /proc/self/exe, using argv[0]");
 		return OS::get_executable_path();

@@ -734,7 +734,8 @@ void VoxelLightBaker::_check_init_light() {
 		leaf_voxel_count = 0;
 		_fixup_plot(0, 0); //pre fixup, so normal, albedo, emission, etc. work for lighting.
 		bake_light.resize(bake_cells.size());
-		zeromem(bake_light.ptrw(), bake_light.size() * sizeof(Light));
+		print_line("bake light size: " + itos(bake_light.size()));
+		//zeromem(bake_light.ptrw(), bake_light.size() * sizeof(Light));
 		first_leaf = -1;
 		_init_light_plot(0, 0, 0, 0, 0, CHILD_EMPTY);
 	}
@@ -1586,10 +1587,10 @@ Vector3 VoxelLightBaker::_compute_pixel_light_at_pos(const Vector3 &p_pos, const
 	Vector3 bitangent = tangent.cross(p_normal).normalized();
 	Basis normal_xform = Basis(tangent, bitangent, p_normal).transposed();
 
-	const Vector3 *cone_dirs;
-	const float *cone_weights;
-	int cone_dir_count;
-	float cone_aperture;
+	const Vector3 *cone_dirs = NULL;
+	const float *cone_weights = NULL;
+	int cone_dir_count = 0;
+	float cone_aperture = 0;
 
 	switch (bake_quality) {
 		case BAKE_QUALITY_LOW: {

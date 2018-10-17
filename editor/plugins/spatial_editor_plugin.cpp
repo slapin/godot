@@ -531,12 +531,12 @@ void SpatialEditorViewport::_select_region() {
 
 void SpatialEditorViewport::_update_name() {
 
-	String ortho = orthogonal ? TTR("Orthogonal") : TTR("Perspective");
+	String view_mode = orthogonal ? TTR("Orthogonal") : TTR("Perspective");
 
 	if (name != "")
-		view_menu->set_text("[ " + name + " " + ortho + " ]");
+		view_menu->set_text(name + " " + view_mode);
 	else
-		view_menu->set_text("[ " + ortho + " ]");
+		view_menu->set_text(view_mode);
 
 	view_menu->set_size(Vector2(0, 0)); // resets the button size
 }
@@ -1912,7 +1912,7 @@ void SpatialEditorViewport::_nav_orbit(Ref<InputEventWithModifiers> p_event, con
 void SpatialEditorViewport::_nav_look(Ref<InputEventWithModifiers> p_event, const Vector2 &p_relative) {
 
 	// Freelook only works properly in perspective.
-	// It technically works too in ortho, but it's awful for a user due to fov being near zero
+	// It could technically work in ortho, but it's terrible for a user due to FOV being a fixed width.
 	if (!orthogonal) {
 		real_t degrees_per_pixel = EditorSettings::get_singleton()->get("editors/3d/navigation_feel/orbit_sensitivity");
 		real_t radians_per_pixel = Math::deg2rad(degrees_per_pixel);
@@ -2124,7 +2124,7 @@ void SpatialEditorViewport::_notification(int p_what) {
 		_update_freelook(delta);
 
 		Node *scene_root = editor->get_scene_tree_dock()->get_editor_data()->get_edited_scene_root();
-		if (previewing_cinema == true && scene_root != NULL) {
+		if (previewing_cinema && scene_root != NULL) {
 			Camera *cam = scene_root->get_viewport()->get_camera();
 			if (cam != NULL && cam != previewing) {
 				//then switch the viewport's camera to the scene's viewport camera
@@ -2260,6 +2260,12 @@ void SpatialEditorViewport::_notification(int p_what) {
 		surface->connect("mouse_exited", this, "_surface_mouse_exit");
 		surface->connect("focus_entered", this, "_surface_focus_enter");
 		surface->connect("focus_exited", this, "_surface_focus_exit");
+		view_menu->set_flat(false);
+		view_menu->add_style_override("normal", editor->get_gui_base()->get_stylebox("Information3dViewport", "EditorStyles"));
+		view_menu->add_style_override("hover", editor->get_gui_base()->get_stylebox("Information3dViewport", "EditorStyles"));
+		view_menu->add_style_override("pressed", editor->get_gui_base()->get_stylebox("Information3dViewport", "EditorStyles"));
+		view_menu->add_style_override("focus", editor->get_gui_base()->get_stylebox("Information3dViewport", "EditorStyles"));
+		view_menu->add_style_override("disabled", editor->get_gui_base()->get_stylebox("Information3dViewport", "EditorStyles"));
 		info_label->add_style_override("normal", editor->get_gui_base()->get_stylebox("Information3dViewport", "EditorStyles"));
 		fps_label->add_style_override("normal", editor->get_gui_base()->get_stylebox("Information3dViewport", "EditorStyles"));
 		cinema_label->add_style_override("normal", editor->get_gui_base()->get_stylebox("Information3dViewport", "EditorStyles"));
@@ -3421,7 +3427,6 @@ SpatialEditorViewport::SpatialEditorViewport(SpatialEditor *p_spatial_editor, Ed
 	view_menu = memnew(MenuButton);
 	surface->add_child(view_menu);
 	view_menu->set_position(Point2(4, 4) * EDSCALE);
-	view_menu->set_self_modulate(Color(1, 1, 1, 0.5));
 	view_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("spatial_editor/top_view"), VIEW_TOP);
 	view_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("spatial_editor/bottom_view"), VIEW_BOTTOM);
 	view_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("spatial_editor/left_view"), VIEW_LEFT);
@@ -3543,69 +3548,77 @@ void SpatialEditorViewportContainer::_gui_input(const Ref<InputEvent> &p_event) 
 
 	Ref<InputEventMouseButton> mb = p_event;
 
-	if (mb.is_valid() && mb->is_pressed() && mb->get_button_index() == BUTTON_LEFT) {
+	if (mb.is_valid() && mb->get_button_index() == BUTTON_LEFT) {
 
-		Vector2 size = get_size();
+		if (mb->is_pressed()) {
+			Vector2 size = get_size();
 
-		int h_sep = get_constant("separation", "HSplitContainer");
-		int v_sep = get_constant("separation", "VSplitContainer");
+			int h_sep = get_constant("separation", "HSplitContainer");
+			int v_sep = get_constant("separation", "VSplitContainer");
 
-		int mid_w = size.width * ratio_h;
-		int mid_h = size.height * ratio_v;
+			int mid_w = size.width * ratio_h;
+			int mid_h = size.height * ratio_v;
 
-		dragging_h = mb->get_position().x > (mid_w - h_sep / 2) && mb->get_position().x < (mid_w + h_sep / 2);
-		dragging_v = mb->get_position().y > (mid_h - v_sep / 2) && mb->get_position().y < (mid_h + v_sep / 2);
+			dragging_h = mb->get_position().x > (mid_w - h_sep / 2) && mb->get_position().x < (mid_w + h_sep / 2);
+			dragging_v = mb->get_position().y > (mid_h - v_sep / 2) && mb->get_position().y < (mid_h + v_sep / 2);
 
-		drag_begin_pos = mb->get_position();
-		drag_begin_ratio.x = ratio_h;
-		drag_begin_ratio.y = ratio_v;
+			drag_begin_pos = mb->get_position();
+			drag_begin_ratio.x = ratio_h;
+			drag_begin_ratio.y = ratio_v;
 
-		switch (view) {
-			case VIEW_USE_1_VIEWPORT: {
+			switch (view) {
+				case VIEW_USE_1_VIEWPORT: {
 
-				dragging_h = false;
-				dragging_v = false;
-
-			} break;
-			case VIEW_USE_2_VIEWPORTS: {
-
-				dragging_h = false;
-
-			} break;
-			case VIEW_USE_2_VIEWPORTS_ALT: {
-
-				dragging_v = false;
-
-			} break;
-			case VIEW_USE_3_VIEWPORTS: {
-
-				if (dragging_v)
 					dragging_h = false;
-				else
 					dragging_v = false;
 
-			} break;
-			case VIEW_USE_3_VIEWPORTS_ALT: {
+				} break;
+				case VIEW_USE_2_VIEWPORTS: {
 
-				if (dragging_h)
-					dragging_v = false;
-				else
 					dragging_h = false;
-			} break;
-			case VIEW_USE_4_VIEWPORTS: {
 
-			} break;
+				} break;
+				case VIEW_USE_2_VIEWPORTS_ALT: {
+
+					dragging_v = false;
+
+				} break;
+				case VIEW_USE_3_VIEWPORTS:
+				case VIEW_USE_3_VIEWPORTS_ALT:
+				case VIEW_USE_4_VIEWPORTS: {
+
+					// Do nothing.
+
+				} break;
+			}
+		} else {
+			dragging_h = false;
+			dragging_v = false;
 		}
-	}
-
-	if (mb.is_valid() && !mb->is_pressed() && mb->get_button_index() == BUTTON_LEFT) {
-		dragging_h = false;
-		dragging_v = false;
 	}
 
 	Ref<InputEventMouseMotion> mm = p_event;
 
-	if (mm.is_valid() && (dragging_h || dragging_v)) {
+	if (mm.is_valid()) {
+
+		if (view == VIEW_USE_3_VIEWPORTS || view == VIEW_USE_3_VIEWPORTS_ALT || view == VIEW_USE_4_VIEWPORTS) {
+			Vector2 size = get_size();
+
+			int h_sep = get_constant("separation", "HSplitContainer");
+			int v_sep = get_constant("separation", "VSplitContainer");
+
+			int mid_w = size.width * ratio_h;
+			int mid_h = size.height * ratio_v;
+
+			bool was_hovering_h = hovering_h;
+			bool was_hovering_v = hovering_v;
+			hovering_h = mm->get_position().x > (mid_w - h_sep / 2) && mm->get_position().x < (mid_w + h_sep / 2);
+			hovering_v = mm->get_position().y > (mid_h - v_sep / 2) && mm->get_position().y < (mid_h + v_sep / 2);
+
+			if (was_hovering_h != hovering_h || was_hovering_v != hovering_v) {
+				update();
+			}
+		}
 
 		if (dragging_h) {
 			float new_ratio = drag_begin_ratio.x + (mm->get_position().x - drag_begin_pos.x) / get_size().width;
@@ -3635,8 +3648,11 @@ void SpatialEditorViewportContainer::_notification(int p_what) {
 	if (p_what == NOTIFICATION_DRAW && mouseover) {
 
 		Ref<Texture> h_grabber = get_icon("grabber", "HSplitContainer");
-
 		Ref<Texture> v_grabber = get_icon("grabber", "VSplitContainer");
+
+		Ref<Texture> hdiag_grabber = get_icon("GuiViewportHdiagsplitter", "EditorIcons");
+		Ref<Texture> vdiag_grabber = get_icon("GuiViewportVdiagsplitter", "EditorIcons");
+		Ref<Texture> vh_grabber = get_icon("GuiViewportVhsplitter", "EditorIcons");
 
 		Vector2 size = get_size();
 
@@ -3654,35 +3670,62 @@ void SpatialEditorViewportContainer::_notification(int p_what) {
 
 			case VIEW_USE_1_VIEWPORT: {
 
-				//nothing to show
+				// Nothing to show.
 
 			} break;
 			case VIEW_USE_2_VIEWPORTS: {
 
 				draw_texture(v_grabber, Vector2((size.width - v_grabber->get_width()) / 2, mid_h - v_grabber->get_height() / 2));
+				set_default_cursor_shape(CURSOR_VSPLIT);
 
 			} break;
 			case VIEW_USE_2_VIEWPORTS_ALT: {
 
 				draw_texture(h_grabber, Vector2(mid_w - h_grabber->get_width() / 2, (size.height - h_grabber->get_height()) / 2));
+				set_default_cursor_shape(CURSOR_HSPLIT);
 
 			} break;
 			case VIEW_USE_3_VIEWPORTS: {
 
-				draw_texture(v_grabber, Vector2((size.width - v_grabber->get_width()) / 2, mid_h - v_grabber->get_height() / 2));
-				draw_texture(h_grabber, Vector2(mid_w - h_grabber->get_width() / 2, mid_h + v_grabber->get_height() / 2 + (size_bottom - h_grabber->get_height()) / 2));
+				if ((hovering_v && hovering_h && !dragging_v && !dragging_h) || (dragging_v && dragging_h)) {
+					draw_texture(hdiag_grabber, Vector2(mid_w - hdiag_grabber->get_width() / 2, mid_h - v_grabber->get_height() / 4));
+					set_default_cursor_shape(CURSOR_DRAG);
+				} else if ((hovering_v && !dragging_h) || dragging_v) {
+					draw_texture(v_grabber, Vector2((size.width - v_grabber->get_width()) / 2, mid_h - v_grabber->get_height() / 2));
+					set_default_cursor_shape(CURSOR_VSPLIT);
+				} else if (hovering_h || dragging_h) {
+					draw_texture(h_grabber, Vector2(mid_w - h_grabber->get_width() / 2, mid_h + v_grabber->get_height() / 2 + (size_bottom - h_grabber->get_height()) / 2));
+					set_default_cursor_shape(CURSOR_HSPLIT);
+				}
 
 			} break;
 			case VIEW_USE_3_VIEWPORTS_ALT: {
 
-				draw_texture(v_grabber, Vector2((size_left - v_grabber->get_width()) / 2, mid_h - v_grabber->get_height() / 2));
-				draw_texture(h_grabber, Vector2(mid_w - h_grabber->get_width() / 2, (size.height - h_grabber->get_height()) / 2));
+				if ((hovering_v && hovering_h && !dragging_v && !dragging_h) || (dragging_v && dragging_h)) {
+					draw_texture(vdiag_grabber, Vector2(mid_w - vdiag_grabber->get_width() + v_grabber->get_height() / 4, mid_h - vdiag_grabber->get_height() / 2));
+					set_default_cursor_shape(CURSOR_DRAG);
+				} else if ((hovering_v && !dragging_h) || dragging_v) {
+					draw_texture(v_grabber, Vector2((size_left - v_grabber->get_width()) / 2, mid_h - v_grabber->get_height() / 2));
+					set_default_cursor_shape(CURSOR_VSPLIT);
+				} else if (hovering_h || dragging_h) {
+					draw_texture(h_grabber, Vector2(mid_w - h_grabber->get_width() / 2, (size.height - h_grabber->get_height()) / 2));
+					set_default_cursor_shape(CURSOR_HSPLIT);
+				}
+
 			} break;
 			case VIEW_USE_4_VIEWPORTS: {
 
 				Vector2 half(mid_w, mid_h);
-				draw_texture(v_grabber, half - v_grabber->get_size() / 2.0);
-				draw_texture(h_grabber, half - h_grabber->get_size() / 2.0);
+				if ((hovering_v && hovering_h && !dragging_v && !dragging_h) || (dragging_v && dragging_h)) {
+					draw_texture(vh_grabber, half - vh_grabber->get_size() / 2.0);
+					set_default_cursor_shape(CURSOR_DRAG);
+				} else if ((hovering_v && !dragging_h) || dragging_v) {
+					draw_texture(v_grabber, half - v_grabber->get_size() / 2.0);
+					set_default_cursor_shape(CURSOR_VSPLIT);
+				} else if (hovering_h || dragging_h) {
+					draw_texture(h_grabber, half - h_grabber->get_size() / 2.0);
+					set_default_cursor_shape(CURSOR_HSPLIT);
+				}
 
 			} break;
 		}
@@ -3726,6 +3769,7 @@ void SpatialEditorViewportContainer::_notification(int p_what) {
 
 			case VIEW_USE_1_VIEWPORT: {
 
+				viewports[0]->show();
 				for (int i = 1; i < 4; i++) {
 
 					viewports[i]->hide();
@@ -3736,7 +3780,7 @@ void SpatialEditorViewportContainer::_notification(int p_what) {
 			} break;
 			case VIEW_USE_2_VIEWPORTS: {
 
-				for (int i = 1; i < 4; i++) {
+				for (int i = 0; i < 4; i++) {
 
 					if (i == 1 || i == 3)
 						viewports[i]->hide();
@@ -3750,7 +3794,7 @@ void SpatialEditorViewportContainer::_notification(int p_what) {
 			} break;
 			case VIEW_USE_2_VIEWPORTS_ALT: {
 
-				for (int i = 1; i < 4; i++) {
+				for (int i = 0; i < 4; i++) {
 
 					if (i == 1 || i == 3)
 						viewports[i]->hide();
@@ -3763,7 +3807,7 @@ void SpatialEditorViewportContainer::_notification(int p_what) {
 			} break;
 			case VIEW_USE_3_VIEWPORTS: {
 
-				for (int i = 1; i < 4; i++) {
+				for (int i = 0; i < 4; i++) {
 
 					if (i == 1)
 						viewports[i]->hide();
@@ -3778,7 +3822,7 @@ void SpatialEditorViewportContainer::_notification(int p_what) {
 			} break;
 			case VIEW_USE_3_VIEWPORTS_ALT: {
 
-				for (int i = 1; i < 4; i++) {
+				for (int i = 0; i < 4; i++) {
 
 					if (i == 1)
 						viewports[i]->hide();
@@ -3793,7 +3837,7 @@ void SpatialEditorViewportContainer::_notification(int p_what) {
 			} break;
 			case VIEW_USE_4_VIEWPORTS: {
 
-				for (int i = 1; i < 4; i++) {
+				for (int i = 0; i < 4; i++) {
 
 					viewports[i]->show();
 				}
@@ -3826,10 +3870,13 @@ void SpatialEditorViewportContainer::_bind_methods() {
 
 SpatialEditorViewportContainer::SpatialEditorViewportContainer() {
 
+	set_clip_contents(true);
 	view = VIEW_USE_1_VIEWPORT;
 	mouseover = false;
 	ratio_h = 0.5;
 	ratio_v = 0.5;
+	hovering_v = false;
+	hovering_h = false;
 	dragging_v = false;
 	dragging_h = false;
 }

@@ -730,7 +730,7 @@ void RasterizerStorageGLES3::texture_set_data(RID p_texture, const Ref<Image> &p
 		}
 	};
 
-	GLenum blit_target;
+	GLenum blit_target = GL_TEXTURE_2D;
 
 	switch (texture->type) {
 		case VS::TEXTURE_TYPE_2D: {
@@ -948,7 +948,7 @@ void RasterizerStorageGLES3::texture_set_data_partial(RID p_texture, const Ref<I
 	Image::Format real_format;
 	Ref<Image> img = _get_gl_image_and_format(p_sub_img, p_sub_img->get_format(), texture->flags, real_format, format, internal_format, type, compressed, srgb);
 
-	GLenum blit_target;
+	GLenum blit_target = GL_TEXTURE_2D;
 
 	switch (texture->type) {
 		case VS::TEXTURE_TYPE_2D: {
@@ -4066,35 +4066,37 @@ void RasterizerStorageGLES3::multimesh_allocate(RID p_multimesh, int p_instances
 
 		multimesh->data.resize(format_floats * p_instances);
 
+		float *dataptr = multimesh->data.ptrw();
+
 		for (int i = 0; i < p_instances * format_floats; i += format_floats) {
 
 			int color_from = 0;
 			int custom_data_from = 0;
 
 			if (multimesh->transform_format == VS::MULTIMESH_TRANSFORM_2D) {
-				multimesh->data.write[i + 0] = 1.0;
-				multimesh->data.write[i + 1] = 0.0;
-				multimesh->data.write[i + 2] = 0.0;
-				multimesh->data.write[i + 3] = 0.0;
-				multimesh->data.write[i + 4] = 0.0;
-				multimesh->data.write[i + 5] = 1.0;
-				multimesh->data.write[i + 6] = 0.0;
-				multimesh->data.write[i + 7] = 0.0;
+				dataptr[i + 0] = 1.0;
+				dataptr[i + 1] = 0.0;
+				dataptr[i + 2] = 0.0;
+				dataptr[i + 3] = 0.0;
+				dataptr[i + 4] = 0.0;
+				dataptr[i + 5] = 1.0;
+				dataptr[i + 6] = 0.0;
+				dataptr[i + 7] = 0.0;
 				color_from = 8;
 				custom_data_from = 8;
 			} else {
-				multimesh->data.write[i + 0] = 1.0;
-				multimesh->data.write[i + 1] = 0.0;
-				multimesh->data.write[i + 2] = 0.0;
-				multimesh->data.write[i + 3] = 0.0;
-				multimesh->data.write[i + 4] = 0.0;
-				multimesh->data.write[i + 5] = 1.0;
-				multimesh->data.write[i + 6] = 0.0;
-				multimesh->data.write[i + 7] = 0.0;
-				multimesh->data.write[i + 8] = 0.0;
-				multimesh->data.write[i + 9] = 0.0;
-				multimesh->data.write[i + 10] = 1.0;
-				multimesh->data.write[i + 11] = 0.0;
+				dataptr[i + 0] = 1.0;
+				dataptr[i + 1] = 0.0;
+				dataptr[i + 2] = 0.0;
+				dataptr[i + 3] = 0.0;
+				dataptr[i + 4] = 0.0;
+				dataptr[i + 5] = 1.0;
+				dataptr[i + 6] = 0.0;
+				dataptr[i + 7] = 0.0;
+				dataptr[i + 8] = 0.0;
+				dataptr[i + 9] = 0.0;
+				dataptr[i + 10] = 1.0;
+				dataptr[i + 11] = 0.0;
 				color_from = 12;
 				custom_data_from = 12;
 			}
@@ -4109,14 +4111,14 @@ void RasterizerStorageGLES3::multimesh_allocate(RID p_multimesh, int p_instances
 				} cu;
 
 				cu.colu = 0xFFFFFFFF;
-				multimesh->data.write[i + color_from + 0] = cu.colf;
+				dataptr[i + color_from + 0] = cu.colf;
 				custom_data_from = color_from + 1;
 
 			} else if (multimesh->color_format == VS::MULTIMESH_COLOR_FLOAT) {
-				multimesh->data.write[i + color_from + 0] = 1.0;
-				multimesh->data.write[i + color_from + 1] = 1.0;
-				multimesh->data.write[i + color_from + 2] = 1.0;
-				multimesh->data.write[i + color_from + 3] = 1.0;
+				dataptr[i + color_from + 0] = 1.0;
+				dataptr[i + color_from + 1] = 1.0;
+				dataptr[i + color_from + 2] = 1.0;
+				dataptr[i + color_from + 3] = 1.0;
 				custom_data_from = color_from + 4;
 			}
 
@@ -4130,13 +4132,13 @@ void RasterizerStorageGLES3::multimesh_allocate(RID p_multimesh, int p_instances
 				} cu;
 
 				cu.colu = 0;
-				multimesh->data.write[i + custom_data_from + 0] = cu.colf;
+				dataptr[i + custom_data_from + 0] = cu.colf;
 
 			} else if (multimesh->custom_data_format == VS::MULTIMESH_CUSTOM_DATA_FLOAT) {
-				multimesh->data.write[i + custom_data_from + 0] = 0.0;
-				multimesh->data.write[i + custom_data_from + 1] = 0.0;
-				multimesh->data.write[i + custom_data_from + 2] = 0.0;
-				multimesh->data.write[i + custom_data_from + 3] = 0.0;
+				dataptr[i + custom_data_from + 0] = 0.0;
+				dataptr[i + custom_data_from + 1] = 0.0;
+				dataptr[i + custom_data_from + 2] = 0.0;
+				dataptr[i + custom_data_from + 3] = 0.0;
 			}
 		}
 
@@ -5024,6 +5026,9 @@ void RasterizerStorageGLES3::light_set_reverse_cull_face_mode(RID p_light, bool 
 	ERR_FAIL_COND(!light);
 
 	light->reverse_cull = p_enabled;
+
+	light->version++;
+	light->instance_change_notify();
 }
 
 void RasterizerStorageGLES3::light_omni_set_shadow_mode(RID p_light, VS::LightOmniShadowMode p_mode) {
@@ -6838,7 +6843,7 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, level);
 			glDisable(GL_SCISSOR_TEST);
 			glColorMask(1, 1, 1, 1);
-			if (rt->buffers.active == false) {
+			if (!rt->buffers.active) {
 				glDepthMask(GL_TRUE);
 			}
 

@@ -315,6 +315,14 @@ void BaseButton::set_disabled(bool p_disabled) {
 		return;
 
 	status.disabled = p_disabled;
+	if (p_disabled) {
+		if (!toggle_mode) {
+			status.pressed = false;
+		}
+		status.press_attempt = false;
+		status.pressing_inside = false;
+		status.pressing_button = 0;
+	}
 	update();
 	_change_notify("disabled");
 }
@@ -360,7 +368,7 @@ BaseButton::DrawMode BaseButton::get_draw_mode() const {
 		return DRAW_DISABLED;
 	};
 
-	if (status.press_attempt == false && status.hovering) {
+	if (!status.press_attempt && status.hovering) {
 		if (status.pressed)
 			return DRAW_HOVER_PRESSED;
 

@@ -51,26 +51,6 @@ static const GLenum _cube_side_enum[6] = {
 
 };
 
-static _FORCE_INLINE_ void store_transform2d(const Transform2D &p_mtx, float *p_array) {
-
-	p_array[0] = p_mtx.elements[0][0];
-	p_array[1] = p_mtx.elements[0][1];
-	p_array[2] = 0;
-	p_array[3] = 0;
-	p_array[4] = p_mtx.elements[1][0];
-	p_array[5] = p_mtx.elements[1][1];
-	p_array[6] = 0;
-	p_array[7] = 0;
-	p_array[8] = 0;
-	p_array[9] = 0;
-	p_array[10] = 1;
-	p_array[11] = 0;
-	p_array[12] = p_mtx.elements[2][0];
-	p_array[13] = p_mtx.elements[2][1];
-	p_array[14] = 0;
-	p_array[15] = 1;
-}
-
 static _FORCE_INLINE_ void store_transform(const Transform &p_mtx, float *p_array) {
 	p_array[0] = p_mtx.basis.elements[0][0];
 	p_array[1] = p_mtx.basis.elements[1][0];
@@ -673,7 +653,7 @@ bool RasterizerSceneGLES3::reflection_probe_instance_begin_render(RID p_instance
 
 	int best_free = -1;
 	int best_used = -1;
-	uint64_t best_used_frame;
+	uint64_t best_used_frame = 0;
 
 	for (int i = 0; i < reflection_atlas->reflections.size(); i++) {
 		if (reflection_atlas->reflections[i].owner == RID()) {
@@ -1202,7 +1182,7 @@ bool RasterizerSceneGLES3::_setup_material(RasterizerStorageGLES3::Material *p_m
 
 		glActiveTexture(GL_TEXTURE0 + i);
 
-		GLenum target;
+		GLenum target = GL_TEXTURE_2D;
 		GLuint tex = 0;
 
 		RasterizerStorageGLES3::Texture *t = storage->texture_owner.getptr(textures[i]);
@@ -2539,7 +2519,7 @@ void RasterizerSceneGLES3::_draw_sky(RasterizerStorageGLES3::Sky *p_sky, const C
 	storage->shaders.copy.set_conditional(CopyShaderGLES3::USE_PANORAMA, false);
 }
 
-void RasterizerSceneGLES3::_setup_environment(Environment *env, const CameraMatrix &p_cam_projection, const Transform &p_cam_transform) {
+void RasterizerSceneGLES3::_setup_environment(Environment *env, const CameraMatrix &p_cam_projection, const Transform &p_cam_transform, bool p_no_fog) {
 
 	//store camera into ubo
 	store_camera(p_cam_projection, state.ubo_data.projection_matrix);
@@ -2590,7 +2570,7 @@ void RasterizerSceneGLES3::_setup_environment(Environment *env, const CameraMatr
 		state.ubo_data.fog_color_enabled[0] = linear_fog.r;
 		state.ubo_data.fog_color_enabled[1] = linear_fog.g;
 		state.ubo_data.fog_color_enabled[2] = linear_fog.b;
-		state.ubo_data.fog_color_enabled[3] = env->fog_enabled ? 1.0 : 0.0;
+		state.ubo_data.fog_color_enabled[3] = (!p_no_fog && env->fog_enabled) ? 1.0 : 0.0;
 
 		Color linear_sun = env->fog_sun_color.to_linear();
 		state.ubo_data.fog_sun_color_amount[0] = linear_sun.r;
@@ -3951,7 +3931,7 @@ void RasterizerSceneGLES3::_post_process(Environment *env, const CameraMatrix &p
 
 	state.tonemap_shader.set_conditional(TonemapShaderGLES3::USE_FILMIC_TONEMAPPER, env->tone_mapper == VS::ENV_TONE_MAPPER_FILMIC);
 	state.tonemap_shader.set_conditional(TonemapShaderGLES3::USE_ACES_TONEMAPPER, env->tone_mapper == VS::ENV_TONE_MAPPER_ACES);
-	state.tonemap_shader.set_conditional(TonemapShaderGLES3::USE_REINDHART_TONEMAPPER, env->tone_mapper == VS::ENV_TONE_MAPPER_REINHARDT);
+	state.tonemap_shader.set_conditional(TonemapShaderGLES3::USE_REINHARD_TONEMAPPER, env->tone_mapper == VS::ENV_TONE_MAPPER_REINHARD);
 	state.tonemap_shader.set_conditional(TonemapShaderGLES3::KEEP_3D_LINEAR, storage->frame.current_rt->flags[RasterizerStorage::RENDER_TARGET_KEEP_3D_LINEAR]);
 
 	state.tonemap_shader.set_conditional(TonemapShaderGLES3::USE_AUTO_EXPOSURE, env->auto_exposure);
@@ -4038,7 +4018,7 @@ void RasterizerSceneGLES3::_post_process(Environment *env, const CameraMatrix &p
 	state.tonemap_shader.set_conditional(TonemapShaderGLES3::USE_AUTO_EXPOSURE, false);
 	state.tonemap_shader.set_conditional(TonemapShaderGLES3::USE_FILMIC_TONEMAPPER, false);
 	state.tonemap_shader.set_conditional(TonemapShaderGLES3::USE_ACES_TONEMAPPER, false);
-	state.tonemap_shader.set_conditional(TonemapShaderGLES3::USE_REINDHART_TONEMAPPER, false);
+	state.tonemap_shader.set_conditional(TonemapShaderGLES3::USE_REINHARD_TONEMAPPER, false);
 	state.tonemap_shader.set_conditional(TonemapShaderGLES3::USE_GLOW_LEVEL1, false);
 	state.tonemap_shader.set_conditional(TonemapShaderGLES3::USE_GLOW_LEVEL2, false);
 	state.tonemap_shader.set_conditional(TonemapShaderGLES3::USE_GLOW_LEVEL3, false);
@@ -4103,7 +4083,7 @@ void RasterizerSceneGLES3::render_scene(const Transform &p_cam_transform, const 
 		state.ubo_data.screen_pixel_size[1] = 1.0 / storage->frame.current_rt->height;
 	}
 
-	_setup_environment(env, p_cam_projection, p_cam_transform);
+	_setup_environment(env, p_cam_projection, p_cam_transform, p_reflection_probe.is_valid());
 
 	bool fb_cleared = false;
 

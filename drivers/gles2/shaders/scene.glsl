@@ -15,6 +15,7 @@ precision highp int;
 
 #define M_PI 3.14159265359
 
+
 //
 // attributes
 //
@@ -74,12 +75,12 @@ attribute highp vec4 instance_custom_data; // attrib:12
 // uniforms
 //
 
-uniform mat4 camera_matrix;
-uniform mat4 camera_inverse_matrix;
-uniform mat4 projection_matrix;
-uniform mat4 projection_inverse_matrix;
+uniform highp mat4 camera_matrix;
+uniform highp mat4 camera_inverse_matrix;
+uniform highp mat4 projection_matrix;
+uniform highp mat4 projection_inverse_matrix;
 
-uniform mat4 world_transform;
+uniform highp mat4 world_transform;
 
 uniform highp float time;
 
@@ -155,22 +156,22 @@ varying highp vec3 diffuse_interp;
 varying highp vec3 specular_interp;
 
 // general for all lights
-uniform vec4 light_color;
-uniform float light_specular;
+uniform highp vec4 light_color;
+uniform highp float light_specular;
 
 // directional
-uniform vec3 light_direction;
+uniform highp vec3 light_direction;
 
 // omni
-uniform vec3 light_position;
+uniform highp vec3 light_position;
 
-uniform float light_range;
-uniform vec4 light_attenuation;
+uniform highp float light_range;
+uniform highp float light_attenuation;
 
 // spot
-uniform float light_spot_attenuation;
-uniform float light_spot_range;
-uniform float light_spot_angle;
+uniform highp float light_spot_attenuation;
+uniform highp float light_spot_range;
+uniform highp float light_spot_angle;
 
 void light_compute(
 		vec3 N,
@@ -261,9 +262,9 @@ void light_compute(
 
 #ifdef USE_REFLECTION_PROBE1
 
-uniform mat4 refprobe1_local_matrix;
+uniform highp mat4 refprobe1_local_matrix;
 varying mediump vec4 refprobe1_reflection_normal_blend;
-uniform vec3 refprobe1_box_extents;
+uniform highp vec3 refprobe1_box_extents;
 
 #ifndef USE_LIGHTMAP
 varying mediump vec3 refprobe1_ambient_normal;
@@ -273,9 +274,9 @@ varying mediump vec3 refprobe1_ambient_normal;
 
 #ifdef USE_REFLECTION_PROBE2
 
-uniform mat4 refprobe2_local_matrix;
+uniform highp mat4 refprobe2_local_matrix;
 varying mediump vec4 refprobe2_reflection_normal_blend;
-uniform vec3 refprobe2_box_extents;
+uniform highp vec3 refprobe2_box_extents;
 
 #ifndef USE_LIGHTMAP
 varying mediump vec3 refprobe2_ambient_normal;
@@ -285,6 +286,31 @@ varying mediump vec3 refprobe2_ambient_normal;
 
 #endif //vertex lighting for refprobes
 
+#if defined(FOG_DEPTH_ENABLED) || defined(FOG_HEIGHT_ENABLED)
+
+varying vec4 fog_interp;
+
+uniform mediump vec4 fog_color_base;
+#ifdef LIGHT_MODE_DIRECTIONAL
+uniform mediump vec4 fog_sun_color_amount;
+#endif
+
+uniform bool fog_transmit_enabled;
+uniform mediump float fog_transmit_curve;
+
+#ifdef FOG_DEPTH_ENABLED
+uniform highp float fog_depth_begin;
+uniform mediump float fog_depth_curve;
+uniform mediump float fog_max_distance;
+#endif
+
+#ifdef FOG_HEIGHT_ENABLED
+uniform highp float fog_height_min;
+uniform highp float fog_height_max;
+uniform mediump float fog_height_curve;
+#endif
+
+#endif //fog
 
 void main() {
 
@@ -379,7 +405,7 @@ void main() {
 
 #endif
 
-	mat4 modelview = camera_matrix * world_matrix;
+	mat4 modelview = camera_inverse_matrix * world_matrix;
 	float roughness = 1.0;
 
 #define world_transform world_matrix
@@ -406,11 +432,11 @@ VERTEX_SHADER_CODE
 #endif
 
 #if !defined(SKIP_TRANSFORM_USED) && defined(VERTEX_WORLD_COORDS_USED)
-	vertex = camera_matrix * vertex;
-	normal = normalize((camera_matrix * vec4(normal, 0.0)).xyz);
+	vertex = camera_inverse_matrix * vertex;
+	normal = normalize((camera_inverse_matrix * vec4(normal, 0.0)).xyz);
 #if defined(ENABLE_TANGENT_INTERP) || defined(ENABLE_NORMALMAP)
-	tangent = normalize((camera_matrix * vec4(tangent, 0.0)).xyz);
-	binormal = normalize((camera_matrix * vec4(binormal, 0.0)).xyz);
+	tangent = normalize((camera_inverse_matrix * vec4(tangent, 0.0)).xyz);
+	binormal = normalize((camera_inverse_matrix * vec4(binormal, 0.0)).xyz);
 #endif
 #endif
 
@@ -463,10 +489,15 @@ VERTEX_SHADER_CODE
 
 	float normalized_distance = light_length / light_range;
 
-	float omni_attenuation = pow(1.0 - normalized_distance, light_attenuation.w);
+	if (normalized_distance < 1.0) {
 
-	vec3 attenuation = vec3(omni_attenuation);
-	light_att = vec3(omni_attenuation);
+		float omni_attenuation = pow(1.0 - normalized_distance, light_attenuation);
+
+		vec3 attenuation = vec3(omni_attenuation);
+		light_att = vec3(omni_attenuation);
+	} else {
+		light_att = vec3(0.0);
+	}
 
 	L = normalize(light_vec);
 
@@ -478,17 +509,30 @@ VERTEX_SHADER_CODE
 	float light_length = length(light_rel_vec);
 	float normalized_distance = light_length / light_range;
 
-	float spot_attenuation = pow(1.0 - normalized_distance, light_attenuation.w);
-	vec3 spot_dir = light_direction;
+	if (normalized_distance < 1.0) {
 
-	float spot_cutoff = light_spot_angle;
+		float spot_attenuation = pow(1.0 - normalized_distance, light_attenuation);
+		vec3 spot_dir = light_direction;
 
-	float scos = max(dot(-normalize(light_rel_vec), spot_dir), spot_cutoff);
-	float spot_rim = max(0.0001, (1.0 - scos) / (1.0 - spot_cutoff));
+		float spot_cutoff = light_spot_angle;
 
-	spot_attenuation *= 1.0 - pow(spot_rim, light_spot_attenuation);
+		float angle = dot(-normalize(light_rel_vec), spot_dir);
 
-	light_att = vec3(spot_attenuation);
+		if (angle > spot_cutoff) {
+
+			float scos = max(angle, spot_cutoff);
+			float spot_rim = max(0.0001, (1.0 - scos) / (1.0 - spot_cutoff));
+
+			spot_attenuation *= 1.0 - pow(spot_rim, light_spot_attenuation);
+
+			light_att = vec3(spot_attenuation);
+		} else {
+			light_att = vec3(0.0);
+		}
+	} else {
+		light_att = vec3(0.0);
+	}
+
 	L = normalize(light_rel_vec);
 
 #endif
@@ -528,7 +572,7 @@ VERTEX_SHADER_CODE
 #ifdef USE_REFLECTION_PROBE1
 	{
 		vec3 ref_normal = normalize(reflect(vertex_interp, normal_interp));
-		vec3 local_pos = (refprobe1_local_matrix * vec4(vertex_interp, 1.0)).xyz;		
+		vec3 local_pos = (refprobe1_local_matrix * vec4(vertex_interp, 1.0)).xyz;
 		vec3 inner_pos = abs(local_pos / refprobe1_box_extents);
 		float blend = max(inner_pos.x, max(inner_pos.y, inner_pos.z));
 
@@ -536,7 +580,6 @@ VERTEX_SHADER_CODE
 			vec3 local_ref_vec = (refprobe1_local_matrix * vec4(ref_normal, 0.0)).xyz;
 			refprobe1_reflection_normal_blend.xyz = local_ref_vec;
 			refprobe1_reflection_normal_blend.a = blend;
-
 		}
 #ifndef USE_LIGHTMAP
 
@@ -545,7 +588,6 @@ VERTEX_SHADER_CODE
 	}
 
 #endif //USE_REFLECTION_PROBE1
-
 
 #ifdef USE_REFLECTION_PROBE2
 	{
@@ -558,7 +600,6 @@ VERTEX_SHADER_CODE
 			vec3 local_ref_vec = (refprobe2_local_matrix * vec4(ref_normal, 0.0)).xyz;
 			refprobe2_reflection_normal_blend.xyz = local_ref_vec;
 			refprobe2_reflection_normal_blend.a = blend;
-
 		}
 #ifndef USE_LIGHTMAP
 
@@ -567,6 +608,37 @@ VERTEX_SHADER_CODE
 	}
 
 #endif //USE_REFLECTION_PROBE2
+
+#if defined(FOG_DEPTH_ENABLED) || defined(FOG_HEIGHT_ENABLED)
+
+	float fog_amount = 0.0;
+
+#ifdef LIGHT_MODE_DIRECTIONAL
+
+	vec3 fog_color = mix(fog_color_base.rgb, fog_sun_color_amount.rgb, fog_sun_color_amount.a * pow(max(dot(normalize(vertex_interp), light_direction), 0.0), 8.0));
+#else
+	vec3 fog_color = fog_color_base.rgb;
+#endif
+
+#ifdef FOG_DEPTH_ENABLED
+
+	{
+
+		float fog_z = smoothstep(fog_depth_begin, fog_max_distance, length(vertex));
+
+		fog_amount = pow(fog_z, fog_depth_curve);
+	}
+#endif
+
+#ifdef FOG_HEIGHT_ENABLED
+	{
+		float y = (camera_matrix * vec4(vertex_interp, 1.0)).y;
+		fog_amount = max(fog_amount, pow(smoothstep(fog_height_min, fog_height_max, y), fog_height_curve));
+	}
+#endif
+	fog_interp = vec4(fog_color, fog_amount);
+
+#endif //fog
 
 #endif //use vertex lighting
 	gl_Position = projection_matrix * vec4(vertex_interp, 1.0);
@@ -598,13 +670,13 @@ precision highp int;
 // uniforms
 //
 
-uniform mat4 camera_matrix;
+uniform highp mat4 camera_matrix;
 /* clang-format on */
-uniform mat4 camera_inverse_matrix;
-uniform mat4 projection_matrix;
-uniform mat4 projection_inverse_matrix;
+uniform highp mat4 camera_inverse_matrix;
+uniform highp mat4 projection_matrix;
+uniform highp mat4 projection_inverse_matrix;
 
-uniform mat4 world_transform;
+uniform highp mat4 world_transform;
 
 uniform highp float time;
 
@@ -631,9 +703,9 @@ varying mediump vec3 refprobe1_ambient_normal;
 #else
 
 uniform bool refprobe1_use_box_project;
-uniform vec3 refprobe1_box_extents;
+uniform highp vec3 refprobe1_box_extents;
 uniform vec3 refprobe1_box_offset;
-uniform mat4 refprobe1_local_matrix;
+uniform highp mat4 refprobe1_local_matrix;
 
 #endif //use vertex lighting
 
@@ -658,9 +730,9 @@ varying mediump vec3 refprobe2_ambient_normal;
 #else
 
 uniform bool refprobe2_use_box_project;
-uniform vec3 refprobe2_box_extents;
+uniform highp vec3 refprobe2_box_extents;
 uniform vec3 refprobe2_box_offset;
-uniform mat4 refprobe2_local_matrix;
+uniform highp mat4 refprobe2_local_matrix;
 
 #endif //use vertex lighting
 
@@ -679,18 +751,18 @@ uniform vec4 refprobe2_ambient;
 
 void reflection_process(samplerCube reflection_map,
 #ifdef USE_VERTEX_LIGHTING
-			vec3 ref_normal,
+		vec3 ref_normal,
 #ifndef USE_LIGHTMAP
-			vec3 amb_normal,
+		vec3 amb_normal,
 #endif
-			float ref_blend,
+		float ref_blend,
 
 #else //no vertex lighting
-			vec3 normal, vec3 vertex,
-			mat4 local_matrix,
-			bool use_box_project, vec3 box_extents, vec3 box_offset,
+		vec3 normal, vec3 vertex,
+		mat4 local_matrix,
+		bool use_box_project, vec3 box_extents, vec3 box_offset,
 #endif //vertex lighting
-			bool exterior,float intensity, vec4 ref_ambient, float roughness, vec3 ambient, vec3 skybox, inout highp vec4 reflection_accum, inout highp vec4 ambient_accum) {
+		bool exterior, float intensity, vec4 ref_ambient, float roughness, vec3 ambient, vec3 skybox, inout highp vec4 reflection_accum, inout highp vec4 ambient_accum) {
 
 	vec4 reflection;
 
@@ -745,7 +817,6 @@ void reflection_process(samplerCube reflection_map,
 
 	reflection_accum += reflection;
 
-
 #ifndef USE_LIGHTMAP
 
 	vec4 ambient_out;
@@ -782,7 +853,6 @@ uniform bool lightmap_capture_sky;
 
 #ifdef USE_RADIANCE_MAP
 
-
 uniform samplerCube radiance_map; // texunit:-2
 
 uniform mat4 radiance_inverse_xform;
@@ -803,27 +873,29 @@ uniform float ambient_energy;
 varying highp vec3 diffuse_interp;
 varying highp vec3 specular_interp;
 
+uniform highp vec3 light_direction; //may be used by fog, so leave here
+
 #else
 //done in fragment
 // general for all lights
-uniform vec4 light_color;
-uniform float light_specular;
+uniform highp vec4 light_color;
+uniform highp float light_specular;
 
 // directional
-uniform vec3 light_direction;
+uniform highp vec3 light_direction;
 // omni
-uniform vec3 light_position;
+uniform highp vec3 light_position;
 
-uniform vec4 light_attenuation;
+uniform highp float light_attenuation;
 
 // spot
-uniform float light_spot_attenuation;
-uniform float light_spot_range;
-uniform float light_spot_angle;
+uniform highp float light_spot_attenuation;
+uniform highp float light_spot_range;
+uniform highp float light_spot_angle;
 #endif
 
 //this is needed outside above if because dual paraboloid wants it
-uniform float light_range;
+uniform highp float light_range;
 
 #ifdef USE_SHADOW
 
@@ -885,13 +957,12 @@ varying vec2 uv2_interp;
 
 varying vec3 view_interp;
 
-vec3 metallic_to_specular_color(float metallic, float specular, vec3 albedo) {
-	float dielectric = (0.034 * 2.0) * specular;
-	// energy conservation
-	return mix(vec3(dielectric), albedo, metallic); // TODO: reference?
+vec3 F0(float metallic, float specular, vec3 albedo) {
+	float dielectric = 0.16 * specular * specular;
+	// use albedo * metallic as colored specular reflectance at 0 angle for metallic materials;
+	// see https://google.github.io/filament/Filament.md.html
+	return mix(vec3(dielectric), albedo, vec3(metallic));
 }
-
-
 
 /* clang-format off */
 
@@ -923,6 +994,7 @@ varying highp float dp_clip;
 // E. Heitz, "Understanding the Masking-Shadowing Function in Microfacet-Based BRDFs", J. Comp. Graph. Tech. 3 (2) (2014).
 // Eqns 71-72 and 85-86 (see also Eqns 43 and 80).
 
+/*
 float G_GGX_2cos(float cos_theta_m, float alpha) {
 	// Schlick's approximation
 	// C. Schlick, "An Inexpensive BRDF Model for Physically-based Rendering", Computer Graphics Forum. 13 (3): 233 (1994)
@@ -935,6 +1007,15 @@ float G_GGX_2cos(float cos_theta_m, float alpha) {
 	// float sin2 = (1.0 - cos2);
 	// return 1.0 / (cos_theta_m + sqrt(cos2 + alpha * alpha * sin2));
 }
+*/
+
+// This approximates G_GGX_2cos(cos_theta_l, alpha) * G_GGX_2cos(cos_theta_v, alpha)
+// See Filament docs, Specular G section.
+float V_GGX(float cos_theta_l, float cos_theta_v, float alpha) {
+	float v = cos_theta_l * (cos_theta_v * (1.0 - alpha) + alpha);
+	float l = cos_theta_v * (cos_theta_l * (1.0 - alpha) + alpha);
+	return 0.5 / (v + l);
+}
 
 float D_GGX(float cos_theta_m, float alpha) {
 	float alpha2 = alpha * alpha;
@@ -942,6 +1023,7 @@ float D_GGX(float cos_theta_m, float alpha) {
 	return alpha2 / (M_PI * d * d);
 }
 
+/*
 float G_GGX_anisotropic_2cos(float cos_theta_m, float alpha_x, float alpha_y, float cos_phi, float sin_phi) {
 	float cos2 = cos_theta_m * cos_theta_m;
 	float sin2 = (1.0 - cos2);
@@ -949,14 +1031,30 @@ float G_GGX_anisotropic_2cos(float cos_theta_m, float alpha_x, float alpha_y, fl
 	float s_y = alpha_y * sin_phi;
 	return 1.0 / max(cos_theta_m + sqrt(cos2 + (s_x * s_x + s_y * s_y) * sin2), 0.001);
 }
+*/
 
-float D_GGX_anisotropic(float cos_theta_m, float alpha_x, float alpha_y, float cos_phi, float sin_phi) {
-	float cos2 = cos_theta_m * cos_theta_m;
+// This approximates G_GGX_anisotropic_2cos(cos_theta_l, ...) * G_GGX_anisotropic_2cos(cos_theta_v, ...)
+// See Filament docs, Anisotropic specular BRDF section.
+float V_GGX_anisotropic(float alpha_x, float alpha_y, float TdotV, float TdotL, float BdotV, float BdotL, float NdotV, float NdotL) {
+	float Lambda_V = NdotL * length(vec3(alpha_x * TdotV, alpha_y * BdotV, NdotV));
+	float Lambda_L = NdotV * length(vec3(alpha_x * TdotL, alpha_y * BdotL, NdotL));
+	return 0.5 / (Lambda_V + Lambda_L);
+}
+
+float D_GGX_anisotropic(float cos_theta_m, float alpha_x, float alpha_y, float cos_phi, float sin_phi, float NdotH) {
+	float alpha2 = alpha_x * alpha_y;
+	highp vec3 v = vec3(alpha_y * cos_phi, alpha_x * sin_phi, alpha2 * NdotH);
+	highp float v2 = dot(v, v);
+	float w2 = alpha2 / v2;
+	float D = alpha2 * w2 * w2 * (1.0 / M_PI);
+	return D;
+
+	/* float cos2 = cos_theta_m * cos_theta_m;
 	float sin2 = (1.0 - cos2);
 	float r_x = cos_phi / alpha_x;
 	float r_y = sin_phi / alpha_y;
 	float d = cos2 + sin2 * (r_x * r_x + r_y * r_y);
-	return 1.0 / max(M_PI * alpha_x * alpha_y * d * d, 0.001);
+	return 1.0 / max(M_PI * alpha_x * alpha_y * d * d, 0.001); */
 }
 
 float SchlickFresnel(float u) {
@@ -985,6 +1083,7 @@ void light_compute(
 		float specular_blob_intensity,
 		float roughness,
 		float metallic,
+		float specular,
 		float rim,
 		float rim_tint,
 		float clearcoat,
@@ -1101,9 +1200,11 @@ LIGHT_SHADER_CODE
 
 	if (roughness > 0.0) {
 
-		// D
-
-		float specular_brdf_NL;
+#if defined(SPECULAR_SCHLICK_GGX)
+		vec3 specular_brdf_NL = vec3(0.0);
+#else
+		float specular_brdf_NL = 0.0;
+#endif
 
 #if defined(SPECULAR_BLINN)
 
@@ -1136,7 +1237,6 @@ LIGHT_SHADER_CODE
 
 #elif defined(SPECULAR_DISABLED)
 		// none..
-		specular_brdf_NL = 0.0;
 #elif defined(SPECULAR_SCHLICK_GGX)
 		// shlick+ggx as default
 
@@ -1146,28 +1246,28 @@ LIGHT_SHADER_CODE
 		float cLdotH = max(dot(L, H), 0.0);
 
 #if defined(LIGHT_USE_ANISOTROPY)
-
+		float alpha = roughness * roughness;
 		float aspect = sqrt(1.0 - anisotropy * 0.9);
-		float rx = roughness / aspect;
-		float ry = roughness * aspect;
-		float ax = rx * rx;
-		float ay = ry * ry;
+		float ax = alpha / aspect;
+		float ay = alpha * aspect;
 		float XdotH = dot(T, H);
 		float YdotH = dot(B, H);
-		float D = D_GGX_anisotropic(cNdotH, ax, ay, XdotH, YdotH);
-		float G = G_GGX_anisotropic_2cos(cNdotL, ax, ay, XdotH, YdotH) * G_GGX_anisotropic_2cos(cNdotV, ax, ay, XdotH, YdotH);
+		float D = D_GGX_anisotropic(cNdotH, ax, ay, XdotH, YdotH, cNdotH);
+		//float G = G_GGX_anisotropic_2cos(cNdotL, ax, ay, XdotH, YdotH) * G_GGX_anisotropic_2cos(cNdotV, ax, ay, XdotH, YdotH);
+		float G = V_GGX_anisotropic(ax, ay, dot(T, V), dot(T, L), dot(B, V), dot(B, L), cNdotV, cNdotL))
 
 #else
 		float alpha = roughness * roughness;
 		float D = D_GGX(cNdotH, alpha);
-		float G = G_GGX_2cos(cNdotL, alpha) * G_GGX_2cos(cNdotV, alpha);
+		//float G = G_GGX_2cos(cNdotL, alpha) * G_GGX_2cos(cNdotV, alpha);
+		float G = V_GGX(cNdotL, cNdotV, alpha);
 #endif
 		// F
-		//float F0 = 1.0;
-		//float cLdotH5 = SchlickFresnel(cLdotH);
-		//float F = mix(cLdotH5, 1.0, F0);
+		vec3 f0 = F0(metallic, specular, diffuse_color);
+		float cLdotH5 = SchlickFresnel(cLdotH);
+		vec3 F = mix(vec3(cLdotH5), vec3(1.0), f0);
 
-		specular_brdf_NL = cNdotL * D /* F */ * G;
+		specular_brdf_NL = cNdotL * D * F * G;
 
 #endif
 
@@ -1186,11 +1286,12 @@ LIGHT_SHADER_CODE
 #endif
 			float Dr = GTR1(cNdotH, mix(.1, .001, clearcoat_gloss));
 			float Fr = mix(.04, 1.0, cLdotH5);
-			float Gr = G_GGX_2cos(cNdotL, .25) * G_GGX_2cos(cNdotV, .25);
+			//float Gr = G_GGX_2cos(cNdotL, .25) * G_GGX_2cos(cNdotV, .25);
+			float Gr = V_GGX(cNdotL, cNdotV, 0.25);
 
-			float specular_brdf_NL = 0.25 * clearcoat * Gr * Fr * Dr * cNdotL;
+			float clearcoat_specular_brdf_NL = 0.25 * clearcoat * Gr * Fr * Dr * cNdotL;
 
-			specular_light += specular_brdf_NL * light_color * specular_blob_intensity * attenuation;
+			specular_light += clearcoat_specular_brdf_NL * light_color * specular_blob_intensity * attenuation;
 		}
 #endif
 	}
@@ -1204,13 +1305,16 @@ LIGHT_SHADER_CODE
 #ifdef USE_SHADOW
 
 #define SAMPLE_SHADOW_TEXEL(p_shadow, p_pos, p_depth) step(p_depth, texture2D(p_shadow, p_pos).r)
+#define SAMPLE_SHADOW_TEXEL_PROJ(p_shadow, p_pos) step(p_pos.z, texture2DProj(p_shadow, p_pos).r)
 
 float sample_shadow(
-		highp sampler2D shadow,
-		highp vec2 pos,
-		highp float depth) {
+		highp sampler2D shadow, highp vec4 spos) {
 
 #ifdef SHADOW_MODE_PCF_13
+
+	spos.xyz /= spos.w;
+	vec2 pos = spos.xy;
+	float depth = spos.z;
 
 	float avg = SAMPLE_SHADOW_TEXEL(shadow, pos, depth);
 	avg += SAMPLE_SHADOW_TEXEL(shadow, pos + vec2(shadow_pixel_size.x, 0.0), depth);
@@ -1230,6 +1334,10 @@ float sample_shadow(
 
 #ifdef SHADOW_MODE_PCF_5
 
+	spos.xyz /= spos.w;
+	vec2 pos = spos.xy;
+	float depth = spos.z;
+
 	float avg = SAMPLE_SHADOW_TEXEL(shadow, pos, depth);
 	avg += SAMPLE_SHADOW_TEXEL(shadow, pos + vec2(shadow_pixel_size.x, 0.0), depth);
 	avg += SAMPLE_SHADOW_TEXEL(shadow, pos + vec2(-shadow_pixel_size.x, 0.0), depth);
@@ -1241,11 +1349,41 @@ float sample_shadow(
 
 #if !defined(SHADOW_MODE_PCF_5) || !defined(SHADOW_MODE_PCF_13)
 
-	return SAMPLE_SHADOW_TEXEL(shadow, pos, depth);
+	return SAMPLE_SHADOW_TEXEL_PROJ(shadow, spos);
 #endif
 }
 
 #endif
+
+#if defined(FOG_DEPTH_ENABLED) || defined(FOG_HEIGHT_ENABLED)
+
+#if defined(USE_VERTEX_LIGHTING)
+
+varying vec4 fog_interp;
+
+#else
+uniform mediump vec4 fog_color_base;
+#ifdef LIGHT_MODE_DIRECTIONAL
+uniform mediump vec4 fog_sun_color_amount;
+#endif
+
+uniform bool fog_transmit_enabled;
+uniform mediump float fog_transmit_curve;
+
+#ifdef FOG_DEPTH_ENABLED
+uniform highp float fog_depth_begin;
+uniform mediump float fog_depth_curve;
+uniform mediump float fog_max_distance;
+#endif
+
+#ifdef FOG_HEIGHT_ENABLED
+uniform highp float fog_height_min;
+uniform highp float fog_height_max;
+uniform mediump float fog_height_curve;
+#endif
+
+#endif //vertex lit
+#endif //fog
 
 void main() {
 
@@ -1267,9 +1405,15 @@ void main() {
 	float clearcoat_gloss = 0.0;
 	float anisotropy = 0.0;
 	vec2 anisotropy_flow = vec2(1.0, 0.0);
+	float sss_strength = 0.0; //unused
 
 	float alpha = 1.0;
 	float side = 1.0;
+
+	float specular_blob_intensity = 1.0;
+#if defined(SPECULAR_TOON)
+	specular_blob_intensity *= specular * 2.0;
+#endif
 
 #if defined(ENABLE_AO)
 	float ao = 1.0;
@@ -1310,8 +1454,8 @@ FRAGMENT_SHADER_CODE
 	normalmap.xy = normalmap.xy * 2.0 - 1.0;
 	normalmap.z = sqrt(max(0.0, 1.0 - dot(normalmap.xy, normalmap.xy)));
 
-	// normal = normalize(mix(normal_interp, tangent * normalmap.x + binormal * normalmap.y + normal * normalmap.z, normaldepth)) * side;
-	normal = normalmap;
+	normal = normalize(mix(normal_interp, tangent * normalmap.x + binormal * normalmap.y + normal * normalmap.z, normaldepth)) * side;
+	//normal = normalmap;
 #endif
 
 	normal = normalize(normal);
@@ -1356,10 +1500,7 @@ FRAGMENT_SHADER_CODE
 
 	ambient_light *= ambient_energy;
 
-	
 #if defined(USE_REFLECTION_PROBE1) || defined(USE_REFLECTION_PROBE2)
-
-	
 
 	vec4 ambient_accum = vec4(0.0);
 	vec4 reflection_accum = vec4(0.0);
@@ -1368,19 +1509,17 @@ FRAGMENT_SHADER_CODE
 
 	reflection_process(reflection_probe1,
 #ifdef USE_VERTEX_LIGHTING
-			   refprobe1_reflection_normal_blend.rgb,
-#ifndef USE_LIGHTMAP		
-			   refprobe1_ambient_normal,
-#endif			   
-			   refprobe1_reflection_normal_blend.a,
-#else
-			   normal_interp,vertex_interp,refprobe1_local_matrix,
-			   refprobe1_use_box_project,refprobe1_box_extents,refprobe1_box_offset,
+			refprobe1_reflection_normal_blend.rgb,
+#ifndef USE_LIGHTMAP
+			refprobe1_ambient_normal,
 #endif
-			   refprobe1_exterior,refprobe1_intensity, refprobe1_ambient, roughness,
-			   ambient_light, specular_light, reflection_accum, ambient_accum);
-
-
+			refprobe1_reflection_normal_blend.a,
+#else
+			normal_interp, vertex_interp, refprobe1_local_matrix,
+			refprobe1_use_box_project, refprobe1_box_extents, refprobe1_box_offset,
+#endif
+			refprobe1_exterior, refprobe1_intensity, refprobe1_ambient, roughness,
+			ambient_light, specular_light, reflection_accum, ambient_accum);
 
 #endif // USE_REFLECTION_PROBE1
 
@@ -1388,17 +1527,17 @@ FRAGMENT_SHADER_CODE
 
 	reflection_process(reflection_probe2,
 #ifdef USE_VERTEX_LIGHTING
-			   refprobe2_reflection_normal_blend.rgb,
+			refprobe2_reflection_normal_blend.rgb,
 #ifndef USE_LIGHTMAP
-			   refprobe2_ambient_normal,
+			refprobe2_ambient_normal,
 #endif
-			   refprobe2_reflection_normal_blend.a,
+			refprobe2_reflection_normal_blend.a,
 #else
-			   normal_interp,vertex_interp,refprobe2_local_matrix,
-			   refprobe2_use_box_project,refprobe2_box_extents,refprobe2_box_offset,
+			normal_interp, vertex_interp, refprobe2_local_matrix,
+			refprobe2_use_box_project, refprobe2_box_extents, refprobe2_box_offset,
 #endif
-			   refprobe2_exterior,refprobe2_intensity, refprobe2_ambient, roughness,
-			   ambient_light, specular_light, reflection_accum, ambient_accum);
+			refprobe2_exterior, refprobe2_intensity, refprobe2_ambient, roughness,
+			ambient_light, specular_light, reflection_accum, ambient_accum);
 
 #endif // USE_REFLECTION_PROBE2
 
@@ -1454,7 +1593,6 @@ FRAGMENT_SHADER_CODE
 	}
 #endif
 
-
 #endif //BASE PASS
 
 //
@@ -1474,20 +1612,24 @@ FRAGMENT_SHADER_CODE
 	float light_length = length(light_vec);
 
 	float normalized_distance = light_length / light_range;
+	if (normalized_distance < 1.0) {
 
-	float omni_attenuation = pow(1.0 - normalized_distance, light_attenuation.w);
+		float omni_attenuation = pow(1.0 - normalized_distance, light_attenuation);
 
-	light_att = vec3(omni_attenuation);
+		light_att = vec3(omni_attenuation);
+	} else {
+		light_att = vec3(0.0);
+	}
 	L = normalize(light_vec);
 
 #endif
 
 #ifdef USE_SHADOW
 	{
-		highp vec3 splane = shadow_coord.xyz;
-		float shadow_len = length(splane);
+		highp vec4 splane = shadow_coord;
+		float shadow_len = length(splane.xyz);
 
-		splane = normalize(splane);
+		splane.xyz = normalize(splane.xyz);
 
 		vec4 clamp_rect = light_clamp;
 
@@ -1504,8 +1646,9 @@ FRAGMENT_SHADER_CODE
 		splane.z = shadow_len / light_range;
 
 		splane.xy = clamp_rect.xy + splane.xy * clamp_rect.zw;
+		splane.w = 1.0;
 
-		float shadow = sample_shadow(light_shadow_atlas, splane.xy, splane.z);
+		float shadow = sample_shadow(light_shadow_atlas, splane);
 
 		light_att *= shadow;
 	}
@@ -1522,6 +1665,121 @@ FRAGMENT_SHADER_CODE
 	float depth_z = -vertex.z;
 
 #ifdef USE_SHADOW
+
+#ifdef USE_VERTEX_LIGHTING
+	//compute shadows in a mobile friendly way
+
+#ifdef LIGHT_USE_PSSM4
+	//take advantage of prefetch
+	float shadow1 = sample_shadow(light_directional_shadow, shadow_coord);
+	float shadow2 = sample_shadow(light_directional_shadow, shadow_coord2);
+	float shadow3 = sample_shadow(light_directional_shadow, shadow_coord3);
+	float shadow4 = sample_shadow(light_directional_shadow, shadow_coord4);
+
+	if (depth_z < light_split_offsets.w) {
+		float pssm_fade = 0.0;
+		float shadow_att = 1.0;
+#ifdef LIGHT_USE_PSSM_BLEND
+		float shadow_att2 = 1.0;
+		float pssm_blend = 0.0;
+		bool use_blend = true;
+#endif
+		if (depth_z < light_split_offsets.y) {
+			if (depth_z < light_split_offsets.x) {
+				shadow_att = shadow1;
+
+#ifdef LIGHT_USE_PSSM_BLEND
+				shadow_att2 = shadow2;
+
+				pssm_blend = smoothstep(0.0, light_split_offsets.x, depth_z);
+#endif
+			} else {
+				shadow_att = shadow2;
+
+#ifdef LIGHT_USE_PSSM_BLEND
+				shadow_att2 = shadow3;
+
+				pssm_blend = smoothstep(light_split_offsets.x, light_split_offsets.y, depth_z);
+#endif
+			}
+		} else {
+			if (depth_z < light_split_offsets.z) {
+
+				shadow_att = shadow3;
+
+#if defined(LIGHT_USE_PSSM_BLEND)
+				shadow_att2 = shadow4;
+				pssm_blend = smoothstep(light_split_offsets.y, light_split_offsets.z, depth_z);
+#endif
+
+			} else {
+
+				shadow_att = shadow4;
+				pssm_fade = smoothstep(light_split_offsets.z, light_split_offsets.w, depth_z);
+
+#if defined(LIGHT_USE_PSSM_BLEND)
+				use_blend = false;
+#endif
+			}
+		}
+#if defined(LIGHT_USE_PSSM_BLEND)
+		if (use_blend) {
+			shadow_att = mix(shadow_att, shadow_att2, pssm_blend);
+		}
+#endif
+		light_att *= shadow_att;
+	}
+
+#endif //LIGHT_USE_PSSM4
+
+#ifdef LIGHT_USE_PSSM2
+
+	//take advantage of prefetch
+	float shadow1 = sample_shadow(light_directional_shadow, shadow_coord);
+	float shadow2 = sample_shadow(light_directional_shadow, shadow_coord2);
+
+	if (depth_z < light_split_offsets.y) {
+		float shadow_att = 1.0;
+		float pssm_fade = 0.0;
+
+#ifdef LIGHT_USE_PSSM_BLEND
+		float shadow_att2 = 1.0;
+		float pssm_blend = 0.0;
+		bool use_blend = true;
+#endif
+		if (depth_z < light_split_offsets.x) {
+			float pssm_fade = 0.0;
+			shadow_att = shadow1;
+
+#ifdef LIGHT_USE_PSSM_BLEND
+			shadow_att2 = shadow2;
+			pssm_blend = smoothstep(0.0, light_split_offsets.x, depth_z);
+#endif
+		} else {
+
+			shadow_att = shadow2;
+			pssm_fade = smoothstep(light_split_offsets.x, light_split_offsets.y, depth_z);
+#ifdef LIGHT_USE_PSSM_BLEND
+			use_blend = false;
+#endif
+		}
+#ifdef LIGHT_USE_PSSM_BLEND
+		if (use_blend) {
+			shadow_att = mix(shadow_att, shadow_att2, pssm_blend);
+		}
+#endif
+		light_att *= shadow_att;
+	}
+
+#endif //LIGHT_USE_PSSM2
+
+#if !defined(LIGHT_USE_PSSM4) && !defined(LIGHT_USE_PSSM2)
+
+	light_att *= sample_shadow(light_directional_shadow, shadow_coord);
+#endif //orthogonal
+
+#else //fragment version of pssm
+
 	{
 #ifdef LIGHT_USE_PSSM4
 		if (depth_z < light_split_offsets.w) {
@@ -1531,34 +1789,31 @@ FRAGMENT_SHADER_CODE
 		if (depth_z < light_split_offsets.x) {
 #endif //pssm2
 
-			vec3 pssm_coord;
+			highp vec4 pssm_coord;
 			float pssm_fade = 0.0;
 
 #ifdef LIGHT_USE_PSSM_BLEND
 			float pssm_blend;
-			vec3 pssm_coord2;
+			highp vec4 pssm_coord2;
 			bool use_blend = true;
 #endif
 
 #ifdef LIGHT_USE_PSSM4
+
 			if (depth_z < light_split_offsets.y) {
 				if (depth_z < light_split_offsets.x) {
-					highp vec4 splane = shadow_coord;
-					pssm_coord = splane.xyz / splane.w;
+					pssm_coord = shadow_coord;
 
 #ifdef LIGHT_USE_PSSM_BLEND
-					splane = shadow_coord2;
-					pssm_coord2 = splane.xyz / splane.w;
+					pssm_coord2 = shadow_coord2;
 
 					pssm_blend = smoothstep(0.0, light_split_offsets.x, depth_z);
 #endif
 				} else {
-					highp vec4 splane = shadow_coord2;
-					pssm_coord = splane.xyz / splane.w;
+					pssm_coord = shadow_coord2;
 
 #ifdef LIGHT_USE_PSSM_BLEND
-					splane = shadow_coord3;
-					pssm_coord2 = splane.xyz / splane.w;
+					pssm_coord2 = shadow_coord3;
 
 					pssm_blend = smoothstep(light_split_offsets.x, light_split_offsets.y, depth_z);
 #endif
@@ -1566,19 +1821,16 @@ FRAGMENT_SHADER_CODE
 			} else {
 				if (depth_z < light_split_offsets.z) {
 
-					highp vec4 splane = shadow_coord3;
-					pssm_coord = splane.xyz / splane.w;
+					pssm_coord = shadow_coord3;
 
 #if defined(LIGHT_USE_PSSM_BLEND)
-					splane = shadow_coord4;
-					pssm_coord2 = splane.xyz / splane.w;
+					pssm_coord2 = shadow_coord4;
 					pssm_blend = smoothstep(light_split_offsets.y, light_split_offsets.z, depth_z);
 #endif
 
 				} else {
 
-					highp vec4 splane = shadow_coord4;
-					pssm_coord = splane.xyz / splane.w;
+					pssm_coord = shadow_coord4;
 					pssm_fade = smoothstep(light_split_offsets.z, light_split_offsets.w, depth_z);
 
 #if defined(LIGHT_USE_PSSM_BLEND)
@@ -1592,17 +1844,15 @@ FRAGMENT_SHADER_CODE
 #ifdef LIGHT_USE_PSSM2
 			if (depth_z < light_split_offsets.x) {
 
-				highp vec4 splane = shadow_coord;
-				pssm_coord = splane.xyz / splane.w;
+				pssm_coord = shadow_coord;
 
 #ifdef LIGHT_USE_PSSM_BLEND
-				splane = shadow_coord2;
-				pssm_coord2 = splane.xyz / splane.w;
+				pssm_coord2 = shadow_coord2;
 				pssm_blend = smoothstep(0.0, light_split_offsets.x, depth_z);
 #endif
 			} else {
-				highp vec4 splane = shadow_coord2;
-				pssm_coord = splane.xyz / splane.w;
+
+				pssm_coord = shadow_coord2;
 				pssm_fade = smoothstep(light_split_offsets.x, light_split_offsets.y, depth_z);
 #ifdef LIGHT_USE_PSSM_BLEND
 				use_blend = false;
@@ -1613,22 +1863,23 @@ FRAGMENT_SHADER_CODE
 
 #if !defined(LIGHT_USE_PSSM4) && !defined(LIGHT_USE_PSSM2)
 			{
-				highp vec4 splane = shadow_coord;
-				pssm_coord = splane.xyz / splane.w;
+				pssm_coord = shadow_coord;
 			}
 #endif
 
-			float shadow = sample_shadow(light_directional_shadow, pssm_coord.xy, pssm_coord.z);
+			float shadow = sample_shadow(light_directional_shadow, pssm_coord);
 
 #ifdef LIGHT_USE_PSSM_BLEND
 			if (use_blend) {
-				shadow = mix(shadow, sample_shadow(light_directional_shadow, pssm_coord2.xy, pssm_coord2.z), pssm_blend);
+				shadow = mix(shadow, sample_shadow(light_directional_shadow, pssm_coord2), pssm_blend);
 			}
 #endif
 
 			light_att *= shadow;
 		}
 	}
+#endif //use vertex lighting
+
 #endif //use shadow
 
 #endif
@@ -1643,17 +1894,25 @@ FRAGMENT_SHADER_CODE
 	float light_length = length(light_rel_vec);
 	float normalized_distance = light_length / light_range;
 
-	float spot_attenuation = pow(1.0 - normalized_distance, light_attenuation.w);
-	vec3 spot_dir = light_direction;
+	if (normalized_distance < 1.0) {
+		float spot_attenuation = pow(1.0 - normalized_distance, light_attenuation);
+		vec3 spot_dir = light_direction;
 
-	float spot_cutoff = light_spot_angle;
+		float spot_cutoff = light_spot_angle;
+		float angle = dot(-normalize(light_rel_vec), spot_dir);
 
-	float scos = max(dot(-normalize(light_rel_vec), spot_dir), spot_cutoff);
-	float spot_rim = max(0.0001, (1.0 - scos) / (1.0 - spot_cutoff));
+		if (angle > spot_cutoff) {
+			float scos = max(angle, spot_cutoff);
+			float spot_rim = max(0.0001, (1.0 - scos) / (1.0 - spot_cutoff));
+			spot_attenuation *= 1.0 - pow(spot_rim, light_spot_attenuation);
 
-	spot_attenuation *= 1.0 - pow(spot_rim, light_spot_attenuation);
-
-	light_att = vec3(spot_attenuation);
+			light_att = vec3(spot_attenuation);
+		} else {
+			light_att = vec3(0.0);
+		}
+	} else {
+		light_att = vec3(0.0);
+	}
 
 	L = normalize(light_rel_vec);
 
@@ -1674,7 +1933,7 @@ FRAGMENT_SHADER_CODE
 #ifdef USE_VERTEX_LIGHTING
 	//vertex lighting
 
-	specular_light += specular_interp * specular * light_att;
+	specular_light += specular_interp * specular_blob_intensity * light_att;
 	diffuse_light += diffuse_interp * albedo * light_att;
 
 #else
@@ -1689,9 +1948,10 @@ FRAGMENT_SHADER_CODE
 			light_att,
 			albedo,
 			transmission,
-			specular * light_specular,
+			specular_blob_intensity * light_specular,
 			roughness,
 			metallic,
+			specular,
 			rim,
 			rim_tint,
 			clearcoat,
@@ -1726,23 +1986,79 @@ FRAGMENT_SHADER_CODE
 
 	// environment BRDF approximation
 
-	// TODO shadeless
 	{
+
+#if defined(DIFFUSE_TOON)
+		//simplify for toon, as
+		specular_light *= specular * metallic * albedo * 2.0;
+#else
+		//TODO: this curve is not really designed for gammaspace, should be adjusted
 		const vec4 c0 = vec4(-1.0, -0.0275, -0.572, 0.022);
 		const vec4 c1 = vec4(1.0, 0.0425, 1.04, -0.04);
 		vec4 r = roughness * c0 + c1;
 		float ndotv = clamp(dot(normal, eye_position), 0.0, 1.0);
 		float a004 = min(r.x * r.x, exp2(-9.28 * ndotv)) * r.x + r.y;
-		vec2 AB = vec2(-1.04, 1.04) * a004 + r.zw;
+		vec2 env = vec2(-1.04, 1.04) * a004 + r.zw;
 
-		vec3 specular_color = metallic_to_specular_color(metallic, specular, albedo);
-		specular_light *= AB.x * specular_color + AB.y;
+		vec3 f0 = F0(metallic, specular, albedo);
+		specular_light *= env.x * f0 + env.y;
+#endif
 	}
 
 	gl_FragColor = vec4(ambient_light + diffuse_light + specular_light, alpha);
+
+	//add emission if in base pass
+#ifdef BASE_PASS
+	gl_FragColor.rgb += emission;
+#endif
 	// gl_FragColor = vec4(normal, 1.0);
 
 #endif //unshaded
+
+//apply fog
+#if defined(FOG_DEPTH_ENABLED) || defined(FOG_HEIGHT_ENABLED)
+
+#if defined(USE_VERTEX_LIGHTING)
+
+	gl_FragColor.rgb = mix(gl_FragColor.rgb, fog_interp.rgb, fog_interp.a);
+#else //pixel based fog
+	float fog_amount = 0.0;
+
+#ifdef LIGHT_MODE_DIRECTIONAL
+
+	vec3 fog_color = mix(fog_color_base.rgb, fog_sun_color_amount.rgb, fog_sun_color_amount.a * pow(max(dot(eye_position, light_direction), 0.0), 8.0));
+#else
+	vec3 fog_color = fog_color_base.rgb;
+#endif
+
+#ifdef FOG_DEPTH_ENABLED
+
+	{
+
+		float fog_z = smoothstep(fog_depth_begin, fog_max_distance, length(vertex));
+
+		fog_amount = pow(fog_z, fog_depth_curve);
+
+		if (fog_transmit_enabled) {
+			vec3 total_light = gl_FragColor.rgb;
+			float transmit = pow(fog_z, fog_transmit_curve);
+			fog_color = mix(max(total_light, fog_color), fog_color, transmit);
+		}
+	}
+#endif
+
+#ifdef FOG_HEIGHT_ENABLED
+	{
+		float y = (camera_matrix * vec4(vertex, 1.0)).y;
+		fog_amount = max(fog_amount, pow(smoothstep(fog_height_min, fog_height_max, y), fog_height_curve));
+	}
+#endif
+
+	gl_FragColor.rgb = mix(gl_FragColor.rgb, fog_color, fog_amount);
+
+#endif //use vertex lit
+
+#endif // defined(FOG_DEPTH_ENABLED) || defined(FOG_HEIGHT_ENABLED)
 
 #endif // not RENDER_DEPTH
 }

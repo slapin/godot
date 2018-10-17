@@ -458,7 +458,7 @@ LRESULT OS_Windows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 					*/
 				}
 
-				if (window_has_focus && main_loop)
+				if (window_has_focus && main_loop && mm->get_relative() != Vector2())
 					input->parse_input_event(mm);
 			}
 			delete[] lpb;
@@ -697,7 +697,7 @@ LRESULT OS_Windows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 			last_button_state = mb->get_button_mask();
 			mb->set_position(Vector2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)));
 
-			if (mouse_mode == MOUSE_MODE_CAPTURED) {
+			if (mouse_mode == MOUSE_MODE_CAPTURED && !use_raw_input) {
 
 				mb->set_position(Vector2(old_x, old_y));
 			}
@@ -1744,7 +1744,7 @@ void OS_Windows::set_window_size(const Size2 p_size) {
 	RECT rect;
 	GetWindowRect(hWnd, &rect);
 
-	if (video_mode.borderless_window == false) {
+	if (!video_mode.borderless_window) {
 		RECT crect;
 		GetClientRect(hWnd, &crect);
 
@@ -2737,7 +2737,7 @@ void OS_Windows::run() {
 	while (!force_quit) {
 
 		process_events(); // get rid of pending events
-		if (Main::iteration() == true)
+		if (Main::iteration())
 			break;
 	};
 
