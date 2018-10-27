@@ -629,10 +629,8 @@ Rect2 Viewport::get_visible_rect() const {
 	Rect2 r;
 
 	if (size == Size2()) {
-
-		r = Rect2(Point2(), Size2(OS::get_singleton()->get_window_size().width, OS::get_singleton()->get_window_size().height));
+		r = Rect2(Point2(), OS::get_singleton()->get_window_size());
 	} else {
-
 		r = Rect2(Point2(), size);
 	}
 
@@ -2945,6 +2943,7 @@ Viewport::Viewport() {
 
 	//gui.tooltip_timer->force_parent_owned();
 	gui.tooltip_delay = GLOBAL_DEF("gui/timers/tooltip_delay_sec", 0.7);
+	ProjectSettings::get_singleton()->set_custom_property_info("gui/timers/tooltip_delay_sec", PropertyInfo(Variant::REAL, "gui/timers/tooltip_delay_sec", PROPERTY_HINT_RANGE, "0,5,0.01,or_greater")); // No negative numbers
 
 	gui.tooltip = NULL;
 	gui.tooltip_label = NULL;

@@ -80,6 +80,14 @@ double AudioDriver::get_mix_time() const {
 	return total;
 }
 
+void AudioDriver::input_buffer_init(int driver_buffer_frames) {
+
+	const int input_buffer_channels = 2;
+	input_buffer.resize(driver_buffer_frames * input_buffer_channels * 4);
+	input_position = 0;
+	input_size = 0;
+}
+
 void AudioDriver::input_buffer_write(int32_t sample) {
 
 	input_buffer.write[input_position++] = sample;
@@ -926,6 +934,7 @@ void AudioServer::init() {
 
 	channel_disable_threshold_db = GLOBAL_DEF_RST("audio/channel_disable_threshold_db", -60.0);
 	channel_disable_frames = float(GLOBAL_DEF_RST("audio/channel_disable_time", 2.0)) * get_mix_rate();
+	ProjectSettings::get_singleton()->set_custom_property_info("audio/channel_disable_time", PropertyInfo(Variant::REAL, "audio/channel_disable_time", PROPERTY_HINT_RANGE, "0,5,0.01,or_greater"));
 	buffer_size = 1024; //hardcoded for now
 
 	init_channels_and_buffers();
