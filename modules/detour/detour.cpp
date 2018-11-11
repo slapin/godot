@@ -215,11 +215,13 @@ void DetourNavigationMeshInstance::_notification(int p_what) {
 #ifdef TILE_CACHE
 		case NOTIFICATION_PROCESS: {
 			float delta = get_process_delta_time();
-			dtTileCache *tile_cache = mesh->get_tile_cache();
-			if (tile_cache) {
-				tile_cache->update(delta, mesh->get_navmesh());
-				if (debug_view)
-					Object::cast_to<MeshInstance>(debug_view)->set_mesh(mesh->get_debug_mesh());
+			if (mesh.is_valid()) {
+				dtTileCache *tile_cache = mesh->get_tile_cache();
+				if (tile_cache) {
+					tile_cache->update(delta, mesh->get_navmesh());
+					if (debug_view)
+						Object::cast_to<MeshInstance>(debug_view)->set_mesh(mesh->get_debug_mesh());
+				}
 			}
 		} break;
 #endif
