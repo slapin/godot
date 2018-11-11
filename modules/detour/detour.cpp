@@ -1,6 +1,7 @@
 #include "detour.h"
 #include "obstacle.h"
 #include "scene/3d/mesh_instance.h"
+#include "modules/csg/csg_shape.h"
 #include <DetourNavMesh.h>
 #include <DetourNavMeshBuilder.h>
 #include <DetourNavMeshQuery.h>
@@ -149,6 +150,18 @@ void DetourNavigationMeshInstance::collect_geometries(bool recursive) {
 			MeshInstance *mi = Object::cast_to<MeshInstance>(groupNode);
 			Ref<Mesh> mesh = mi->get_mesh();
 			Transform xform = mi->get_global_transform();
+			if (mesh.is_valid())
+				add_mesh(mesh, xform);
+		} else if (Object::cast_to<CSGPolygon>(groupNode)) {
+			CSGPolygon *poly = Object::cast_to<CSGPolygon>(groupNode);
+			Ref<ArrayMesh> mesh(memnew(ArrayMesh));
+			Array arrays;
+			arrays.resize(Mesh::ARRAY_MAX);
+			PoolVector<Vector3> faces = poly->get_brush_faces();
+			arrays[ArrayMesh::ARRAY_VERTEX] = faces;
+			mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, arrays);
+			
+			Transform xform = poly->get_global_transform();
 			if (mesh.is_valid())
 				add_mesh(mesh, xform);
 #ifdef TILE_CACHE
