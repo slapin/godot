@@ -958,7 +958,7 @@ void TileSetEditor::_on_workspace_input(const Ref<InputEvent> &p_ie) {
 	Ref<InputEventMouseMotion> mm = p_ie;
 
 	if (mb.is_valid()) {
-		if (mb->is_pressed() && mb->get_button_index() == BUTTON_LEFT) {
+		if (mb->is_pressed() && mb->get_button_index() == BUTTON_LEFT && !creating_shape) {
 			if (!current_tile_region.has_point(mb->get_position())) {
 				List<int> *tiles = new List<int>();
 				tileset->get_tile_list(tiles);
@@ -2111,13 +2111,24 @@ void TileSetEditor::update_texture_list() {
 
 	List<int> ids;
 	tileset->get_tile_list(&ids);
+	Vector<int> ids_to_remove;
 	for (List<int>::Element *E = ids.front(); E; E = E->next()) {
+		// Clear tiles referencing gone textures (user has been already given the chance to fix broken deps)
+		if (!tileset->tile_get_texture(E->get()).is_valid()) {
+			ids_to_remove.push_back(E->get());
+			ERR_CONTINUE(!tileset->tile_get_texture(E->get()).is_valid());
+		}
+
 		if (!texture_map.has(tileset->tile_get_texture(E->get())->get_rid())) {
 			texture_list->add_item(tileset->tile_get_texture(E->get())->get_path().get_file());
 			texture_map.insert(tileset->tile_get_texture(E->get())->get_rid(), tileset->tile_get_texture(E->get()));
 			texture_list->set_item_metadata(texture_list->get_item_count() - 1, tileset->tile_get_texture(E->get())->get_rid());
 		}
 	}
+	for (int i = 0; i < ids_to_remove.size(); i++) {
+		tileset->remove_tile(ids_to_remove[i]);
+	}
+
 	if (texture_list->get_item_count() > 0 && selected_texture.is_valid()) {
 		texture_list->select(texture_list->find_metadata(selected_texture->get_rid()));
 		if (texture_list->get_selected_items().size() > 0)

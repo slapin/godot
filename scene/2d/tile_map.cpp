@@ -1114,6 +1114,8 @@ void TileMap::_set_tile_data(const PoolVector<int> &p_data) {
 		*/
 		set_cell(x, y, v, flip_h, flip_v, transpose, Vector2(coord_x, coord_y));
 	}
+
+	format = FORMAT_2;
 }
 
 PoolVector<int> TileMap::_get_tile_data() const {
@@ -1403,7 +1405,7 @@ bool TileMap::_set(const StringName &p_name, const Variant &p_value) {
 bool TileMap::_get(const StringName &p_name, Variant &r_ret) const {
 
 	if (p_name == "format") {
-		r_ret = FORMAT_2;
+		r_ret = format;
 		return true;
 	} else if (p_name == "tile_data") {
 		r_ret = _get_tile_data();
@@ -1445,6 +1447,11 @@ Vector2 TileMap::world_to_map(const Vector2 &p_pos) const {
 		default: {}
 	}
 
+	// Account for precision errors on the border (GH-23250).
+	// 0.00005 is 5*CMP_EPSILON, results would start being unpredictible if
+	// cell size is > 15,000, but we can hardly have more precision anyway with
+	// floating point.
+	ret += Vector2(0.00005, 0.00005);
 	return ret.floor();
 }
 

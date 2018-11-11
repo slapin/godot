@@ -326,16 +326,15 @@ static Vector2 get_mouse_pos(NSPoint locationInWindow, CGFloat backingScaleFacto
 - (void)windowDidBecomeKey:(NSNotification *)notification {
 	//_GodotInputWindowFocus(window, GL_TRUE);
 	//_GodotPlatformSetCursorMode(window, window->cursorMode);
-	[OS_OSX::singleton->context update];
 
-	get_mouse_pos(
-			[OS_OSX::singleton->window_object mouseLocationOutsideOfEventStream],
-			[OS_OSX::singleton->window_view backingScaleFactor]);
-	if (OS_OSX::singleton->input)
+	if (OS_OSX::singleton->get_main_loop()) {
+		get_mouse_pos(
+				[OS_OSX::singleton->window_object mouseLocationOutsideOfEventStream],
+				[OS_OSX::singleton->window_view backingScaleFactor]);
 		OS_OSX::singleton->input->set_mouse_position(Point2(mouse_x, mouse_y));
 
-	if (OS_OSX::singleton->get_main_loop())
 		OS_OSX::singleton->get_main_loop()->notification(MainLoop::NOTIFICATION_WM_FOCUS_IN);
+	}
 }
 
 - (void)windowDidResignKey:(NSNotification *)notification {
@@ -365,6 +364,8 @@ static Vector2 get_mouse_pos(NSPoint locationInWindow, CGFloat backingScaleFacto
 	bool imeMode;
 }
 - (void)cancelComposition;
+- (BOOL)wantsUpdateLayer;
+- (void)updateLayer;
 @end
 
 @implementation GodotContentView
@@ -373,6 +374,14 @@ static Vector2 get_mouse_pos(NSPoint locationInWindow, CGFloat backingScaleFacto
 	if (self == [GodotContentView class]) {
 		// nothing left to do here at the moment..
 	}
+}
+
+- (BOOL)wantsUpdateLayer {
+	return YES;
+}
+
+- (void)updateLayer {
+	[OS_OSX::singleton->context update];
 }
 
 - (id)init {
@@ -934,7 +943,7 @@ static int remapKey(unsigned int key) {
 
 	CFDataRef layoutData = (CFDataRef)TISGetInputSourceProperty(currentKeyboard, kTISPropertyUnicodeKeyLayoutData);
 	if (!layoutData)
-		return 0;
+		return translateKey(key);
 
 	const UCKeyboardLayout *keyboardLayout = (const UCKeyboardLayout *)CFDataGetBytePtr(layoutData);
 
@@ -1228,6 +1237,7 @@ Error OS_OSX::initialize(const VideoMode &p_desired, int p_video_driver, int p_a
 	ERR_FAIL_COND_V(window_object == nil, ERR_UNAVAILABLE);
 
 	window_view = [[GodotContentView alloc] init];
+	[window_view setWantsLayer:TRUE];
 
 	float displayScale = 1.0;
 	if (is_hidpi_allowed()) {
