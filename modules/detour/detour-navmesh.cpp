@@ -33,14 +33,19 @@ struct FastLZCompressor : public dtTileCacheCompressor {
 	}
 
 	virtual dtStatus compress(const unsigned char *buffer, const int bufferSize,
-			unsigned char *compressed, const int /*maxCompressedSize*/, int *compressedSize) {
-		*compressedSize = fastlz_compress((const void *const)buffer, bufferSize, compressed);
+			unsigned char *compressed,
+			const int /*maxCompressedSize*/,
+			int *compressedSize) {
+		*compressedSize =
+				fastlz_compress((const void *const)buffer, bufferSize, compressed);
 		return DT_SUCCESS;
 	}
 
-	virtual dtStatus decompress(const unsigned char *compressed, const int compressedSize,
-			unsigned char *buffer, const int maxBufferSize, int *bufferSize) {
-		*bufferSize = fastlz_decompress(compressed, compressedSize, buffer, maxBufferSize);
+	virtual dtStatus decompress(const unsigned char *compressed,
+			const int compressedSize, unsigned char *buffer,
+			const int maxBufferSize, int *bufferSize) {
+		*bufferSize =
+				fastlz_decompress(compressed, compressedSize, buffer, maxBufferSize);
 		return *bufferSize < 0 ? DT_FAILURE : DT_SUCCESS;
 	}
 };
@@ -58,12 +63,11 @@ struct LinearAllocator : public dtTileCacheAlloc {
 		resize(cap);
 	}
 
-	~LinearAllocator() {
-		dtFree(buffer);
-	}
+	~LinearAllocator() { dtFree(buffer); }
 
 	void resize(const size_t cap) {
-		if (buffer) dtFree(buffer);
+		if (buffer)
+			dtFree(buffer);
 		buffer = (unsigned char *)dtAlloc(cap, DT_ALLOC_PERM);
 		capacity = cap;
 	}
@@ -91,9 +95,9 @@ struct LinearAllocator : public dtTileCacheAlloc {
 struct NavMeshProcess : public dtTileCacheMeshProcess {
 	DetourNavigationMesh *nav;
 	inline explicit NavMeshProcess(DetourNavigationMesh *mesh) :
-			nav(mesh) {
-	}
-	virtual void process(struct dtNavMeshCreateParams *params, unsigned char *polyAreas, unsigned short *polyFlags) {
+			nav(mesh) {}
+	virtual void process(struct dtNavMeshCreateParams *params,
+			unsigned char *polyAreas, unsigned short *polyFlags) {
 		/* Add proper flags and offmesh connections here */
 		for (int i = 0; i < params->polyCount; i++) {
 			if (polyAreas[i] != RC_NULL_AREA)
@@ -101,7 +105,8 @@ struct NavMeshProcess : public dtTileCacheMeshProcess {
 		}
 		params->offMeshConCount = nav->offmesh_radii.size();
 		if (params->offMeshConCount > 0) {
-			params->offMeshConVerts = reinterpret_cast<const float *>(&nav->offmesh_vertices[0]);
+			params->offMeshConVerts =
+					reinterpret_cast<const float *>(&nav->offmesh_vertices[0]);
 			params->offMeshConRad = &nav->offmesh_radii[0];
 			params->offMeshConFlags = &nav->offmesh_flags[0];
 			params->offMeshConAreas = &nav->offmesh_areas[0];
@@ -174,13 +179,15 @@ void DetourNavigationMesh::set_group(const String &group) {
 	this->group = group;
 }
 
-unsigned int DetourNavigationMesh::add_obstacle(const Vector3 &pos, real_t radius, real_t height) {
+unsigned int DetourNavigationMesh::add_obstacle(const Vector3 &pos,
+		real_t radius, real_t height) {
 	/* Need to test how this works and why this needed at all */
 	/* TODO implement navmesh changes queue */
 	//	while (tile_cache->isObstacleQueueFull())
 	//		tile_cache->update(1, navMesh_);
 	dtObstacleRef ref = 0;
-	if (dtStatusFailed(tile_cache->addObstacle(&pos.coord[0], radius, height, &ref))) {
+	if (dtStatusFailed(
+				tile_cache->addObstacle(&pos.coord[0], radius, height, &ref))) {
 		ERR_PRINT("can't add obstacle");
 		return 0;
 	}
@@ -209,7 +216,8 @@ bool DetourNavigationMesh::init(dtNavMeshParams *params) {
 }
 #ifdef TILE_CACHE
 bool DetourNavigationMesh::init_tile_cache(dtTileCacheParams *params) {
-	if (dtStatusFailed(tile_cache->init(params, tile_cache_alloc, tile_cache_compressor, mesh_process))) {
+	if (dtStatusFailed(tile_cache->init(params, tile_cache_alloc,
+				tile_cache_compressor, mesh_process))) {
 		ERR_PRINT("Could not initialize tile cache");
 		release_navmesh();
 		return false;
@@ -233,16 +241,20 @@ Ref<ArrayMesh> DetourNavigationMesh::get_debug_mesh() {
 			dtPoly *poly = tile->polys + j;
 			if (poly->getType() != DT_POLYTYPE_OFFMESH_CONNECTION) {
 				for (int k = 0; k < poly->vertCount; k++) {
-					lines.push_back(*reinterpret_cast<const Vector3 *>(&tile->verts[poly->verts[k] * 3]));
-					lines.push_back(*reinterpret_cast<const Vector3 *>(&tile->verts[poly->verts[(k + 1) % poly->vertCount] * 3]));
+					lines.push_back(*reinterpret_cast<const Vector3 *>(
+							&tile->verts[poly->verts[k] * 3]));
+					lines.push_back(*reinterpret_cast<const Vector3 *>(
+							&tile->verts[poly->verts[(k + 1) % poly->vertCount] * 3]));
 				}
 			} else if (poly->getType() == DT_POLYTYPE_OFFMESH_CONNECTION) {
-				const dtOffMeshConnection *con = &tile->offMeshCons[j - tile->header->offMeshBase];
+				const dtOffMeshConnection *con =
+						&tile->offMeshCons[j - tile->header->offMeshBase];
 				const float *va = &tile->verts[poly->verts[0] * 3];
 				const float *vb = &tile->verts[poly->verts[1] * 3];
 				bool startSet = false;
 				bool endSet = false;
-				for (unsigned int k = poly->firstLink; k != DT_NULL_LINK; k = tile->links[k].next) {
+				for (unsigned int k = poly->firstLink; k != DT_NULL_LINK;
+						k = tile->links[k].next) {
 					if (tile->links[k].edge == 0)
 						startSet = true;
 					if (tile->links[k].edge == 1)
@@ -348,9 +360,10 @@ Dictionary DetourNavigationMesh::get_data() {
 	return t;
 }
 
-#define SETGET(v, t)                                                               \
-	ClassDB::bind_method(D_METHOD("set_" #v, #v), &DetourNavigationMesh::set_##v); \
-	ClassDB::bind_method(D_METHOD("get_" #v), &DetourNavigationMesh::get_##v);     \
+#define SETGET(v, t)                                                           \
+	ClassDB::bind_method(D_METHOD("set_" #v, #v),                              \
+			&DetourNavigationMesh::set_##v);                                   \
+	ClassDB::bind_method(D_METHOD("get_" #v), &DetourNavigationMesh::get_##v); \
 	ADD_PROPERTY(PropertyInfo(Variant::t, #v), "set_" #v, "get_" #v)
 
 void DetourNavigationMesh::_bind_methods() {
@@ -371,26 +384,37 @@ void DetourNavigationMesh::_bind_methods() {
 	SETGET(tile_size, INT);
 	BIND_ENUM_CONSTANT(PARTITION_WATERSHED);
 	BIND_ENUM_CONSTANT(PARTITION_MONOTONE);
-	ClassDB::bind_method(D_METHOD("set_partition_type", "type"), &DetourNavigationMesh::set_partition_type);
-	ClassDB::bind_method(D_METHOD("get_partition_type"), &DetourNavigationMesh::get_partition_type);
-	ClassDB::bind_method(D_METHOD("set_data", "data"), &DetourNavigationMesh::set_data);
+	ClassDB::bind_method(D_METHOD("set_partition_type", "type"),
+			&DetourNavigationMesh::set_partition_type);
+	ClassDB::bind_method(D_METHOD("get_partition_type"),
+			&DetourNavigationMesh::get_partition_type);
+	ClassDB::bind_method(D_METHOD("set_data", "data"),
+			&DetourNavigationMesh::set_data);
 	ClassDB::bind_method(D_METHOD("get_data"), &DetourNavigationMesh::get_data);
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "partition_type", PROPERTY_HINT_ENUM, "watershed,monotone"), "set_partition_type", "get_partition_type");
-	ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "data", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_STORAGE), "set_data", "get_data");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "partition_type", PROPERTY_HINT_ENUM,
+						 "watershed,monotone"),
+			"set_partition_type", "get_partition_type");
+	ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "data", PROPERTY_HINT_NONE, "",
+						 PROPERTY_USAGE_STORAGE),
+			"set_data", "get_data");
 }
 #undef SETGET
 
-void DetourNavigationMesh::get_tile_bounding_box(int x, int z, Vector3 &bmin, Vector3 &bmax) {
+void DetourNavigationMesh::get_tile_bounding_box(int x, int z, Vector3 &bmin,
+		Vector3 &bmax) {
 	const float tile_edge_length = (float)tile_size * cell_size;
 	bmin = bounding_box.position +
-		   Vector3(tile_edge_length * (float)x,
-				   0,
-				   tile_edge_length * (float)z);
-	bmax = bmin + Vector3(tile_edge_length, bounding_box.size.y, tile_edge_length);
-	// print_line("tile bounding box: " +itos(x) + " " + itos(z) + ": " + String(bmin) + "/" + String(bmax));
+		   Vector3(tile_edge_length * (float)x, 0, tile_edge_length * (float)z);
+	bmax =
+			bmin + Vector3(tile_edge_length, bounding_box.size.y, tile_edge_length);
+	// print_line("tile bounding box: " +itos(x) + " " + itos(z) + ": " +
+	// String(bmin) + "/" + String(bmax));
 	// print_line("mesh bounding box: " + String(mesh->bounding_box));
 }
-bool DetourNavigationMesh::build_tile(const Transform &xform, const Vector<Ref<Mesh> > &geometries, const Vector<Transform> &xforms, int x, int z) {
+bool DetourNavigationMesh::build_tile(const Transform &xform,
+		const Vector<Ref<Mesh> > &geometries,
+		const Vector<Transform> &xforms, int x,
+		int z) {
 	Vector3 bmin, bmax;
 	get_tile_bounding_box(x, z, bmin, bmax);
 	dtNavMesh *nav = get_navmesh();
@@ -416,7 +440,8 @@ bool DetourNavigationMesh::build_tile(const Transform &xform, const Vector<Ref<M
 	cfg.borderSize = cfg.walkableRadius + 3;
 	cfg.width = cfg.tileSize + cfg.borderSize * 2;
 	cfg.height = cfg.tileSize + cfg.borderSize * 2;
-	cfg.detailSampleDist = detail_sample_distance < 0.9f ? 0.0f : cell_size * detail_sample_distance;
+	cfg.detailSampleDist =
+			detail_sample_distance < 0.9f ? 0.0f : cell_size * detail_sample_distance;
 	cfg.detailSampleMaxError = cell_height * detail_sample_max_error;
 	rcVcopy(cfg.bmin, &bmin.coord[0]);
 	rcVcopy(cfg.bmax, &bmax.coord[0]);
@@ -439,7 +464,8 @@ bool DetourNavigationMesh::build_tile(const Transform &xform, const Vector<Ref<M
 		AABB mesh_aabb = geometries[idx]->get_aabb();
 		Transform xform = base * xforms[idx];
 		mesh_aabb = xform.xform(mesh_aabb);
-		if (!mesh_aabb.intersects_inclusive(expbox) && !expbox.encloses(mesh_aabb)) {
+		if (!mesh_aabb.intersects_inclusive(expbox) &&
+				!expbox.encloses(mesh_aabb)) {
 			continue;
 		}
 		// Add offmesh
@@ -449,7 +475,8 @@ bool DetourNavigationMesh::build_tile(const Transform &xform, const Vector<Ref<M
 		// FIXME
 		add_meshdata(mdata, xform, points, indices);
 	}
-	// print_line(String() + "points: " + itos(points.size()) + " indices: " + itos(indices.size()) + " tile_size: " + itos(mesh->tile_size));
+// print_line(String() + "points: " + itos(points.size()) + " indices: " +
+// itos(indices.size()) + " tile_size: " + itos(mesh->tile_size));
 #if 0
 	print_line("mesh points:");
 	for (int k = 0; k < points.size(); k += 3)
@@ -464,7 +491,8 @@ bool DetourNavigationMesh::build_tile(const Transform &xform, const Vector<Ref<M
 		return false;
 	}
 	rcContext *ctx = new rcContext(true);
-	if (!rcCreateHeightfield(ctx, *heightfield, cfg.width, cfg.height, cfg.bmin, cfg.bmax, cfg.cs, cfg.ch)) {
+	if (!rcCreateHeightfield(ctx, *heightfield, cfg.width, cfg.height, cfg.bmin,
+				cfg.bmax, cfg.cs, cfg.ch)) {
 		ERR_PRINT("Failed to create height field");
 		return false;
 	}
@@ -472,8 +500,11 @@ bool DetourNavigationMesh::build_tile(const Transform &xform, const Vector<Ref<M
 	Vector<unsigned char> tri_areas;
 	tri_areas.resize(ntris);
 	memset(&tri_areas.write[0], 0, ntris);
-	rcMarkWalkableTriangles(ctx, cfg.walkableSlopeAngle, &points[0], points.size() / 3, &indices[0], ntris, &tri_areas.write[0]);
-	rcRasterizeTriangles(ctx, &points[0], points.size() / 3, &indices[0], &tri_areas[0], ntris, *heightfield, cfg.walkableClimb);
+	rcMarkWalkableTriangles(ctx, cfg.walkableSlopeAngle, &points[0],
+			points.size() / 3, &indices[0], ntris,
+			&tri_areas.write[0]);
+	rcRasterizeTriangles(ctx, &points[0], points.size() / 3, &indices[0],
+			&tri_areas[0], ntris, *heightfield, cfg.walkableClimb);
 	rcFilterLowHangingWalkableObstacles(ctx, cfg.walkableClimb, *heightfield);
 
 	rcFilterLedgeSpans(ctx, cfg.walkableHeight, cfg.walkableClimb, *heightfield);
@@ -484,8 +515,8 @@ bool DetourNavigationMesh::build_tile(const Transform &xform, const Vector<Ref<M
 		ERR_PRINT("Failed to allocate compact height field");
 		return false;
 	}
-	if (!rcBuildCompactHeightfield(ctx, cfg.walkableHeight, cfg.walkableClimb, *heightfield,
-				*compact_heightfield)) {
+	if (!rcBuildCompactHeightfield(ctx, cfg.walkableHeight, cfg.walkableClimb,
+				*heightfield, *compact_heightfield)) {
 		ERR_PRINT("Could not build compact height field");
 		return false;
 	}
@@ -494,9 +525,9 @@ bool DetourNavigationMesh::build_tile(const Transform &xform, const Vector<Ref<M
 		return false;
 	}
 
-	// TODO: Implement area storage in navmesh data and build from that data
-	// populate at collect_geometry stage
-	// areas should indicate if walkable
+// TODO: Implement area storage in navmesh data and build from that data
+// populate at collect_geometry stage
+// areas should indicate if walkable
 #if 0
 	for (unsigned int i = 0; i < nav_areas.size(); i++) {
 		Vector3 amin = nav_areas[i].bounds.position;
@@ -509,10 +540,11 @@ bool DetourNavigationMesh::build_tile(const Transform &xform, const Vector<Ref<M
 	if (partition_type == DetourNavigationMesh::PARTITION_WATERSHED) {
 		if (!rcBuildDistanceField(ctx, *compact_heightfield))
 			return false;
-		if (!rcBuildRegions(ctx, *compact_heightfield, cfg.borderSize, cfg.minRegionArea,
-					cfg.mergeRegionArea))
+		if (!rcBuildRegions(ctx, *compact_heightfield, cfg.borderSize,
+					cfg.minRegionArea, cfg.mergeRegionArea))
 			return false;
-	} else if (!rcBuildRegionsMonotone(ctx, *compact_heightfield, cfg.borderSize, cfg.minRegionArea, cfg.mergeRegionArea))
+	} else if (!rcBuildRegionsMonotone(ctx, *compact_heightfield, cfg.borderSize,
+					   cfg.minRegionArea, cfg.mergeRegionArea))
 		return false;
 #ifdef TILE_CACHE
 	rcHeightfieldLayerSet *heightfield_layer_set = rcAllocHeightfieldLayerSet();
@@ -520,8 +552,8 @@ bool DetourNavigationMesh::build_tile(const Transform &xform, const Vector<Ref<M
 		ERR_PRINT("Could not allocate height field layer set");
 		return false;
 	}
-	if (!rcBuildHeightfieldLayers(ctx, *compact_heightfield, cfg.borderSize, cfg.walkableHeight,
-				*heightfield_layer_set)) {
+	if (!rcBuildHeightfieldLayers(ctx, *compact_heightfield, cfg.borderSize,
+				cfg.walkableHeight, *heightfield_layer_set)) {
 		ERR_PRINT("Could not build heightfield layers");
 		return false;
 	}
@@ -545,13 +577,15 @@ bool DetourNavigationMesh::build_tile(const Transform &xform, const Vector<Ref<M
 		header.hmax = (unsigned short)layer->hmax;
 		unsigned char *tile_data;
 		int tile_data_size;
-		if (dtStatusFailed(dtBuildTileCacheLayer(get_tile_cache_compressor(), &header, layer->heights, layer->areas, layer->cons,
-					&tile_data, &tile_data_size))) {
+		if (dtStatusFailed(dtBuildTileCacheLayer(
+					get_tile_cache_compressor(), &header, layer->heights, layer->areas,
+					layer->cons, &tile_data, &tile_data_size))) {
 			ERR_PRINT("Failed to build tile cache layers");
 			return false;
 		}
 		dtCompressedTileRef tileRef;
-		int status = tile_cache->addTile(tile_data, tile_data_size, DT_COMPRESSEDTILE_FREE_DATA, &tileRef);
+		int status = tile_cache->addTile(tile_data, tile_data_size,
+				DT_COMPRESSEDTILE_FREE_DATA, &tileRef);
 		if (dtStatusFailed((dtStatus)status)) {
 			dtFree(tile_data);
 			tile_data = NULL;
@@ -563,8 +597,8 @@ bool DetourNavigationMesh::build_tile(const Transform &xform, const Vector<Ref<M
 	if (!contour_set)
 		return false;
 	print_line("allocated contour set");
-	if (!rcBuildContours(ctx, *compact_heightfield, cfg.maxSimplificationError, cfg.maxEdgeLen,
-				*contour_set))
+	if (!rcBuildContours(ctx, *compact_heightfield, cfg.maxSimplificationError,
+				cfg.maxEdgeLen, *contour_set))
 		return false;
 	print_line("created contour set");
 	rcPolyMesh *poly_mesh = rcAllocPolyMesh();
@@ -578,8 +612,9 @@ bool DetourNavigationMesh::build_tile(const Transform &xform, const Vector<Ref<M
 	if (!poly_mesh_detail)
 		return false;
 	print_line("allocated polymesh detail");
-	if (!rcBuildPolyMeshDetail(ctx, *poly_mesh, *compact_heightfield, cfg.detailSampleDist,
-				cfg.detailSampleMaxError, *poly_mesh_detail))
+	if (!rcBuildPolyMeshDetail(ctx, *poly_mesh, *compact_heightfield,
+				cfg.detailSampleDist, cfg.detailSampleMaxError,
+				*poly_mesh_detail))
 		return false;
 	print_line("created polymesh detail");
 	/* Assign area flags TODO: use nav area assignment here */
@@ -630,7 +665,8 @@ bool DetourNavigationMesh::build_tile(const Transform &xform, const Vector<Ref<M
 
 	if (!dtCreateNavMeshData(&params, &nav_data, &nav_data_size))
 		return false;
-	if (dtStatusFailed(mesh->get_navmesh()->addTile(nav_data, nav_data_size, DT_TILE_FREE_DATA, 0, NULL))) {
+	if (dtStatusFailed(mesh->get_navmesh()->addTile(
+				nav_data, nav_data_size, DT_TILE_FREE_DATA, 0, NULL))) {
 		dtFree(nav_data);
 		return false;
 	}
@@ -639,7 +675,10 @@ bool DetourNavigationMesh::build_tile(const Transform &xform, const Vector<Ref<M
 	return true;
 }
 
-void DetourNavigationMesh::add_meshdata(const Ref<Mesh> &p_mesh, const Transform &p_xform, Vector<float> &p_verticies, Vector<int> &p_indices) {
+void DetourNavigationMesh::add_meshdata(const Ref<Mesh> &p_mesh,
+		const Transform &p_xform,
+		Vector<float> &p_verticies,
+		Vector<int> &p_indices) {
 	int current_vertex_count = 0;
 
 	for (int i = 0; i < p_mesh->get_surface_count(); i++) {
@@ -715,7 +754,9 @@ void DetourNavigationMesh::remove_tile(int x, int z) {
 #endif
 }
 
-unsigned int DetourNavigationMesh::build_tiles(const Transform &xform, const Vector<Ref<Mesh> > &geometries, const Vector<Transform> &xforms, int x1, int z1, int x2, int z2) {
+unsigned int DetourNavigationMesh::build_tiles(
+		const Transform &xform, const Vector<Ref<Mesh> > &geometries,
+		const Vector<Transform> &xforms, int x1, int z1, int x2, int z2) {
 	unsigned ret = 0;
 	for (int z = z1; z <= z2; z++) {
 		for (int x = x1; x <= x2; x++) {

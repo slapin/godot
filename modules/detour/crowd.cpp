@@ -11,8 +11,7 @@ DetourCrowdManager::DetourCrowdManager() :
 		initialized(false),
 		max_agent_radius(0.0f),
 		max_agents(20),
-		query(memnew(DetourNavigationQuery)) {
-}
+		query(memnew(DetourNavigationQuery)) {}
 DetourCrowdManager::~DetourCrowdManager() {
 	if (crowd) {
 		if (initialized)
@@ -21,7 +20,8 @@ DetourCrowdManager::~DetourCrowdManager() {
 			dtFree(crowd);
 	}
 }
-void DetourCrowdManager::set_navigation_mesh(const Ref<DetourNavigationMesh> &navmesh, const Transform &xform) {
+void DetourCrowdManager::set_navigation_mesh(
+		const Ref<DetourNavigationMesh> &navmesh, const Transform &xform) {
 	this->navmesh = navmesh;
 	this->transform = xform;
 	query->init(navmesh, xform);
@@ -82,12 +82,9 @@ void DetourCrowdManager::remove_agent(Object *agent) {
 void DetourCrowdManager::clear_agent_list() {
 	agents.clear();
 }
-void DetourCrowdManager::set_target(const Vector3 &position) {
-}
-void DetourCrowdManager::set_velocity(const Vector3 &position) {
-}
-void DetourCrowdManager::reset_target() {
-}
+void DetourCrowdManager::set_target(const Vector3 &position) {}
+void DetourCrowdManager::set_velocity(const Vector3 &position) {}
+void DetourCrowdManager::reset_target() {}
 void DetourCrowdManager::set_max_agents(int max_agents) {
 	this->max_agents = max_agents;
 	create_crowd();
@@ -105,10 +102,8 @@ DetourCrowdManager::AgentData::AgentData() :
 		max_accel(10.5f),
 		max_speed(30.0f),
 		filter_id(0),
-		oa_id(0) {
-}
-DetourCrowdManager::AgentData::~AgentData() {
-}
+		oa_id(0) {}
+DetourCrowdManager::AgentData::~AgentData() {}
 void DetourCrowdManager::process_agent(dtCrowdAgent *agent) {
 	if (!agent || !agent->params.userData)
 		return;
@@ -131,8 +126,9 @@ void DetourCrowdManager::process_agent(dtCrowdAgent *agent) {
 	}
 #endif
 	if (!params.updateFlags) {
-		params.updateFlags =
-				DT_CROWD_OPTIMIZE_TOPO | DT_CROWD_OPTIMIZE_VIS | DT_CROWD_ANTICIPATE_TURNS | DT_CROWD_SEPARATION | DT_CROWD_OBSTACLE_AVOIDANCE;
+		params.updateFlags = DT_CROWD_OPTIMIZE_TOPO | DT_CROWD_OPTIMIZE_VIS |
+							 DT_CROWD_ANTICIPATE_TURNS | DT_CROWD_SEPARATION |
+							 DT_CROWD_OBSTACLE_AVOIDANCE;
 		update_params = true;
 	}
 	if (!params.separationWeight > 0.0f) {
@@ -152,11 +148,15 @@ void DetourCrowdManager::process_agent(dtCrowdAgent *agent) {
 	if (velocity.length() == 0.0f)
 		velocity = transform.basis[2];
 	if (data->mode == 0)
-		data->obj->look_at_from_position(position, position + velocity, Vector3(0, 1, 0));
+		data->obj->look_at_from_position(position, position + velocity,
+				Vector3(0, 1, 0));
 	if (data->send_signals)
-		data->obj->emit_signal("agent_position", position, velocity, desired_velocity, (int)agent->state);
+		data->obj->emit_signal("agent_position", position, velocity,
+				desired_velocity, (int)agent->state);
 }
-Vector3 DetourCrowdManager::_nearest_point(const Vector3 &point, int query_filter, polyref_t *nearest_ref) {
+Vector3 DetourCrowdManager::_nearest_point(const Vector3 &point,
+		int query_filter,
+		polyref_t *nearest_ref) {
 	if (!navmesh.is_valid() || !crowd)
 		return point;
 	polyref_t nearestRef = 0;
@@ -166,12 +166,14 @@ Vector3 DetourCrowdManager::_nearest_point(const Vector3 &point, int query_filte
 			*nearest_ref = nearestRef;
 		return point;
 	}
-	ret = query->nearest_point_(point, Vector3(*reinterpret_cast<const Vector3 *>(crowd->getQueryExtents())), crowd->getFilter(query_filter), &nearestRef);
+	ret = query->nearest_point_(point, Vector3(*reinterpret_cast<const Vector3 *>(crowd->getQueryExtents())),
+			crowd->getFilter(query_filter), &nearestRef);
 	if (nearest_ref)
 		*nearest_ref = nearestRef;
 	return ret;
 }
-void DetourCrowdManager::set_agent_target_position(int id, const Vector3 &position) {
+void DetourCrowdManager::set_agent_target_position(int id,
+		const Vector3 &position) {
 	uint64_t pref;
 	Vector3 close = _nearest_point(position, 0, &pref);
 	dtPolyRef nearestRef = (dtPolyRef)pref;
@@ -196,7 +198,8 @@ void DetourCrowdManager::_notification(int p_what) {
 				crowd->update(delta, NULL);
 				Vector<dtCrowdAgent *> active_agents;
 				active_agents.resize(agents.size());
-				int nactive = crowd->getActiveAgents(&active_agents.write[0], agents.size());
+				int nactive =
+						crowd->getActiveAgents(&active_agents.write[0], agents.size());
 				for (int i = 0; i < nactive; i++)
 					process_agent(active_agents[i]);
 			}
@@ -242,12 +245,14 @@ float DetourCrowdManager::get_area_cost(int filter_id, int area_id) {
 		return 1.0f;
 	return filter->getAreaCost(area_id);
 }
-void DetourCrowdManager::set_include_flags(int filter_id, unsigned short flags) {
+void DetourCrowdManager::set_include_flags(int filter_id,
+		unsigned short flags) {
 	dtQueryFilter *filter = crowd->getEditableFilter(filter_id);
 	if (filter)
 		filter->setIncludeFlags(flags);
 }
-void DetourCrowdManager::set_exclude_flags(int filter_id, unsigned short flags) {
+void DetourCrowdManager::set_exclude_flags(int filter_id,
+		unsigned short flags) {
 	dtQueryFilter *filter = crowd->getEditableFilter(filter_id);
 	if (filter)
 		filter->setExcludeFlags(flags);
@@ -265,28 +270,52 @@ unsigned short DetourCrowdManager::get_exclude_flags(int filter_id) {
 	return filter->getExcludeFlags();
 }
 void DetourCrowdManager::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_navigation_mesh", "navmesh", "xform"), &DetourCrowdManager::set_navigation_mesh);
-	ClassDB::bind_method(D_METHOD("get_navigation_mesh"), &DetourCrowdManager::get_navigation_mesh);
-	ClassDB::bind_method(D_METHOD("add_agent", "agent", "mode", "signals"), &DetourCrowdManager::add_agent, DEFVAL(0), DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("remove_agent", "agent"), &DetourCrowdManager::remove_agent);
-	ClassDB::bind_method(D_METHOD("clear_agent_list"), &DetourCrowdManager::clear_agent_list);
-	ClassDB::bind_method(D_METHOD("get_agent_obj", "id"), &DetourCrowdManager::get_agent_obj);
-	ClassDB::bind_method(D_METHOD("get_agent_mode", "id"), &DetourCrowdManager::get_agent_mode);
-	ClassDB::bind_method(D_METHOD("get_agent_count"), &DetourCrowdManager::get_agent_count);
-	ClassDB::bind_method(D_METHOD("set_target", "position"), &DetourCrowdManager::set_target);
-	ClassDB::bind_method(D_METHOD("set_velocity", "velocity"), &DetourCrowdManager::set_velocity);
-	ClassDB::bind_method(D_METHOD("reset_target"), &DetourCrowdManager::reset_target);
-	ClassDB::bind_method(D_METHOD("set_max_agents", "max_agents"), &DetourCrowdManager::set_max_agents);
-	ClassDB::bind_method(D_METHOD("get_max_agents"), &DetourCrowdManager::get_max_agents);
-	ClassDB::bind_method(D_METHOD("set_max_agent_radius", "max_agent_radius"), &DetourCrowdManager::set_max_agent_radius);
-	ClassDB::bind_method(D_METHOD("get_max_agent_radius"), &DetourCrowdManager::get_max_agent_radius);
-	ClassDB::bind_method(D_METHOD("set_area_cost", "filter_id", "area_id", "cost"), &DetourCrowdManager::set_area_cost);
-	ClassDB::bind_method(D_METHOD("get_area_cost", "filter_id", "area_id"), &DetourCrowdManager::get_area_cost);
-	ClassDB::bind_method(D_METHOD("set_include_flags", "filter_id", "flags"), &DetourCrowdManager::set_include_flags);
-	ClassDB::bind_method(D_METHOD("get_include_flags", "filter_id"), &DetourCrowdManager::get_include_flags);
-	ClassDB::bind_method(D_METHOD("set_exclude_flags", "filter_id", "flags"), &DetourCrowdManager::set_exclude_flags);
-	ClassDB::bind_method(D_METHOD("get_exclude_flags", "filter_id"), &DetourCrowdManager::get_exclude_flags);
-	ClassDB::bind_method(D_METHOD("set_agent_target_position", "id", "position"), &DetourCrowdManager::set_agent_target_position);
+	ClassDB::bind_method(D_METHOD("set_navigation_mesh", "navmesh", "xform"),
+			&DetourCrowdManager::set_navigation_mesh);
+	ClassDB::bind_method(D_METHOD("get_navigation_mesh"),
+			&DetourCrowdManager::get_navigation_mesh);
+	ClassDB::bind_method(D_METHOD("add_agent", "agent", "mode", "signals"),
+			&DetourCrowdManager::add_agent, DEFVAL(0),
+			DEFVAL(false));
+	ClassDB::bind_method(D_METHOD("remove_agent", "agent"),
+			&DetourCrowdManager::remove_agent);
+	ClassDB::bind_method(D_METHOD("clear_agent_list"),
+			&DetourCrowdManager::clear_agent_list);
+	ClassDB::bind_method(D_METHOD("get_agent_obj", "id"),
+			&DetourCrowdManager::get_agent_obj);
+	ClassDB::bind_method(D_METHOD("get_agent_mode", "id"),
+			&DetourCrowdManager::get_agent_mode);
+	ClassDB::bind_method(D_METHOD("get_agent_count"),
+			&DetourCrowdManager::get_agent_count);
+	ClassDB::bind_method(D_METHOD("set_target", "position"),
+			&DetourCrowdManager::set_target);
+	ClassDB::bind_method(D_METHOD("set_velocity", "velocity"),
+			&DetourCrowdManager::set_velocity);
+	ClassDB::bind_method(D_METHOD("reset_target"),
+			&DetourCrowdManager::reset_target);
+	ClassDB::bind_method(D_METHOD("set_max_agents", "max_agents"),
+			&DetourCrowdManager::set_max_agents);
+	ClassDB::bind_method(D_METHOD("get_max_agents"),
+			&DetourCrowdManager::get_max_agents);
+	ClassDB::bind_method(D_METHOD("set_max_agent_radius", "max_agent_radius"),
+			&DetourCrowdManager::set_max_agent_radius);
+	ClassDB::bind_method(D_METHOD("get_max_agent_radius"),
+			&DetourCrowdManager::get_max_agent_radius);
+	ClassDB::bind_method(
+			D_METHOD("set_area_cost", "filter_id", "area_id", "cost"),
+			&DetourCrowdManager::set_area_cost);
+	ClassDB::bind_method(D_METHOD("get_area_cost", "filter_id", "area_id"),
+			&DetourCrowdManager::get_area_cost);
+	ClassDB::bind_method(D_METHOD("set_include_flags", "filter_id", "flags"),
+			&DetourCrowdManager::set_include_flags);
+	ClassDB::bind_method(D_METHOD("get_include_flags", "filter_id"),
+			&DetourCrowdManager::get_include_flags);
+	ClassDB::bind_method(D_METHOD("set_exclude_flags", "filter_id", "flags"),
+			&DetourCrowdManager::set_exclude_flags);
+	ClassDB::bind_method(D_METHOD("get_exclude_flags", "filter_id"),
+			&DetourCrowdManager::get_exclude_flags);
+	ClassDB::bind_method(D_METHOD("set_agent_target_position", "id", "position"),
+			&DetourCrowdManager::set_agent_target_position);
 }
 
 #if 0
