@@ -21,7 +21,6 @@ static const float DEFAULT_DETAIL_SAMPLE_DISTANCE = 6.0f;
 static const float DEFAULT_DETAIL_SAMPLE_MAX_ERROR = 1.0f;
 
 #ifdef TILE_CACHE
-static const int TILECACHE_MAXLAYERS = 255;
 static const int DEFAULT_MAX_OBSTACLES = 1024;
 static const int DEFAULT_MAX_LAYERS = 16;
 #endif
@@ -130,6 +129,19 @@ struct NavMeshProcess : public dtTileCacheMeshProcess {
 DetourNavigationMesh::DetourNavigationMesh() :
 		Resource(),
 		navmesh(NULL),
+#ifdef TILE_CACHE
+		tile_cache(0),
+		tile_cache_alloc(new LinearAllocator(64000)),
+		tile_cache_compressor(new FastLZCompressor),
+		mesh_process(new NavMeshProcess(this)),
+#endif
+		group(""),
+		initialized(false),
+#ifdef TILE_CACHE
+		max_obstacles(DEFAULT_MAX_OBSTACLES),
+		max_layers(DEFAULT_MAX_LAYERS),
+#endif
+		tile_size(DEFAULT_TILE_SIZE),
 		cell_size(DEFAULT_CELL_SIZE),
 		cell_height(DEFAULT_CELL_HEIGHT),
 		agent_height(DEFAULT_AGENT_HEIGHT),
@@ -142,19 +154,8 @@ DetourNavigationMesh::DetourNavigationMesh() :
 		edge_max_error(DEFAULT_EDGE_MAX_ERROR),
 		detail_sample_distance(DEFAULT_DETAIL_SAMPLE_DISTANCE),
 		detail_sample_max_error(DEFAULT_DETAIL_SAMPLE_MAX_ERROR),
-		tile_size(DEFAULT_TILE_SIZE),
-#ifdef TILE_CACHE
-		tile_cache(0),
-		tile_cache_alloc(new LinearAllocator(64000)),
-		tile_cache_compressor(new FastLZCompressor),
-		mesh_process(new NavMeshProcess(this)),
-		max_obstacles(DEFAULT_MAX_OBSTACLES),
-		max_layers(DEFAULT_MAX_LAYERS),
-#endif
-		initialized(false),
 		bounding_box(AABB()),
-		padding(Vector3(1.0f, 1.0f, 1.0f)),
-		group("") {
+		padding(Vector3(1.0f, 1.0f, 1.0f)) {
 }
 
 bool DetourNavigationMesh::alloc_tile_cache() {
@@ -251,6 +252,8 @@ Ref<ArrayMesh> DetourNavigationMesh::get_debug_mesh() {
 						&tile->offMeshCons[j - tile->header->offMeshBase];
 				const float *va = &tile->verts[poly->verts[0] * 3];
 				const float *vb = &tile->verts[poly->verts[1] * 3];
+#if 0
+				/* TODO: implement offmesh debug proper */
 				bool startSet = false;
 				bool endSet = false;
 				for (unsigned int k = poly->firstLink; k != DT_NULL_LINK;
@@ -260,6 +263,7 @@ Ref<ArrayMesh> DetourNavigationMesh::get_debug_mesh() {
 					if (tile->links[k].edge == 1)
 						endSet = true;
 				}
+#endif
 				Vector3 p0 = *reinterpret_cast<const Vector3 *>(va);
 				Vector3 p1 = *reinterpret_cast<const Vector3 *>(&con[0]);
 				Vector3 p2 = *reinterpret_cast<const Vector3 *>(&con[3]);
@@ -458,7 +462,7 @@ bool DetourNavigationMesh::build_tile(const Transform &xform,
 	Vector<float> points;
 	Vector<int> indices;
 	Transform base = xform.inverse();
-	for (int idx; idx < geometries.size(); idx++) {
+	for (int idx = 0; idx < geometries.size(); idx++) {
 		if (!geometries[idx].is_valid())
 			continue;
 		AABB mesh_aabb = geometries[idx]->get_aabb();

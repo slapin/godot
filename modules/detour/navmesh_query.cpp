@@ -244,8 +244,11 @@ Vector3 DetourNavigationQuery::move_along_surface(
 		int max_visited, Ref<DetourNavigationQueryFilter> filter) {
 	if (!navmesh_query)
 		return end;
+#if 0
+	/* TODO: are these necessary? */
 	Vector3 local_start = inverse.xform(start);
 	Vector3 local_end = inverse.xform(end);
+#endif
 	Vector3 result =
 			move_along_surface_(start, end, extents, max_visited, filter);
 	return transform.xform(result);

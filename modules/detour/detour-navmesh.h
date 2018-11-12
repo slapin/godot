@@ -38,10 +38,10 @@
 class dtNavMesh;
 class dtTileCache;
 struct dtTileCacheAlloc;
-class dtNavMeshParams;
+struct dtNavMeshParams;
 struct dtTileCacheCompressor;
 struct dtTileCacheMeshProcess;
-class dtTileCacheParams;
+struct dtTileCacheParams;
 class DetourNavigationMesh : public Resource {
 	GDCLASS(DetourNavigationMesh, Resource);
 	dtNavMesh *navmesh;
@@ -62,7 +62,7 @@ class DetourNavigationMesh : public Resource {
 	Vector<unsigned char> offmesh_areas;
 	Vector<unsigned char> offmesh_dir;
 #ifdef TILE_CACHE
-	friend class NavMeshProcess;
+	friend struct NavMeshProcess;
 #endif
 protected:
 	void release_navmesh();

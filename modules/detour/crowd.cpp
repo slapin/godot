@@ -9,9 +9,9 @@ DetourCrowdManager::DetourCrowdManager() :
 		crowd(0),
 		dirty(false),
 		initialized(false),
-		max_agent_radius(0.0f),
+		query(memnew(DetourNavigationQuery)),
 		max_agents(20),
-		query(memnew(DetourNavigationQuery)) {}
+		max_agent_radius(0.0f) {}
 DetourCrowdManager::~DetourCrowdManager() {
 	if (crowd) {
 		if (initialized)
@@ -131,7 +131,7 @@ void DetourCrowdManager::process_agent(dtCrowdAgent *agent) {
 							 DT_CROWD_OBSTACLE_AVOIDANCE;
 		update_params = true;
 	}
-	if (!params.separationWeight > 0.0f) {
+	if (!(params.separationWeight > 0.0f)) {
 		params.separationWeight = 4.0f;
 		params.collisionQueryRange = 16.0f * data->radius; /* *radius */
 		update_params = true;

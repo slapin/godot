@@ -75,7 +75,7 @@ public:
 };
 
 class dtNavMesh;
-class dtNavMeshParams;
+struct dtNavMeshParams;
 class dtNavMeshQuery;
 class dtQueryFilter;
 #ifdef TILE_CACHE
@@ -86,8 +86,8 @@ struct dtTileCacheMeshProcess;
 struct dtTileCacheLayer;
 struct dtTileCacheContourSet;
 struct dtTileCachePolyMesh;
-class dtTileCacheParams;
-class NavMeshProcess;
+struct dtTileCacheParams;
+struct NavMeshProcess;
 #endif
 #ifdef TILE_CACHE
 class DetourNavigationObstacle;

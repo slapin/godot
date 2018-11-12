@@ -156,16 +156,16 @@ void DetourNavigationMeshInstance::collect_geometries(bool recursive) {
 			Transform xform = mi->get_global_transform();
 			if (mesh.is_valid())
 				add_mesh(mesh, xform);
-		} else if (Object::cast_to<CSGPolygon>(groupNode)) {
-			CSGPolygon *poly = Object::cast_to<CSGPolygon>(groupNode);
+		} else if (Object::cast_to<CSGShape>(groupNode)) {
+			CSGShape *shape = Object::cast_to<CSGShape>(groupNode);
 			Ref<ArrayMesh> mesh(memnew(ArrayMesh));
 			Array arrays;
 			arrays.resize(Mesh::ARRAY_MAX);
-			PoolVector<Vector3> faces = poly->get_brush_faces();
+			PoolVector<Vector3> faces = shape->get_brush_faces();
 			arrays[ArrayMesh::ARRAY_VERTEX] = faces;
 			mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, arrays);
 
-			Transform xform = poly->get_global_transform();
+			Transform xform = shape->get_global_transform();
 			if (mesh.is_valid())
 				add_mesh(mesh, xform);
 #ifdef TILE_CACHE
