@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  emws_server.cpp                                                      */
+/*  random_pcg.cpp                                                       */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -27,61 +27,29 @@
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
-#ifdef JAVASCRIPT_ENABLED
 
-#include "emws_server.h"
+#include "random_pcg.h"
+
 #include "core/os/os.h"
 
-Error EMWSServer::listen(int p_port, PoolVector<String> p_protocols, bool gd_mp_api) {
-
-	return FAILED;
+RandomPCG::RandomPCG(uint64_t seed, uint64_t inc) :
+		pcg() {
+	pcg.state = seed;
+	pcg.inc = inc;
 }
 
-bool EMWSServer::is_listening() const {
-	return false;
+void RandomPCG::randomize() {
+	seed(OS::get_singleton()->get_ticks_usec() * pcg.state + PCG_DEFAULT_INC_64);
 }
 
-void EMWSServer::stop() {
+double RandomPCG::random(double from, double to) {
+	unsigned int r = rand();
+	double ret = (double)r / (double)RANDOM_MAX;
+	return (ret) * (to - from) + from;
 }
 
-bool EMWSServer::has_peer(int p_id) const {
-	return false;
+float RandomPCG::random(float from, float to) {
+	unsigned int r = rand();
+	float ret = (float)r / (float)RANDOM_MAX;
+	return (ret) * (to - from) + from;
 }
-
-Ref<WebSocketPeer> EMWSServer::get_peer(int p_id) const {
-	return NULL;
-}
-
-PoolVector<String> EMWSServer::get_protocols() const {
-	PoolVector<String> out;
-
-	return out;
-}
-
-IP_Address EMWSServer::get_peer_address(int p_peer_id) const {
-
-	return IP_Address();
-}
-
-int EMWSServer::get_peer_port(int p_peer_id) const {
-
-	return 0;
-}
-
-void EMWSServer::disconnect_peer(int p_peer_id, int p_code, String p_reason) {
-}
-
-void EMWSServer::poll() {
-}
-
-int EMWSServer::get_max_packet_size() const {
-	return 0;
-}
-
-EMWSServer::EMWSServer() {
-}
-
-EMWSServer::~EMWSServer() {
-}
-
-#endif // JAVASCRIPT_ENABLED

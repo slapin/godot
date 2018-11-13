@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  emws_server.cpp                                                      */
+/*  random_number_generator.cpp                                          */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -27,61 +27,19 @@
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
-#ifdef JAVASCRIPT_ENABLED
 
-#include "emws_server.h"
-#include "core/os/os.h"
+#include "random_number_generator.h"
 
-Error EMWSServer::listen(int p_port, PoolVector<String> p_protocols, bool gd_mp_api) {
+RandomNumberGenerator::RandomNumberGenerator() :
+		randbase() {}
 
-	return FAILED;
+void RandomNumberGenerator::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_seed", "seed"), &RandomNumberGenerator::set_seed);
+	ClassDB::bind_method(D_METHOD("get_seed"), &RandomNumberGenerator::get_seed);
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "seed"), "set_seed", "get_seed");
+
+	ClassDB::bind_method(D_METHOD("randi"), &RandomNumberGenerator::randi);
+	ClassDB::bind_method(D_METHOD("randf"), &RandomNumberGenerator::randf);
+	ClassDB::bind_method(D_METHOD("rand_range", "from", "to"), &RandomNumberGenerator::rand_range);
+	ClassDB::bind_method(D_METHOD("randomize"), &RandomNumberGenerator::randomize);
 }
-
-bool EMWSServer::is_listening() const {
-	return false;
-}
-
-void EMWSServer::stop() {
-}
-
-bool EMWSServer::has_peer(int p_id) const {
-	return false;
-}
-
-Ref<WebSocketPeer> EMWSServer::get_peer(int p_id) const {
-	return NULL;
-}
-
-PoolVector<String> EMWSServer::get_protocols() const {
-	PoolVector<String> out;
-
-	return out;
-}
-
-IP_Address EMWSServer::get_peer_address(int p_peer_id) const {
-
-	return IP_Address();
-}
-
-int EMWSServer::get_peer_port(int p_peer_id) const {
-
-	return 0;
-}
-
-void EMWSServer::disconnect_peer(int p_peer_id, int p_code, String p_reason) {
-}
-
-void EMWSServer::poll() {
-}
-
-int EMWSServer::get_max_packet_size() const {
-	return 0;
-}
-
-EMWSServer::EMWSServer() {
-}
-
-EMWSServer::~EMWSServer() {
-}
-
-#endif // JAVASCRIPT_ENABLED

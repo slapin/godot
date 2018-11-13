@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  emws_server.cpp                                                      */
+/*  random_pcg.h                                                         */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -27,61 +27,35 @@
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
-#ifdef JAVASCRIPT_ENABLED
 
-#include "emws_server.h"
-#include "core/os/os.h"
+#ifndef RANDOM_PCG_H
+#define RANDOM_PCG_H
 
-Error EMWSServer::listen(int p_port, PoolVector<String> p_protocols, bool gd_mp_api) {
+#include "core/math/math_defs.h"
 
-	return FAILED;
-}
+#include "thirdparty/misc/pcg.h"
 
-bool EMWSServer::is_listening() const {
-	return false;
-}
+class RandomPCG {
+	pcg32_random_t pcg;
 
-void EMWSServer::stop() {
-}
+public:
+	static const uint64_t DEFAULT_SEED = 12047754176567800795ULL;
+	static const uint64_t DEFAULT_INC = PCG_DEFAULT_INC_64;
+	static const uint64_t RANDOM_MAX = 4294967295;
 
-bool EMWSServer::has_peer(int p_id) const {
-	return false;
-}
+	RandomPCG(uint64_t seed = DEFAULT_SEED, uint64_t inc = PCG_DEFAULT_INC_64);
 
-Ref<WebSocketPeer> EMWSServer::get_peer(int p_id) const {
-	return NULL;
-}
+	_FORCE_INLINE_ void seed(uint64_t seed) { pcg.state = seed; }
+	_FORCE_INLINE_ uint64_t get_seed() { return pcg.state; }
 
-PoolVector<String> EMWSServer::get_protocols() const {
-	PoolVector<String> out;
+	void randomize();
+	_FORCE_INLINE_ uint32_t rand() { return pcg32_random_r(&pcg); }
+	_FORCE_INLINE_ double randf() { return (double)rand() / (double)RANDOM_MAX; }
+	_FORCE_INLINE_ float randd() { return (float)rand() / (float)RANDOM_MAX; }
 
-	return out;
-}
+	double random(double from, double to);
+	float random(float from, float to);
+	real_t random(int from, int to) { return (real_t)random((real_t)from, (real_t)to); }
+};
 
-IP_Address EMWSServer::get_peer_address(int p_peer_id) const {
-
-	return IP_Address();
-}
-
-int EMWSServer::get_peer_port(int p_peer_id) const {
-
-	return 0;
-}
-
-void EMWSServer::disconnect_peer(int p_peer_id, int p_code, String p_reason) {
-}
-
-void EMWSServer::poll() {
-}
-
-int EMWSServer::get_max_packet_size() const {
-	return 0;
-}
-
-EMWSServer::EMWSServer() {
-}
-
-EMWSServer::~EMWSServer() {
-}
-
-#endif // JAVASCRIPT_ENABLED
+#endif // RANDOM_PCG_H

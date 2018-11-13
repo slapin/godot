@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  emws_server.cpp                                                      */
+/*  random_number_generator.h                                            */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -27,61 +27,35 @@
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
-#ifdef JAVASCRIPT_ENABLED
 
-#include "emws_server.h"
-#include "core/os/os.h"
+#ifndef RANDOM_NUMBER_GENERATOR_H
+#define RANDOM_NUMBER_GENERATOR_H
 
-Error EMWSServer::listen(int p_port, PoolVector<String> p_protocols, bool gd_mp_api) {
+#include "core/math/random_pcg.h"
+#include "core/reference.h"
 
-	return FAILED;
-}
+class RandomNumberGenerator : public Reference {
+	GDCLASS(RandomNumberGenerator, Reference);
 
-bool EMWSServer::is_listening() const {
-	return false;
-}
+	RandomPCG randbase;
 
-void EMWSServer::stop() {
-}
+protected:
+	static void _bind_methods();
 
-bool EMWSServer::has_peer(int p_id) const {
-	return false;
-}
+public:
+	_FORCE_INLINE_ void set_seed(uint64_t seed) { randbase.seed(seed); }
 
-Ref<WebSocketPeer> EMWSServer::get_peer(int p_id) const {
-	return NULL;
-}
+	_FORCE_INLINE_ uint64_t get_seed() { return randbase.get_seed(); }
 
-PoolVector<String> EMWSServer::get_protocols() const {
-	PoolVector<String> out;
+	_FORCE_INLINE_ void randomize() { return randbase.randomize(); }
 
-	return out;
-}
+	_FORCE_INLINE_ uint32_t randi() { return randbase.rand(); }
 
-IP_Address EMWSServer::get_peer_address(int p_peer_id) const {
+	_FORCE_INLINE_ real_t randf() { return randbase.randf(); }
 
-	return IP_Address();
-}
+	_FORCE_INLINE_ real_t rand_range(real_t from, real_t to) { return randbase.random(from, to); }
 
-int EMWSServer::get_peer_port(int p_peer_id) const {
+	RandomNumberGenerator();
+};
 
-	return 0;
-}
-
-void EMWSServer::disconnect_peer(int p_peer_id, int p_code, String p_reason) {
-}
-
-void EMWSServer::poll() {
-}
-
-int EMWSServer::get_max_packet_size() const {
-	return 0;
-}
-
-EMWSServer::EMWSServer() {
-}
-
-EMWSServer::~EMWSServer() {
-}
-
-#endif // JAVASCRIPT_ENABLED
+#endif // RANDOM_NUMBER_GENERATOR_H
