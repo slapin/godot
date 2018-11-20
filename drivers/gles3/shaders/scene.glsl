@@ -42,8 +42,6 @@ layout(location = 4) in vec2 uv_attrib;
 layout(location = 5) in vec2 uv2_attrib;
 #endif
 
-uniform float normal_mult;
-
 #ifdef USE_SKELETON
 layout(location = 6) in uvec4 bone_indices; // attrib:6
 layout(location = 7) in vec4 bone_weights; // attrib:7
@@ -98,6 +96,8 @@ layout(std140) uniform SceneData { // ubo:0
 
 	bool fog_depth_enabled;
 	highp float fog_depth_begin;
+	highp float fog_depth_end;
+	mediump float fog_density;
 	highp float fog_depth_curve;
 	bool fog_transmit_enabled;
 	highp float fog_transmit_curve;
@@ -278,11 +278,10 @@ void main() {
 	}
 #endif
 
-	vec3 normal = normal_attrib * normal_mult;
+	vec3 normal = normal_attrib;
 
 #if defined(ENABLE_TANGENT_INTERP) || defined(ENABLE_NORMALMAP) || defined(LIGHT_USE_ANISOTROPY)
 	vec3 tangent = tangent_attrib.xyz;
-	tangent *= normal_mult;
 	float binormalf = tangent_attrib.a;
 #endif
 
@@ -675,6 +674,8 @@ layout(std140) uniform SceneData {
 
 	bool fog_depth_enabled;
 	highp float fog_depth_begin;
+	highp float fog_depth_end;
+	mediump float fog_density;
 	highp float fog_depth_curve;
 	bool fog_transmit_enabled;
 	highp float fog_transmit_curve;
@@ -1102,9 +1103,9 @@ LIGHT_SHADER_CODE
 		float Fr = mix(.04, 1.0, cLdotH5);
 		float Gr = G_GGX_2cos(cNdotL, .25) * G_GGX_2cos(cNdotV, .25);
 
-		float specular_brdf_NL = 0.25 * clearcoat * Gr * Fr * Dr * cNdotL;
+		float clearcoat_specular_brdf_NL = 0.25 * clearcoat * Gr * Fr * Dr * cNdotL;
 
-		specular_light += specular_brdf_NL * light_color * specular_blob_intensity * attenuation;
+		specular_light += clearcoat_specular_brdf_NL * light_color * specular_blob_intensity * attenuation;
 #endif
 	}
 
@@ -2026,10 +2027,11 @@ FRAGMENT_SHADER_CODE
 		//apply fog
 
 		if (fog_depth_enabled) {
+			float fog_far = fog_depth_end > 0 ? fog_depth_end : z_far;
 
-			float fog_z = smoothstep(fog_depth_begin, z_far, length(vertex));
+			float fog_z = smoothstep(fog_depth_begin, fog_far, length(vertex));
 
-			fog_amount = pow(fog_z, fog_depth_curve);
+			fog_amount = pow(fog_z, fog_depth_curve) * fog_density;
 			if (fog_transmit_enabled) {
 				vec3 total_light = emission + ambient_light + specular_light + diffuse_light;
 				float transmit = pow(fog_z, fog_transmit_curve);

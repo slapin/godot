@@ -2037,6 +2037,12 @@ const ShaderLanguage::BuiltinFuncDef ShaderLanguage::builtin_func_defs[] = {
 
 };
 
+const ShaderLanguage::BuiltinFuncOutArgs ShaderLanguage::builtin_func_out_args[] = {
+	//constructors
+	{ "modf", 1 },
+	{ NULL, 0 }
+};
+
 bool ShaderLanguage::_validate_function_call(BlockNode *p_block, OperatorNode *p_func, DataType *r_ret_type) {
 
 	ERR_FAIL_COND_V(p_func->op != OP_CALL && p_func->op != OP_CONSTRUCT, NULL);
@@ -2079,6 +2085,41 @@ bool ShaderLanguage::_validate_function_call(BlockNode *p_block, OperatorNode *p
 					fail = true; //make sure the number of arguments matches
 
 				if (!fail) {
+
+					//make sure its not an out argument used in the wrong way
+					int outarg_idx = 0;
+					while (builtin_func_out_args[outarg_idx].name) {
+
+						if (String(name) == builtin_func_out_args[outarg_idx].name) {
+							int arg_idx = builtin_func_out_args[outarg_idx].argument;
+
+							if (arg_idx < argcount) {
+
+								if (p_func->arguments[arg_idx + 1]->type != Node::TYPE_VARIABLE) {
+									_set_error("Argument " + itos(arg_idx + 1) + " of function '" + String(name) + "' is not a variable");
+									return false;
+								}
+								StringName var_name = static_cast<const VariableNode *>(p_func->arguments[arg_idx + 1])->name;
+
+								const BlockNode *b = p_block;
+								bool valid = false;
+								while (b) {
+									if (b->variables.has(var_name)) {
+										valid = true;
+										break;
+									}
+									b = b->parent_block;
+								}
+
+								if (!valid) {
+									_set_error("Argument " + itos(arg_idx + 1) + " of function '" + String(name) + "' can only take a local variable");
+									return false;
+								}
+							}
+						}
+
+						outarg_idx++;
+					}
 
 					if (r_ret_type)
 						*r_ret_type = builtin_func_defs[idx].rettype;
@@ -2312,7 +2353,7 @@ bool ShaderLanguage::is_sampler_type(DataType p_type) {
 		   p_type == TYPE_SAMPLERCUBE;
 }
 
-Variant ShaderLanguage::constant_value_to_variant(const Vector<ShaderLanguage::ConstantNode::Value> &p_value, DataType p_type) {
+Variant ShaderLanguage::constant_value_to_variant(const Vector<ShaderLanguage::ConstantNode::Value> &p_value, DataType p_type, ShaderLanguage::ShaderNode::Uniform::Hint p_hint) {
 	if (p_value.size() > 0) {
 		Variant value;
 		switch (p_type) {
@@ -2356,7 +2397,11 @@ Variant ShaderLanguage::constant_value_to_variant(const Vector<ShaderLanguage::C
 				value = Variant(Vector3(p_value[0].real, p_value[1].real, p_value[2].real));
 				break;
 			case ShaderLanguage::TYPE_VEC4:
-				value = Variant(Plane(p_value[0].real, p_value[1].real, p_value[2].real, p_value[3].real));
+				if (p_hint == ShaderLanguage::ShaderNode::Uniform::HINT_COLOR) {
+					value = Variant(Color(p_value[0].real, p_value[1].real, p_value[2].real, p_value[3].real));
+				} else {
+					value = Variant(Plane(p_value[0].real, p_value[1].real, p_value[2].real, p_value[3].real));
+				}
 				break;
 			case ShaderLanguage::TYPE_MAT2:
 				value = Variant(Transform2D(p_value[0].real, p_value[2].real, p_value[1].real, p_value[3].real, 0.0, 0.0));

@@ -84,7 +84,7 @@ uniform highp mat4 world_transform;
 
 uniform highp float time;
 
-uniform float normal_mult;
+
 
 #ifdef RENDER_DEPTH
 uniform float light_bias;
@@ -330,11 +330,10 @@ void main() {
 
 #endif
 
-	vec3 normal = normal_attrib * normal_mult;
+	vec3 normal = normal_attrib;
 
 #if defined(ENABLE_TANGENT_INTERP) || defined(ENABLE_NORMALMAP)
 	vec3 tangent = tangent_attrib.xyz;
-	tangent *= normal_mult;
 	float binormalf = tangent_attrib.a;
 	vec3 binormal = normalize(cross(normal, tangent) * binormalf);
 #endif
@@ -626,7 +625,7 @@ VERTEX_SHADER_CODE
 
 		float fog_z = smoothstep(fog_depth_begin, fog_max_distance, length(vertex));
 
-		fog_amount = pow(fog_z, fog_depth_curve);
+		fog_amount = pow(fog_z, fog_depth_curve) * fog_color_base.a;
 	}
 #endif
 
@@ -2027,7 +2026,7 @@ FRAGMENT_SHADER_CODE
 
 		float fog_z = smoothstep(fog_depth_begin, fog_max_distance, length(vertex));
 
-		fog_amount = pow(fog_z, fog_depth_curve);
+		fog_amount = pow(fog_z, fog_depth_curve) * fog_color_base.a;
 
 		if (fog_transmit_enabled) {
 			vec3 total_light = gl_FragColor.rgb;
