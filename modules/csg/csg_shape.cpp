@@ -201,10 +201,9 @@ void CSGShape::mikktSetTSpaceBasic(const SMikkTSpaceContext *pContext, const flo
 
 	int i = (iFace * 3 + iVert) * 4;
 
-	// Godot seems to want the tangent flipped because our handedness is reversed..
-	surface.tansw[i++] = -fvTangent[0];
-	surface.tansw[i++] = -fvTangent[1];
-	surface.tansw[i++] = -fvTangent[2];
+	surface.tansw[i++] = fvTangent[0];
+	surface.tansw[i++] = fvTangent[1];
+	surface.tansw[i++] = fvTangent[2];
 	surface.tansw[i++] = fSign;
 }
 
@@ -219,11 +218,10 @@ void CSGShape::mikktSetTSpaceDefault(const SMikkTSpaceContext *pContext, const f
 	Vector3 bitangent = Vector3(fvBiTangent[0], fvBiTangent[1], fvBiTangent[2]);
 	float d = bitangent.dot(normal.cross(tangent));
 
-	// Godot seems to want the tangent flipped because our handedness is reversed..
 	i *= 4;
-	surface.tansw[i++] = -tangent.x;
-	surface.tansw[i++] = -tangent.y;
-	surface.tansw[i++] = -tangent.z;
+	surface.tansw[i++] = tangent.x;
+	surface.tansw[i++] = tangent.y;
+	surface.tansw[i++] = tangent.z;
 	surface.tansw[i++] = d < 0 ? -1 : 1;
 }
 
@@ -1666,6 +1664,24 @@ CSGBrush *CSGPolygon::_build_brush() {
 	Path *path = NULL;
 	Ref<Curve3D> curve;
 
+	// get bounds for our polygon
+	Vector2 final_polygon_min;
+	Vector2 final_polygon_max;
+	for (int i = 0; i < final_polygon.size(); i++) {
+		Vector2 p = final_polygon[i];
+		if (i == 0) {
+			final_polygon_min = p;
+			final_polygon_max = final_polygon_min;
+		} else {
+			if (p.x < final_polygon_min.x) final_polygon_min.x = p.x;
+			if (p.y < final_polygon_min.y) final_polygon_min.y = p.y;
+
+			if (p.x > final_polygon_max.x) final_polygon_max.x = p.x;
+			if (p.y > final_polygon_max.y) final_polygon_max.y = p.y;
+		}
+	}
+	Vector2 final_polygon_size = final_polygon_max - final_polygon_min;
+
 	if (mode == MODE_PATH) {
 		if (!has_node(path_node))
 			return NULL;
@@ -1757,6 +1773,10 @@ CSGBrush *CSGPolygon::_build_brush() {
 								v.z -= depth;
 							}
 							facesw[face * 3 + k] = v;
+							uvsw[face * 3 + k] = (p - final_polygon_min) / final_polygon_size;
+							if (i == 0) {
+								uvsw[face * 3 + k].x = 1.0 - uvsw[face * 3 + k].x; /* flip x */
+							}
 						}
 
 						smoothw[face] = false;
@@ -1888,6 +1908,7 @@ CSGBrush *CSGPolygon::_build_brush() {
 								Vector2 p = final_polygon[triangles[j + src[k]]];
 								Vector3 v = Vector3(p.x, p.y, 0);
 								facesw[face * 3 + k] = v;
+								uvsw[face * 3 + k] = (p - final_polygon_min) / final_polygon_size;
 							}
 
 							smoothw[face] = false;
@@ -1905,6 +1926,8 @@ CSGBrush *CSGPolygon::_build_brush() {
 								Vector2 p = final_polygon[triangles[j + src[k]]];
 								Vector3 v = Vector3(normali_n.x * p.x, p.y, normali_n.z * p.x);
 								facesw[face * 3 + k] = v;
+								uvsw[face * 3 + k] = (p - final_polygon_min) / final_polygon_size;
+								uvsw[face * 3 + k].x = 1.0 - uvsw[face * 3 + k].x; /* flip x */
 							}
 
 							smoothw[face] = false;
@@ -1990,10 +2013,10 @@ CSGBrush *CSGPolygon::_build_brush() {
 							};
 
 							Vector2 u[4] = {
-								Vector2(u1, 0),
 								Vector2(u1, 1),
-								Vector2(u2, 1),
-								Vector2(u2, 0)
+								Vector2(u1, 0),
+								Vector2(u2, 0),
+								Vector2(u2, 1)
 							};
 
 							// face 1
@@ -2036,6 +2059,7 @@ CSGBrush *CSGPolygon::_build_brush() {
 								Vector2 p = final_polygon[triangles[j + src[k]]];
 								Vector3 v = Vector3(p.x, p.y, 0);
 								facesw[face * 3 + k] = xf.xform(v);
+								uvsw[face * 3 + k] = (p - final_polygon_min) / final_polygon_size;
 							}
 
 							smoothw[face] = false;
@@ -2053,6 +2077,8 @@ CSGBrush *CSGPolygon::_build_brush() {
 								Vector2 p = final_polygon[triangles[j + src[k]]];
 								Vector3 v = Vector3(p.x, p.y, 0);
 								facesw[face * 3 + k] = xf.xform(v);
+								uvsw[face * 3 + k] = (p - final_polygon_min) / final_polygon_size;
+								uvsw[face * 3 + k].x = 1.0 - uvsw[face * 3 + k].x; /* flip x */
 							}
 
 							smoothw[face] = false;
@@ -2077,6 +2103,9 @@ CSGBrush *CSGPolygon::_build_brush() {
 			} else {
 				aabb.expand_to(facesw[i]);
 			}
+
+			// invert UVs on the Y-axis OpenGL = upside down
+			uvsw[i].y = 1.0 - uvsw[i].y;
 		}
 	}
 

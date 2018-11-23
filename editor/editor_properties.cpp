@@ -1802,14 +1802,26 @@ void EditorPropertyNodePath::_node_selected(const NodePath &p_path) {
 
 	NodePath path = p_path;
 	Node *base_node = Object::cast_to<Node>(get_edited_object());
-	if (base_node == NULL) {
-		if (Object::cast_to<Resource>(get_edited_object())) {
-			Node *to_node = get_node(p_path);
-			path = get_tree()->get_edited_scene_root()->get_path_to(to_node);
-		} else if (get_edited_object()->has_method("get_root_path")) {
-			base_node = get_edited_object()->call("get_root_path");
+	if (!base_node) {
+		//try a base node within history
+		if (EditorNode::get_singleton()->get_editor_history()->get_path_size() > 0) {
+			Object *base = ObjectDB::get_instance(EditorNode::get_singleton()->get_editor_history()->get_path_object(0));
+			if (base) {
+				base_node = Object::cast_to<Node>(base);
+			}
 		}
 	}
+
+	if (!base_node && get_edited_object()->has_method("get_root_path")) {
+		base_node = get_edited_object()->call("get_root_path");
+	}
+
+	if (!base_node && Object::cast_to<Reference>(get_edited_object())) {
+		Node *to_node = get_node(p_path);
+		ERR_FAIL_COND(!to_node);
+		path = get_tree()->get_edited_scene_root()->get_path_to(to_node);
+	}
+
 	if (base_node) { // for AnimationTrackKeyEdit
 		path = base_node->get_path().rel_path_to(p_path);
 	}
@@ -2014,6 +2026,13 @@ void EditorPropertyResource::_menu_option(int p_which) {
 			emit_signal("property_changed", get_edited_property(), res);
 			update_property();
 
+		} break;
+
+		case OBJ_MENU_SAVE: {
+			RES res = get_edited_object()->get(get_edited_property());
+			if (res.is_null())
+				return;
+			EditorNode::get_singleton()->save_resource(res);
 		} break;
 
 		case OBJ_MENU_COPY: {
@@ -2233,6 +2252,7 @@ void EditorPropertyResource::_update_menu_items() {
 		menu->add_icon_item(get_icon("Edit", "EditorIcons"), TTR("Edit"), OBJ_MENU_EDIT);
 		menu->add_icon_item(get_icon("Clear", "EditorIcons"), TTR("Clear"), OBJ_MENU_CLEAR);
 		menu->add_icon_item(get_icon("Duplicate", "EditorIcons"), TTR("Make Unique"), OBJ_MENU_MAKE_UNIQUE);
+		menu->add_icon_item(get_icon("Save", "EditorIcons"), TTR("Save"), OBJ_MENU_SAVE);
 		RES r = res;
 		if (r.is_valid() && r->get_path().is_resource_file()) {
 			menu->add_separator();

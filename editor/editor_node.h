@@ -180,7 +180,6 @@ private:
 		SETTINGS_HELP,
 		SCENE_TAB_CLOSE,
 
-		HELP_CLASSES,
 		HELP_SEARCH,
 		HELP_DOCS,
 		HELP_QA,
@@ -356,6 +355,7 @@ private:
 	EditorExport *editor_export;
 
 	Object *current;
+	Ref<Resource> saving_resource;
 
 	bool _playing_edited;
 	String run_custom_filename;
@@ -604,6 +604,8 @@ private:
 
 	static void _resource_saved(RES p_resource, const String &p_path);
 	static void _resource_loaded(RES p_resource, const String &p_path);
+
+	void _resources_changed(const PoolVector<String> &p_resources);
 
 protected:
 	void _notification(int p_what);
