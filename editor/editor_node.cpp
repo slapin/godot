@@ -999,6 +999,22 @@ void EditorNode::_save_scene_with_preview(String p_file, int p_idx) {
 	EditorResourcePreview::get_singleton()->check_for_invalidation(p_file);
 }
 
+bool EditorNode::_validate_scene_recursive(const String &p_filename, Node *p_node) {
+
+	for (int i = 0; i < p_node->get_child_count(); i++) {
+		Node *child = p_node->get_child(i);
+		if (child->get_filename() == p_filename) {
+			return true;
+		}
+
+		if (_validate_scene_recursive(p_filename, child)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void EditorNode::_save_scene(String p_file, int idx) {
 
 	Node *scene = editor_data.get_edited_scene_root(idx);
@@ -1006,6 +1022,11 @@ void EditorNode::_save_scene(String p_file, int idx) {
 	if (!scene) {
 
 		show_accept(TTR("This operation can't be done without a tree root."), TTR("OK"));
+		return;
+	}
+
+	if (scene->get_filename() != String() && _validate_scene_recursive(scene->get_filename(), scene)) {
+		show_accept(TTR("This scene can't be saved because there is a cyclic instancing inclusion.\nPlease resolve it and then attempt to save again."), TTR("OK"));
 		return;
 	}
 
@@ -2926,7 +2947,12 @@ Error EditorNode::load_scene(const String &p_scene, bool p_ignore_broken_deps, b
 	_update_scene_tabs();
 	_add_to_recent_scenes(lpath);
 
-	editor_folding.load_scene_folding(new_scene, lpath);
+	if (editor_folding.has_folding_data(lpath)) {
+		editor_folding.load_scene_folding(new_scene, lpath);
+	} else if (EDITOR_GET("interface/inspector/auto_unfold_foreign_scenes")) {
+		editor_folding.unfold_scene(new_scene);
+		editor_folding.save_scene_folding(new_scene, lpath);
+	}
 
 	prev_scene->set_disabled(previous_scenes.size() == 0);
 	opening_prev = false;
@@ -3223,17 +3249,31 @@ Ref<Texture> EditorNode::get_class_icon(const String &p_class, const String &p_f
 
 void EditorNode::progress_add_task(const String &p_task, const String &p_label, int p_steps, bool p_can_cancel) {
 
-	singleton->progress_dialog->add_task(p_task, p_label, p_steps, p_can_cancel);
+	if (singleton->disable_progress_dialog) {
+		print_line(p_task + ": begin: " + p_label + " steps: " + itos(p_steps));
+	} else {
+		singleton->progress_dialog->add_task(p_task, p_label, p_steps, p_can_cancel);
+	}
 }
 
 bool EditorNode::progress_task_step(const String &p_task, const String &p_state, int p_step, bool p_force_refresh) {
 
-	return singleton->progress_dialog->task_step(p_task, p_state, p_step, p_force_refresh);
+	if (singleton->disable_progress_dialog) {
+		print_line("\t" + p_task + ": step " + itos(p_step) + ": " + p_state);
+		return false;
+	} else {
+
+		return singleton->progress_dialog->task_step(p_task, p_state, p_step, p_force_refresh);
+	}
 }
 
 void EditorNode::progress_end_task(const String &p_task) {
 
-	singleton->progress_dialog->end_task(p_task);
+	if (singleton->disable_progress_dialog) {
+		print_line(p_task + ": end");
+	} else {
+		singleton->progress_dialog->end_task(p_task);
+	}
 }
 
 void EditorNode::progress_add_task_bg(const String &p_task, const String &p_label, int p_steps) {
@@ -3315,7 +3355,7 @@ Error EditorNode::export_preset(const String &p_preset, const String &p_path, bo
 	export_defer.path = p_path;
 	export_defer.debug = p_debug;
 	export_defer.password = p_password;
-
+	disable_progress_dialog = true;
 	return OK;
 }
 
@@ -4705,7 +4745,7 @@ EditorNode::EditorNode() {
 	_initializing_addons = false;
 	docks_visible = true;
 	restoring_scenes = false;
-
+	disable_progress_dialog = false;
 	scene_distraction = false;
 	script_distraction = false;
 
@@ -4878,7 +4918,7 @@ EditorNode::EditorNode() {
 	EDITOR_DEF_RST("interface/scene_tabs/show_thumbnail_on_hover", true);
 	EDITOR_DEF_RST("interface/inspector/capitalize_properties", true);
 	EDITOR_DEF_RST("interface/inspector/disable_folding", false);
-	EDITOR_DEF_RST("interface/inspector/auto_unfold_edited", true);
+	EDITOR_DEF_RST("interface/inspector/auto_unfold_foreign_scenes", true);
 	EDITOR_DEF("interface/inspector/horizontal_vector2_editing", false);
 	EDITOR_DEF("interface/inspector/horizontal_vector_types_editing", true);
 	EDITOR_DEF("interface/inspector/open_resources_in_current_inspector", true);
