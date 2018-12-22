@@ -222,11 +222,10 @@ String EditorExportPreset::get_custom_features() const {
 	return custom_features;
 }
 
-EditorExportPreset::EditorExportPreset() {
-
-	export_path = "";
-	export_filter = EXPORT_ALL_RESOURCES;
-	runnable = false;
+EditorExportPreset::EditorExportPreset() :
+		export_filter(EXPORT_ALL_RESOURCES),
+		export_path(""),
+		runnable(false) {
 }
 
 ///////////////////////////////////
@@ -546,6 +545,13 @@ void EditorExportPlugin::_export_begin_script(const PoolVector<String> &p_featur
 	}
 }
 
+void EditorExportPlugin::_export_end_script() {
+
+	if (get_script_instance()) {
+		get_script_instance()->call("_export_end");
+	}
+}
+
 void EditorExportPlugin::_export_file(const String &p_path, const String &p_type, const Set<String> &p_features) {
 }
 
@@ -587,6 +593,20 @@ EditorExportPlatform::FeatureContainers EditorExportPlatform::get_feature_contai
 		result.features.insert(E->get());
 		result.features_pv.push_back(E->get());
 	}
+
+	if (p_preset->get_custom_features() != String()) {
+
+		Vector<String> tmp_custom_list = p_preset->get_custom_features().split(",");
+
+		for (int i = 0; i < tmp_custom_list.size(); i++) {
+			String f = tmp_custom_list[i].strip_edges();
+			if (f != String()) {
+				result.features.insert(f);
+				result.features_pv.push_back(f);
+			}
+		}
+	}
+
 	return result;
 }
 
@@ -606,6 +626,9 @@ EditorExportPlatform::ExportNotifier::ExportNotifier(EditorExportPlatform &p_pla
 EditorExportPlatform::ExportNotifier::~ExportNotifier() {
 	Vector<Ref<EditorExportPlugin> > export_plugins = EditorExport::get_singleton()->get_export_plugins();
 	for (int i = 0; i < export_plugins.size(); i++) {
+		if (export_plugins[i]->get_script_instance()) {
+			export_plugins.write[i]->_export_end_script();
+		}
 		export_plugins.write[i]->_export_end();
 	}
 }

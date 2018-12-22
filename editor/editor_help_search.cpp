@@ -130,9 +130,9 @@ void EditorHelpSearch::_notification(int p_what) {
 		} break;
 		case NOTIFICATION_POPUP_HIDE: {
 
-			results_tree->clear();
+			results_tree->call_deferred("clear"); // Wait for the Tree's mouse event propagation.
 			get_ok()->set_disabled(true);
-			EditorSettings::get_singleton()->set("interface/dialogs/search_help_bounds", get_rect());
+			EditorSettings::get_singleton()->set_project_metadata("dialog_bounds", "search_help", get_rect());
 		} break;
 		case NOTIFICATION_PROCESS: {
 
@@ -177,8 +177,9 @@ void EditorHelpSearch::popup_dialog() {
 void EditorHelpSearch::popup_dialog(const String &p_term) {
 
 	// Restore valid window bounds or pop up at default size.
-	if (EditorSettings::get_singleton()->has_setting("interface/dialogs/search_help_bounds"))
-		popup(EditorSettings::get_singleton()->get("interface/dialogs/search_help_bounds"));
+	Rect2 saved_size = EditorSettings::get_singleton()->get_project_metadata("dialog_bounds", "search_help", Rect2());
+	if (saved_size != Rect2())
+		popup(saved_size);
 	else
 		popup_centered_ratio(0.5F);
 
@@ -578,18 +579,12 @@ bool EditorHelpSearch::Runner::work(uint64_t slot) {
 	return true;
 }
 
-EditorHelpSearch::Runner::Runner(Control *p_icon_service, Tree *p_results_tree, const String &p_term, int p_search_flags) {
-
-	ui_service = p_icon_service;
-	results_tree = p_results_tree;
-	term = p_term.strip_edges();
-	search_flags = p_search_flags;
-
-	if ((search_flags & SEARCH_CASE_SENSITIVE) == 0)
-		term = term.to_lower();
-
-	empty_icon = ui_service->get_icon("ArrowRight", "EditorIcons");
-	disabled_color = ui_service->get_color("disabled_font_color", "Editor");
-
-	phase = 0;
+EditorHelpSearch::Runner::Runner(Control *p_icon_service, Tree *p_results_tree, const String &p_term, int p_search_flags) :
+		phase(0),
+		ui_service(p_icon_service),
+		results_tree(p_results_tree),
+		term((p_search_flags & SEARCH_CASE_SENSITIVE) == 0 ? p_term.strip_edges().to_lower() : p_term.strip_edges()),
+		search_flags(p_search_flags),
+		empty_icon(ui_service->get_icon("ArrowRight", "EditorIcons")),
+		disabled_color(ui_service->get_color("disabled_font_color", "Editor")) {
 }

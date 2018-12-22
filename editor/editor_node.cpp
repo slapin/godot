@@ -2471,7 +2471,7 @@ void EditorNode::_editor_select(int p_which) {
 	}
 }
 
-void EditorNode::add_editor_plugin(EditorPlugin *p_editor) {
+void EditorNode::add_editor_plugin(EditorPlugin *p_editor, bool p_config_changed) {
 
 	if (p_editor->has_main_screen()) {
 
@@ -2496,9 +2496,11 @@ void EditorNode::add_editor_plugin(EditorPlugin *p_editor) {
 	}
 	singleton->editor_data.add_editor_plugin(p_editor);
 	singleton->add_child(p_editor);
+	if (p_config_changed)
+		p_editor->enable_plugin();
 }
 
-void EditorNode::remove_editor_plugin(EditorPlugin *p_editor) {
+void EditorNode::remove_editor_plugin(EditorPlugin *p_editor, bool p_config_changed) {
 
 	if (p_editor->has_main_screen()) {
 
@@ -2521,6 +2523,8 @@ void EditorNode::remove_editor_plugin(EditorPlugin *p_editor) {
 	}
 	p_editor->make_visible(false);
 	p_editor->clear();
+	if (p_config_changed)
+		p_editor->disable_plugin();
 	singleton->editor_plugins_over->get_plugins_list().erase(p_editor);
 	singleton->remove_child(p_editor);
 	singleton->editor_data.remove_editor_plugin(p_editor);
@@ -2546,7 +2550,7 @@ void EditorNode::_update_addon_config() {
 	project_settings->queue_save();
 }
 
-void EditorNode::set_addon_plugin_enabled(const String &p_addon, bool p_enabled) {
+void EditorNode::set_addon_plugin_enabled(const String &p_addon, bool p_enabled, bool p_config_changed) {
 
 	ERR_FAIL_COND(p_enabled && plugin_addons.has(p_addon));
 	ERR_FAIL_COND(!p_enabled && !plugin_addons.has(p_addon));
@@ -2554,7 +2558,7 @@ void EditorNode::set_addon_plugin_enabled(const String &p_addon, bool p_enabled)
 	if (!p_enabled) {
 
 		EditorPlugin *addon = plugin_addons[p_addon];
-		remove_editor_plugin(addon);
+		remove_editor_plugin(addon, p_config_changed);
 		memdelete(addon); //bye
 		plugin_addons.erase(p_addon);
 		_update_addon_config();
@@ -2606,7 +2610,7 @@ void EditorNode::set_addon_plugin_enabled(const String &p_addon, bool p_enabled)
 	ep->set_script(script.get_ref_ptr());
 	ep->set_dir_cache(p_addon);
 	plugin_addons[p_addon] = ep;
-	add_editor_plugin(ep);
+	add_editor_plugin(ep, p_config_changed);
 
 	_update_addon_config();
 }
@@ -3131,6 +3135,9 @@ bool EditorNode::is_scene_in_use(const String &p_path) {
 
 void EditorNode::register_editor_types() {
 
+	ResourceLoader::set_timestamp_on_load(true);
+	ResourceSaver::set_timestamp_on_save(true);
+
 	ClassDB::register_class<EditorPlugin>();
 	ClassDB::register_class<EditorImportPlugin>();
 	ClassDB::register_class<EditorScript>();
@@ -3645,6 +3652,7 @@ void EditorNode::_load_docks() {
 
 	_load_docks_from_config(config, "docks");
 	_load_open_scenes_from_config(config, "EditorNode");
+
 	editor_data.set_plugin_window_layout(config);
 }
 
@@ -3837,6 +3845,23 @@ void EditorNode::_load_open_scenes_from_config(Ref<ConfigFile> p_layout, const S
 	}
 
 	restoring_scenes = false;
+}
+
+bool EditorNode::has_scenes_in_session() {
+	if (!bool(EDITOR_GET("interface/scene_tabs/restore_scenes_on_load"))) {
+		return false;
+	}
+	Ref<ConfigFile> config;
+	config.instance();
+	Error err = config->load(EditorSettings::get_singleton()->get_project_settings_dir().plus_file("editor_layout.cfg"));
+	if (err != OK) {
+		return false;
+	}
+	if (!config->has_section("EditorNode") || !config->has_section_key("EditorNode", "open_scenes")) {
+		return false;
+	}
+	Array scenes = config->get_value("EditorNode", "open_scenes");
+	return !scenes.empty();
 }
 
 void EditorNode::_update_layouts_menu() {
@@ -4804,9 +4829,6 @@ EditorNode::EditorNode() {
 	ResourceLoader::set_error_notify_func(this, _load_error_notify);
 	ResourceLoader::set_dependency_error_notify_func(this, _dependency_error_report);
 
-	ResourceLoader::set_timestamp_on_load(true);
-	ResourceSaver::set_timestamp_on_save(true);
-
 	{ //register importers at the beginning, so dialogs are created with the right extensions
 		Ref<ResourceImporterTexture> import_texture;
 		import_texture.instance();
@@ -5169,14 +5191,9 @@ EditorNode::EditorNode() {
 	top_region->add_child(left_menu_hb);
 	menu_hb->add_child(top_region);
 
-	{
-		Control *sp = memnew(Control);
-		sp->set_custom_minimum_size(Size2(30, 0) * EDSCALE);
-		menu_hb->add_child(sp);
-	}
-
 	file_menu = memnew(MenuButton);
 	file_menu->set_flat(false);
+	file_menu->set_switch_on_hover(true);
 	file_menu->set_text(TTR("Scene"));
 	file_menu->add_style_override("hover", gui_base->get_stylebox("MenuHover", "EditorStyles"));
 	left_menu_hb->add_child(file_menu);
@@ -5268,6 +5285,7 @@ EditorNode::EditorNode() {
 
 	project_menu = memnew(MenuButton);
 	project_menu->set_flat(false);
+	project_menu->set_switch_on_hover(true);
 	project_menu->set_tooltip(TTR("Miscellaneous project or scene-wide tools."));
 	project_menu->set_text(TTR("Project"));
 	project_menu->add_style_override("hover", gui_base->get_stylebox("MenuHover", "EditorStyles"));
@@ -5309,6 +5327,7 @@ EditorNode::EditorNode() {
 
 	debug_menu = memnew(MenuButton);
 	debug_menu->set_flat(false);
+	debug_menu->set_switch_on_hover(true);
 	debug_menu->set_text(TTR("Debug"));
 	debug_menu->add_style_override("hover", gui_base->get_stylebox("MenuHover", "EditorStyles"));
 	left_menu_hb->add_child(debug_menu);
@@ -5339,6 +5358,7 @@ EditorNode::EditorNode() {
 
 	settings_menu = memnew(MenuButton);
 	settings_menu->set_flat(false);
+	settings_menu->set_switch_on_hover(true);
 	settings_menu->set_text(TTR("Editor"));
 	settings_menu->add_style_override("hover", gui_base->get_stylebox("MenuHover", "EditorStyles"));
 	left_menu_hb->add_child(settings_menu);
@@ -5375,6 +5395,7 @@ EditorNode::EditorNode() {
 	// Help Menu
 	help_menu = memnew(MenuButton);
 	help_menu->set_flat(false);
+	help_menu->set_switch_on_hover(true);
 	help_menu->set_text(TTR("Help"));
 	help_menu->add_style_override("hover", gui_base->get_stylebox("MenuHover", "EditorStyles"));
 	left_menu_hb->add_child(help_menu);
@@ -5391,12 +5412,8 @@ EditorNode::EditorNode() {
 	p->add_separator();
 	p->add_icon_item(gui_base->get_icon("Godot", "EditorIcons"), TTR("About"), HELP_ABOUT);
 
-	play_cc = memnew(CenterContainer);
-	play_cc->set_mouse_filter(Control::MOUSE_FILTER_IGNORE);
-	menu_hb->add_child(play_cc);
-
 	play_button_panel = memnew(PanelContainer);
-	play_cc->add_child(play_button_panel);
+	menu_hb->add_child(play_button_panel);
 
 	HBoxContainer *play_hb = memnew(HBoxContainer);
 	play_button_panel->add_child(play_hb);
@@ -5442,11 +5459,6 @@ EditorNode::EditorNode() {
 
 	run_native = memnew(EditorRunNative);
 	play_hb->add_child(run_native);
-	native_play_button = memnew(MenuButton);
-	native_play_button->set_text("NTV");
-	menu_hb->add_child(native_play_button);
-	native_play_button->hide();
-	native_play_button->get_popup()->connect("id_pressed", this, "_run_in_device");
 	run_native->connect("native_run", this, "_menu_option", varray(RUN_PLAY_NATIVE));
 
 	play_scene_button = memnew(ToolButton);
@@ -5475,6 +5487,9 @@ EditorNode::EditorNode() {
 	play_custom_scene_button->set_shortcut(ED_SHORTCUT("editor/play_custom_scene", TTR("Play Custom Scene"), KEY_MASK_CMD | KEY_MASK_SHIFT | KEY_F5));
 #endif
 
+	HBoxContainer *right_menu_hb = memnew(HBoxContainer);
+	menu_hb->add_child(right_menu_hb);
+
 	// Toggle for video driver
 	video_driver = memnew(OptionButton);
 	video_driver->set_flat(true);
@@ -5482,7 +5497,7 @@ EditorNode::EditorNode() {
 	video_driver->set_v_size_flags(Control::SIZE_SHRINK_CENTER);
 	video_driver->connect("item_selected", this, "_video_driver_selected");
 	video_driver->add_font_override("font", gui_base->get_font("bold", "EditorFonts"));
-	menu_hb->add_child(video_driver);
+	right_menu_hb->add_child(video_driver);
 
 	String video_drivers = ProjectSettings::get_singleton()->get_custom_property_info()["rendering/quality/driver/driver_name"].hint_string;
 	String current_video_driver = OS::get_singleton()->get_video_driver_name(OS::get_singleton()->get_current_video_driver());
@@ -5507,9 +5522,6 @@ EditorNode::EditorNode() {
 	gui_base->add_child(video_restart_dialog);
 
 	progress_hb = memnew(BackgroundProgress);
-
-	HBoxContainer *right_menu_hb = memnew(HBoxContainer);
-	menu_hb->add_child(right_menu_hb);
 
 	layout_dialog = memnew(EditorNameDialog);
 	gui_base->add_child(layout_dialog);

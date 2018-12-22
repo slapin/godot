@@ -206,9 +206,9 @@ public:
 		PropertyInfo option;
 		Variant default_value;
 
-		ExportOption(const PropertyInfo &p_info, const Variant &p_default) {
-			option = p_info;
-			default_value = p_default;
+		ExportOption(const PropertyInfo &p_info, const Variant &p_default) :
+				option(p_info),
+				default_value(p_default) {
 		}
 		ExportOption() {}
 	};
@@ -291,6 +291,7 @@ class EditorExportPlugin : public Reference {
 
 	void _export_file_script(const String &p_path, const String &p_type, const PoolVector<String> &p_features);
 	void _export_begin_script(const PoolVector<String> &p_features, bool p_debug, const String &p_path, int p_flags);
+	void _export_end_script();
 
 protected:
 	void add_file(const String &p_path, const Vector<uint8_t> &p_file, bool p_remap);

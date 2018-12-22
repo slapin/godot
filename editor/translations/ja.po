@@ -18,18 +18,21 @@
 # sugusan <sugusan.development@gmail.com>, 2018.
 # Nathan Lovato <nathan.lovato.art@gmail.com>, 2018.
 # nyanode <akaruooyagi@yahoo.co.jp>, 2018.
+# nitenook <admin@alterbaum.net>, 2018.
 msgid ""
 msgstr ""
 "Project-Id-Version: Godot Engine editor\n"
-"PO-Revision-Date: 2018-10-09 09:33+0000\n"
-"Last-Translator: nyanode <akaruooyagi@yahoo.co.jp>\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: 2018-12-13 14:41+0100\n"
+"Last-Translator: nitenook <admin@alterbaum.net>\n"
 "Language-Team: Japanese <https://hosted.weblate.org/projects/godot-engine/"
 "godot/ja/>\n"
 "Language: ja\n"
+"MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8-bit\n"
+"Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 3.2.1\n"
+"X-Generator: Poedit 2.2\n"
 
 #: core/math/expression.cpp modules/gdscript/gdscript_functions.cpp
 #: modules/visual_script/visual_script_builtin_funcs.cpp
@@ -52,11 +55,11 @@ msgstr "インスタンスが null のため、self は使用できません"
 
 #: core/math/expression.cpp
 msgid "Invalid operands to operator %s, %s and %s."
-msgstr "演算子 ％s 、 ％s 、 ％s に対する値が無効です。"
+msgstr "演算子 %s 、 %s 、 %s に対する値が無効です。"
 
 #: core/math/expression.cpp
 msgid "Invalid index of type %s for base type %s"
-msgstr "基本型 ％s の型 ％s のインデックスが無効です"
+msgstr "基本型 %s の型 %s のインデックスが無効です"
 
 #: core/math/expression.cpp
 msgid "Invalid named index '%s' for base type %s"
@@ -68,7 +71,7 @@ msgstr "'%s' の引数は無効です"
 
 #: core/math/expression.cpp
 msgid "On call to '%s':"
-msgstr "'％s' への呼び出し:"
+msgstr "'%s' への呼び出し:"
 
 #: editor/animation_bezier_editor.cpp
 #: editor/plugins/asset_library_editor_plugin.cpp
@@ -194,7 +197,7 @@ msgstr "このトラックを除去する。"
 
 #: editor/animation_track_editor.cpp
 msgid "Time (s): "
-msgstr "時間: "
+msgstr "時間 (秒): "
 
 #: editor/animation_track_editor.cpp
 msgid "Continuous"
@@ -262,7 +265,6 @@ msgstr "%d 新規トラックを作成し、キーを挿入しますか？"
 #: editor/editor_audio_buses.cpp editor/editor_plugin_settings.cpp
 #: editor/plugin_config_dialog.cpp
 #: editor/plugins/abstract_polygon_2d_editor.cpp
-#: editor/plugins/light_occluder_2d_editor_plugin.cpp
 #: editor/plugins/mesh_instance_editor_plugin.cpp
 #: editor/plugins/particles_editor_plugin.cpp editor/script_create_dialog.cpp
 msgid "Create"
@@ -413,12 +415,10 @@ msgid "Delete Selection"
 msgstr "選択範囲を削除"
 
 #: editor/animation_track_editor.cpp
-#, fuzzy
 msgid "Go to Next Step"
 msgstr "次のステップへ"
 
 #: editor/animation_track_editor.cpp
-#, fuzzy
 msgid "Go to Previous Step"
 msgstr "前のステップへ"
 
@@ -542,15 +542,19 @@ msgstr "すべて置換"
 msgid "Selection Only"
 msgstr "選択範囲のみ"
 
-#: editor/code_editor.cpp editor/plugins/tile_set_editor_plugin.cpp
+#: editor/code_editor.cpp editor/plugins/canvas_item_editor_plugin.cpp
+#: editor/plugins/texture_region_editor_plugin.cpp
+#: editor/plugins/tile_set_editor_plugin.cpp scene/gui/graph_edit.cpp
 msgid "Zoom In"
 msgstr "ズームイン"
 
-#: editor/code_editor.cpp editor/plugins/tile_set_editor_plugin.cpp
+#: editor/code_editor.cpp editor/plugins/canvas_item_editor_plugin.cpp
+#: editor/plugins/texture_region_editor_plugin.cpp
+#: editor/plugins/tile_set_editor_plugin.cpp scene/gui/graph_edit.cpp
 msgid "Zoom Out"
 msgstr "ズームアウト"
 
-#: editor/code_editor.cpp editor/plugins/tile_set_editor_plugin.cpp
+#: editor/code_editor.cpp
 msgid "Reset Zoom"
 msgstr "ズームをリセット"
 
@@ -559,8 +563,8 @@ msgid "Warnings:"
 msgstr "警告:"
 
 #: editor/code_editor.cpp
-msgid "Zoom:"
-msgstr "ズーム:"
+msgid "Font Size:"
+msgstr "フォントサイズ:"
 
 #: editor/code_editor.cpp
 msgid "Line:"
@@ -579,8 +583,8 @@ msgid ""
 "Target method not found! Specify a valid method or attach a script to target "
 "Node."
 msgstr ""
-"対象メソッドが見つかりません！　有効なメソッドを指定するか、対象ノードにスク"
-"リプトを添付してください。"
+"対象メソッドが見つかりません！有効なメソッドを指定するか、対象ノードにスクリ"
+"プトを添付してください。"
 
 #: editor/connections_dialog.cpp
 msgid "Connect To Node:"
@@ -649,7 +653,7 @@ msgstr "'%s' を '%s' に接続"
 
 #: editor/connections_dialog.cpp
 msgid "Disconnect '%s' from '%s'"
-msgstr "'%s' から '%s' を切断"
+msgstr "'%s' を '%s' から切断"
 
 #: editor/connections_dialog.cpp
 msgid "Disconnect all from signal: '%s'"
@@ -673,9 +677,8 @@ msgid "Edit Connection: "
 msgstr "接続を編集 "
 
 #: editor/connections_dialog.cpp
-#, fuzzy
 msgid "Are you sure you want to remove all connections from the \"%s\" signal?"
-msgstr "この信号から全ての接続を除去してもよろしいですか？"
+msgstr "信号 %s から全ての接続を除去してもよろしいですか？"
 
 #: editor/connections_dialog.cpp editor/editor_help.cpp editor/node_dock.cpp
 msgid "Signals"
@@ -720,8 +723,8 @@ msgid "Recent:"
 msgstr "最近:"
 
 #: editor/create_dialog.cpp editor/plugins/asset_library_editor_plugin.cpp
-#: editor/plugins/script_editor_plugin.cpp editor/property_selector.cpp
-#: editor/quick_open.cpp
+#: editor/plugins/script_editor_plugin.cpp editor/project_manager.cpp
+#: editor/property_selector.cpp editor/quick_open.cpp
 #: modules/visual_script/visual_script_property_selector.cpp
 msgid "Search:"
 msgstr "検索:"
@@ -772,8 +775,7 @@ msgid "Resource"
 msgstr "リソース"
 
 #: editor/dependency_editor.cpp editor/editor_autoload_settings.cpp
-#: editor/project_manager.cpp editor/project_settings_editor.cpp
-#: editor/script_create_dialog.cpp
+#: editor/project_settings_editor.cpp editor/script_create_dialog.cpp
 msgid "Path"
 msgstr "パス"
 
@@ -829,13 +831,12 @@ msgid "Error loading:"
 msgstr "読込みエラー:"
 
 #: editor/dependency_editor.cpp
-#, fuzzy
 msgid "Load failed due to missing dependencies:"
-msgstr "依存関係が確認できず、シーンを読込めません:"
+msgstr "依存関係が見つからないため、シーンを読込めません:"
 
 #: editor/dependency_editor.cpp editor/editor_node.cpp
 msgid "Open Anyway"
-msgstr "ともかく開く"
+msgstr "とにかく開く"
 
 #: editor/dependency_editor.cpp
 msgid "Which action should be taken?"
@@ -1117,7 +1118,7 @@ msgstr "オーディオバスのレイアウトを開く"
 
 #: editor/editor_audio_buses.cpp
 msgid "There is no 'res://default_bus_layout.tres' file."
-msgstr "'res://default_bus_layout.tres' ファイルがありません！"
+msgstr "'res://default_bus_layout.tres' ファイルがありません。"
 
 #: editor/editor_audio_buses.cpp
 msgid "Invalid file, not an audio bus layout."
@@ -1231,8 +1232,7 @@ msgid "Node Name:"
 msgstr "ノード名:"
 
 #: editor/editor_autoload_settings.cpp editor/editor_help_search.cpp
-#: editor/editor_profiler.cpp editor/project_manager.cpp
-#: editor/settings_config_dialog.cpp
+#: editor/editor_profiler.cpp editor/settings_config_dialog.cpp
 msgid "Name"
 msgstr "名前"
 
@@ -1310,22 +1310,19 @@ msgid "File Exists, Overwrite?"
 msgstr "ファイルが既に存在します。上書きしますか？"
 
 #: editor/editor_file_dialog.cpp scene/gui/file_dialog.cpp
-#, fuzzy
 msgid "Select This Folder"
-msgstr "すべて選択"
+msgstr "このフォルダーを選択"
 
 #: editor/editor_file_dialog.cpp editor/filesystem_dock.cpp
 msgid "Copy Path"
 msgstr "パスをコピー"
 
 #: editor/editor_file_dialog.cpp editor/filesystem_dock.cpp
-#, fuzzy
 msgid "Open in File Manager"
 msgstr "ファイルマネージャーで開く"
 
 #: editor/editor_file_dialog.cpp editor/filesystem_dock.cpp
 #: editor/project_manager.cpp
-#, fuzzy
 msgid "Show in File Manager"
 msgstr "ファイルマネージャーで表示"
 
@@ -1510,14 +1507,12 @@ msgid "Constants:"
 msgstr "定数:"
 
 #: editor/editor_help.cpp
-#, fuzzy
 msgid "Class Description"
-msgstr "説明"
+msgstr "クラスの説明"
 
 #: editor/editor_help.cpp
-#, fuzzy
 msgid "Class Description:"
-msgstr "説明:"
+msgstr "クラスの説明："
 
 #: editor/editor_help.cpp
 msgid "Online Tutorials:"
@@ -1651,7 +1646,7 @@ msgstr "出力をクリア"
 
 #: editor/editor_node.cpp
 msgid "Project export failed with error code %d."
-msgstr "エラーコード %d により、プロジェクトのエクスポートに失敗しました。"
+msgstr "プロジェクトのエクスポートがエラーコード %d で失敗しました。"
 
 #: editor/editor_node.cpp editor/plugins/animation_player_editor_plugin.cpp
 msgid "Error saving resource!"
@@ -1681,8 +1676,7 @@ msgstr "保存中にエラーが発生しました。"
 #: editor/editor_node.cpp editor/plugins/script_editor_plugin.cpp
 msgid "Can't open '%s'. The file could have been moved or deleted."
 msgstr ""
-"'％s' を開くことができません。ファイルが移動または削除された可能性がありま"
-"す。"
+"'%s' を開くことができません。ファイルが移動または削除された可能性があります。"
 
 #: editor/editor_node.cpp
 msgid "Error while parsing '%s'."
@@ -1718,6 +1712,12 @@ msgstr "この操作は、ツリーの root なしでは実行できません。
 
 #: editor/editor_node.cpp
 msgid ""
+"This scene can't be saved because there is a cyclic instancing inclusion.\n"
+"Please resolve it and then attempt to save again."
+msgstr ""
+
+#: editor/editor_node.cpp
+msgid ""
 "Couldn't save scene. Likely dependencies (instances or inheritance) couldn't "
 "be satisfied."
 msgstr ""
@@ -1726,7 +1726,7 @@ msgstr ""
 
 #: editor/editor_node.cpp editor/scene_tree_dock.cpp
 msgid "Can't overwrite scene that is still open!"
-msgstr ""
+msgstr "開いているシーンを上書きすることはできません!"
 
 #: editor/editor_node.cpp
 msgid "Can't load MeshLibrary for merging!"
@@ -1980,7 +1980,7 @@ msgstr ""
 
 #: editor/editor_node.cpp
 msgid "Unable to load addon script from path: '%s'."
-msgstr "パス '％s' からアドオンスクリプトを読込めません。"
+msgstr "パス '%s' からアドオンスクリプトを読込めません。"
 
 #: editor/editor_node.cpp
 #, fuzzy
@@ -2009,7 +2009,7 @@ msgid ""
 "Scene '%s' was automatically imported, so it can't be modified.\n"
 "To make changes to it, a new inherited scene can be created."
 msgstr ""
-"シーン '％s' は自動的にインポートされたので、変更できません。\n"
+"シーン '%s' は自動的にインポートされたので、変更できません。\n"
 "変更するためには、新たに継承されたシーンを作成してください。"
 
 #: editor/editor_node.cpp
@@ -2062,7 +2062,7 @@ msgstr "シーンタブを切替え"
 
 #: editor/editor_node.cpp
 msgid "%d more files or folders"
-msgstr "％d 以上のファイルとフォルダ"
+msgstr "%d 以上のファイルとフォルダ"
 
 #: editor/editor_node.cpp
 msgid "%d more folders"
@@ -2078,11 +2078,11 @@ msgstr "ドックの位置"
 
 #: editor/editor_node.cpp
 msgid "Distraction Free Mode"
-msgstr "よそ見知らずモード"
+msgstr "集中モード"
 
 #: editor/editor_node.cpp
 msgid "Toggle distraction-free mode."
-msgstr "よそ見知らずモードを切替える。"
+msgstr "集中モードを切替える。"
 
 #: editor/editor_node.cpp
 msgid "Add a new scene."
@@ -2156,12 +2156,12 @@ msgstr "タイルセット..."
 #: editor/editor_node.cpp editor/plugins/script_text_editor.cpp
 #: scene/gui/line_edit.cpp scene/gui/text_edit.cpp
 msgid "Undo"
-msgstr "アンドゥ"
+msgstr "元に戻す"
 
 #: editor/editor_node.cpp editor/plugins/script_text_editor.cpp
-#: scene/gui/line_edit.cpp
+#: scene/gui/line_edit.cpp scene/gui/text_edit.cpp
 msgid "Redo"
-msgstr "リドゥ"
+msgstr "やり直す"
 
 #: editor/editor_node.cpp
 msgid "Revert Scene"
@@ -2183,7 +2183,7 @@ msgstr "プロジェクトの設定"
 msgid "Export"
 msgstr "エクスポート"
 
-#: editor/editor_node.cpp
+#: editor/editor_node.cpp editor/plugins/tile_set_editor_plugin.cpp
 msgid "Tools"
 msgstr "ツール"
 
@@ -2612,6 +2612,12 @@ msgstr "アサイン.."
 
 #: editor/editor_properties.cpp
 msgid ""
+"The selected resource (%s) does not match the type expected for this "
+"property (%s)."
+msgstr ""
+
+#: editor/editor_properties.cpp
+msgid ""
 "Can't create a ViewportTexture on resources saved as a file.\n"
 "Resource needs to belong to a scene."
 msgstr ""
@@ -2628,8 +2634,7 @@ msgstr ""
 msgid "Pick a Viewport"
 msgstr "ビューポートを選ぶ"
 
-#: editor/editor_properties.cpp editor/plugins/script_editor_plugin.cpp
-#: editor/property_editor.cpp
+#: editor/editor_properties.cpp editor/property_editor.cpp
 msgid "New Script"
 msgstr "新規スクリプト"
 
@@ -2653,7 +2658,7 @@ msgstr "ユニーク化"
 #: editor/plugins/tile_map_editor_plugin.cpp editor/property_editor.cpp
 #: scene/gui/line_edit.cpp scene/gui/text_edit.cpp
 msgid "Paste"
-msgstr "貼付け"
+msgstr "貼り付け"
 
 #: editor/editor_properties.cpp editor/property_editor.cpp
 msgid "Convert To %s"
@@ -2848,7 +2853,7 @@ msgid ""
 "found at '%s'."
 msgstr ""
 "テンプレートのインストールに失敗しました。 問題のテンプレートのアーカイブは "
-"'％s' にあります。"
+"'%s' にあります。"
 
 #: editor/export_template_manager.cpp
 msgid "Error requesting url: "
@@ -2898,7 +2903,7 @@ msgstr "接続エラー"
 
 #: editor/export_template_manager.cpp
 msgid "SSL Handshake Error"
-msgstr "SS ハンドシェイクエラー"
+msgstr "SSL ハンドシェイクエラー"
 
 #: editor/export_template_manager.cpp
 msgid "Current Version:"
@@ -3033,9 +3038,8 @@ msgid "Add to favorites"
 msgstr "お気に入り:"
 
 #: editor/filesystem_dock.cpp
-#, fuzzy
 msgid "Remove from favorites"
-msgstr "グループから除去"
+msgstr "お気に入りから削除"
 
 #: editor/filesystem_dock.cpp
 msgid "Edit Dependencies..."
@@ -3057,7 +3061,7 @@ msgstr "複製..."
 msgid "Move To..."
 msgstr "移動..."
 
-#: editor/filesystem_dock.cpp
+#: editor/filesystem_dock.cpp editor/plugins/script_editor_plugin.cpp
 msgid "New Script..."
 msgstr "新規スクリプト..."
 
@@ -3189,7 +3193,8 @@ msgid "Group name already exists."
 msgstr "グループ名が既にあります。"
 
 #: editor/groups_editor.cpp
-msgid "invalid Group name."
+#, fuzzy
+msgid "Invalid group name."
 msgstr "無効なグループ名です。"
 
 #: editor/groups_editor.cpp editor/node_dock.cpp
@@ -3437,14 +3442,14 @@ msgid "Activate now?"
 msgstr "いまアクティブ化しますか？"
 
 #: editor/plugins/abstract_polygon_2d_editor.cpp
-#: editor/plugins/light_occluder_2d_editor_plugin.cpp
-msgid "Create Poly"
-msgstr "ポリゴンを作成"
+#: editor/plugins/polygon_2d_editor_plugin.cpp
+#, fuzzy
+msgid "Create Polygon"
+msgstr "ポリゴンを生成"
 
 #: editor/plugins/abstract_polygon_2d_editor.cpp
-#: editor/plugins/collision_polygon_editor_plugin.cpp
-#: editor/plugins/light_occluder_2d_editor_plugin.cpp
-msgid "Edit Poly"
+#, fuzzy
+msgid "Edit Polygon"
 msgstr "ポリゴンを編集"
 
 #: editor/plugins/abstract_polygon_2d_editor.cpp
@@ -3452,25 +3457,27 @@ msgid "Insert Point"
 msgstr "ポイント挿入"
 
 #: editor/plugins/abstract_polygon_2d_editor.cpp
-#: editor/plugins/collision_polygon_editor_plugin.cpp
-#: editor/plugins/light_occluder_2d_editor_plugin.cpp
-msgid "Edit Poly (Remove Point)"
+#, fuzzy
+msgid "Edit Polygon (Remove Point)"
 msgstr "ポリゴンを編集（点を除去）"
 
 #: editor/plugins/abstract_polygon_2d_editor.cpp
-msgid "Remove Poly And Point"
+#, fuzzy
+msgid "Remove Polygon And Point"
 msgstr "ポリゴンとポイントを除去"
 
 #: editor/plugins/abstract_polygon_2d_editor.cpp
-msgid "Create a new polygon from scratch"
-msgstr "新規にポリゴンを作成"
+#: editor/plugins/animation_blend_space_1d_editor.cpp
+#: editor/plugins/animation_blend_space_2d_editor.cpp
+msgid "Create points."
+msgstr "点を作成する。"
 
 #: editor/plugins/abstract_polygon_2d_editor.cpp
+#, fuzzy
 msgid ""
-"Edit existing polygon:\n"
-"LMB: Move Point.\n"
-"Ctrl+LMB: Split Segment.\n"
-"RMB: Erase Point."
+"Edit points.\n"
+"LMB: Move Point\n"
+"RMB: Erase Point"
 msgstr ""
 "既存のポリゴンを編集:\n"
 "左クリック: 点を移動。\n"
@@ -3478,8 +3485,9 @@ msgstr ""
 "右クリック: 点を消す。"
 
 #: editor/plugins/abstract_polygon_2d_editor.cpp
-msgid "Delete points"
-msgstr "点を削除"
+#: editor/plugins/animation_blend_space_1d_editor.cpp
+msgid "Erase points."
+msgstr "点を消す。"
 
 #: editor/plugins/animation_blend_space_1d_editor.cpp
 #: editor/plugins/animation_blend_space_2d_editor.cpp
@@ -3523,15 +3531,6 @@ msgstr "スペース内のブレンド位置を設定"
 #: editor/plugins/animation_blend_space_2d_editor.cpp
 msgid "Select and move points, create points with RMB."
 msgstr "点を選択して移動し、右クリックで点を作成します。"
-
-#: editor/plugins/animation_blend_space_1d_editor.cpp
-#: editor/plugins/animation_blend_space_2d_editor.cpp
-msgid "Create points."
-msgstr "点を作成する。"
-
-#: editor/plugins/animation_blend_space_1d_editor.cpp
-msgid "Erase points."
-msgstr "点を消す。"
 
 #: editor/plugins/animation_blend_space_1d_editor.cpp
 #: editor/plugins/animation_blend_space_2d_editor.cpp
@@ -3613,7 +3612,6 @@ msgstr ""
 "得できません。"
 
 #: editor/plugins/animation_blend_tree_editor_plugin.cpp
-#: editor/plugins/visual_shader_editor_plugin.cpp
 msgid "Add Node.."
 msgstr "ノードを追加.."
 
@@ -3863,7 +3861,7 @@ msgstr "サブトランジションには、開始ノードと終了ノードが
 
 #: editor/plugins/animation_state_machine_editor.cpp
 msgid "No playback resource set at path: %s."
-msgstr "パス（ ％s ）に再生リソースが設定されていません。"
+msgstr "パス（ %s ）に再生リソースが設定されていません。"
 
 #: editor/plugins/animation_state_machine_editor.cpp
 msgid ""
@@ -4153,7 +4151,7 @@ msgstr "すべて"
 msgid "Plugins"
 msgstr "プラグイン"
 
-#: editor/plugins/asset_library_editor_plugin.cpp
+#: editor/plugins/asset_library_editor_plugin.cpp editor/project_manager.cpp
 msgid "Sort:"
 msgstr "並べ替え:"
 
@@ -4310,19 +4308,17 @@ msgid "Paste Pose"
 msgstr "ポーズを貼り付ける"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
-#, fuzzy
-msgid "Zoom out"
-msgstr "ズームアウト"
+msgid ""
+"Warning: Children of a container get their position and size determined only "
+"by their parent."
+msgstr ""
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
+#: editor/plugins/texture_region_editor_plugin.cpp
+#: editor/plugins/tile_set_editor_plugin.cpp scene/gui/graph_edit.cpp
 #, fuzzy
-msgid "Zoom reset"
+msgid "Zoom Reset"
 msgstr "ズームをリセット"
-
-#: editor/plugins/canvas_item_editor_plugin.cpp
-#, fuzzy
-msgid "Zoom in"
-msgstr "ズームイン"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
 msgid "Select Mode"
@@ -4341,7 +4337,7 @@ msgstr "Alt+ドラッグ:移動"
 #, fuzzy
 msgid "Press 'v' to Change Pivot, 'Shift+v' to Drag Pivot (while moving)."
 msgstr ""
-"ｖキーを押すとピボットの変更、'Shift+v' でピボットをドラッグ（移動中でも）"
+"vキーを押すとピボットの変更、'Shift+v' でピボットをドラッグ（移動中でも）"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
 #, fuzzy
@@ -4626,8 +4622,17 @@ msgstr ""
 "ドラッグ＆ドロップ + Alt : ノードのタイプを変更する"
 
 #: editor/plugins/collision_polygon_editor_plugin.cpp
-msgid "Create Poly3D"
-msgstr "3Dポリゴンを生成する"
+#, fuzzy
+msgid "Create Polygon3D"
+msgstr "ポリゴンを生成"
+
+#: editor/plugins/collision_polygon_editor_plugin.cpp
+msgid "Edit Poly"
+msgstr "ポリゴンを編集"
+
+#: editor/plugins/collision_polygon_editor_plugin.cpp
+msgid "Edit Poly (Remove Point)"
+msgstr "ポリゴンを編集（点を除去）"
 
 #: editor/plugins/collision_shape_2d_editor_plugin.cpp
 #, fuzzy
@@ -4635,9 +4640,8 @@ msgid "Set Handle"
 msgstr "ハンドルを設定する"
 
 #: editor/plugins/cpu_particles_editor_plugin.cpp
-#, fuzzy
 msgid "CPUParticles"
-msgstr "頂点"
+msgstr "CPUパーティクル"
 
 #: editor/plugins/cpu_particles_editor_plugin.cpp
 #: editor/plugins/particles_editor_plugin.cpp
@@ -4694,7 +4698,7 @@ msgstr "点を追加"
 
 #: editor/plugins/curve_editor_plugin.cpp
 msgid "Remove point"
-msgstr "選択しているポイント＝点を削除"
+msgstr "ポイントを除去"
 
 #: editor/plugins/curve_editor_plugin.cpp
 #, fuzzy
@@ -4740,39 +4744,9 @@ msgid "Item List Editor"
 msgstr "アイテムリストのエディタ"
 
 #: editor/plugins/light_occluder_2d_editor_plugin.cpp
-msgid ""
-"No OccluderPolygon2D resource on this node.\n"
-"Create and assign one?"
-msgstr ""
-"このノードにOccluderPolygon2Dリソースがありません。\n"
-"作成して、割り当てますか ?"
-
-#: editor/plugins/light_occluder_2d_editor_plugin.cpp
 #, fuzzy
 msgid "Create Occluder Polygon"
 msgstr "オクルージョンを生じるポリゴンを生成"
-
-#: editor/plugins/light_occluder_2d_editor_plugin.cpp
-#, fuzzy
-msgid "Create a new polygon from scratch."
-msgstr "新規にポリゴンを生成する"
-
-#: editor/plugins/light_occluder_2d_editor_plugin.cpp
-msgid "Edit existing polygon:"
-msgstr "既存のポリゴンを編集:"
-
-#: editor/plugins/light_occluder_2d_editor_plugin.cpp
-msgid "LMB: Move Point."
-msgstr "LMB: 点を移動する。"
-
-#: editor/plugins/light_occluder_2d_editor_plugin.cpp
-#, fuzzy
-msgid "Ctrl+LMB: Split Segment."
-msgstr "Ctrl+マウス左ボタン: セグメントを分割"
-
-#: editor/plugins/light_occluder_2d_editor_plugin.cpp
-msgid "RMB: Erase Point."
-msgstr "右クリック: 点を消す。"
 
 #: editor/plugins/mesh_instance_editor_plugin.cpp
 #, fuzzy
@@ -5083,9 +5057,8 @@ msgstr "発光(Emission)マスクをクリア"
 
 #: editor/plugins/particles_2d_editor_plugin.cpp
 #: editor/plugins/particles_editor_plugin.cpp
-#, fuzzy
 msgid "Convert to CPUParticles"
-msgstr "大文字に変換"
+msgstr "CPUパーティクルに変換"
 
 #: editor/plugins/particles_2d_editor_plugin.cpp
 #: editor/plugins/particles_editor_plugin.cpp
@@ -5206,6 +5179,11 @@ msgstr "ポイントを曲線に追加"
 
 #: editor/plugins/path_2d_editor_plugin.cpp
 #, fuzzy
+msgid "Split Curve"
+msgstr "曲線を閉じる"
+
+#: editor/plugins/path_2d_editor_plugin.cpp
+#, fuzzy
 msgid "Move Point in Curve"
 msgstr "曲線のポイントを移動"
 
@@ -5236,6 +5214,11 @@ msgid "Click: Add Point"
 msgstr "クリック: 点を追加"
 
 #: editor/plugins/path_2d_editor_plugin.cpp
+#, fuzzy
+msgid "Left Click: Split Segment (in curve)"
+msgstr "分割する(曲線を)"
+
+#: editor/plugins/path_2d_editor_plugin.cpp
 #: editor/plugins/path_editor_plugin.cpp
 msgid "Right Click: Delete Point"
 msgstr "右クリック: 点を削除"
@@ -5248,12 +5231,6 @@ msgstr "コントロールポイントを選ぶ (Shift+Drag)"
 #: editor/plugins/path_editor_plugin.cpp
 msgid "Add Point (in empty space)"
 msgstr "点を空きスペースに追加"
-
-#: editor/plugins/path_2d_editor_plugin.cpp
-#: editor/plugins/path_editor_plugin.cpp
-#, fuzzy
-msgid "Split Segment (in curve)"
-msgstr "分割する(曲線を)"
 
 #: editor/plugins/path_2d_editor_plugin.cpp
 #: editor/plugins/path_editor_plugin.cpp
@@ -5318,6 +5295,11 @@ msgstr "曲線のOut-ハンドルを除去"
 msgid "Remove In-Control Point"
 msgstr "曲線のIn-ハンドルを除去"
 
+#: editor/plugins/path_editor_plugin.cpp
+#, fuzzy
+msgid "Split Segment (in curve)"
+msgstr "分割する(曲線を)"
+
 #: editor/plugins/physical_bone_plugin.cpp
 #, fuzzy
 msgid "Move joint"
@@ -5330,8 +5312,14 @@ msgstr ""
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
 #, fuzzy
-msgid "Sync bones"
+msgid "Sync Bones"
 msgstr "ボーンを表示する"
+
+#: editor/plugins/polygon_2d_editor_plugin.cpp
+msgid ""
+"No texture in this polygon.\n"
+"Set a texture to be able to edit UV."
+msgstr ""
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
 msgid "Create UV Map"
@@ -5374,8 +5362,18 @@ msgid "Transform UV Map"
 msgstr "UVマップをトランスフォーム"
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
-msgid "Paint bone weights"
+#, fuzzy
+msgid "Transform Polygon"
+msgstr "トランスフォーム"
+
+#: editor/plugins/polygon_2d_editor_plugin.cpp
+msgid "Paint Bone Weights"
 msgstr ""
+
+#: editor/plugins/polygon_2d_editor_plugin.cpp
+#, fuzzy
+msgid "Open Polygon 2D UV editor."
+msgstr "ポリゴン２DのUVエディタ"
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
 #, fuzzy
@@ -5384,7 +5382,7 @@ msgstr "ポリゴン２DのUVエディタ"
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
 msgid "UV"
-msgstr ""
+msgstr "UV"
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
 #, fuzzy
@@ -5403,12 +5401,7 @@ msgstr "ボーンを生成"
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
 #, fuzzy
-msgid "Create Polygon"
-msgstr "ポリゴンを生成"
-
-#: editor/plugins/polygon_2d_editor_plugin.cpp
-#, fuzzy
-msgid "Move Point"
+msgid "Move Points"
 msgstr "ポイントを移動"
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
@@ -5442,25 +5435,25 @@ msgid "Scale Polygon"
 msgstr "ポリゴンの縮尺を変更"
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
-msgid "Connect two points to make a split"
+msgid "Connect two points to make a split."
 msgstr ""
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
 #, fuzzy
-msgid "Select a split to erase it"
+msgid "Select a split to erase it."
 msgstr "設定項目を設定してください!"
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
-msgid "Paint weights with specified intensity"
+msgid "Paint weights with specified intensity."
 msgstr ""
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
-msgid "UnPaint weights with specified intensity"
+msgid "Unpaint weights with specified intensity."
 msgstr ""
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
 msgid "Radius:"
-msgstr ""
+msgstr "半径:"
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
 #, fuzzy
@@ -5526,20 +5519,17 @@ msgid "ERROR: Couldn't load resource!"
 msgstr "エラー:リソースを読み込めませんでした!"
 
 #: editor/plugins/resource_preloader_editor_plugin.cpp
-#, fuzzy
 msgid "Add Resource"
 msgstr "リソースを追加"
 
 #: editor/plugins/resource_preloader_editor_plugin.cpp
-#, fuzzy
 msgid "Rename Resource"
-msgstr "リソースの名前を変える"
+msgstr "リソース名を変更"
 
 #: editor/plugins/resource_preloader_editor_plugin.cpp
 #: editor/plugins/sprite_frames_editor_plugin.cpp
-#, fuzzy
 msgid "Delete Resource"
-msgstr "リソースを消去する"
+msgstr "リソースを削除"
 
 #: editor/plugins/resource_preloader_editor_plugin.cpp
 #, fuzzy
@@ -5547,9 +5537,8 @@ msgid "Resource clipboard is empty!"
 msgstr "リソースのクリップボードは空です!"
 
 #: editor/plugins/resource_preloader_editor_plugin.cpp
-#, fuzzy
 msgid "Paste Resource"
-msgstr "リソースを張り付ける"
+msgstr "リソースの張り付け"
 
 #: editor/plugins/resource_preloader_editor_plugin.cpp
 #: editor/scene_tree_editor.cpp
@@ -5593,11 +5582,8 @@ msgid "Clear Recent Files"
 msgstr "最近開いたファイルの記録をクリア"
 
 #: editor/plugins/script_editor_plugin.cpp
-#, fuzzy
 msgid "Close and save changes?"
-msgstr ""
-"変更を保存して閉じますか?\n"
-"\""
+msgstr "変更を保存して閉じますか?"
 
 #: editor/plugins/script_editor_plugin.cpp
 #, fuzzy
@@ -5621,20 +5607,22 @@ msgstr "タイルセットの保存エラー!"
 
 #: editor/plugins/script_editor_plugin.cpp
 #, fuzzy
-msgid "Error while saving theme"
+msgid "Error while saving theme."
 msgstr "テーマを保存する途中でのエラー"
 
 #: editor/plugins/script_editor_plugin.cpp
-msgid "Error saving"
+#, fuzzy
+msgid "Error Saving"
 msgstr "保存エラー"
 
 #: editor/plugins/script_editor_plugin.cpp
 #, fuzzy
-msgid "Error importing theme"
+msgid "Error importing theme."
 msgstr "テーマをインポート中のエラー"
 
 #: editor/plugins/script_editor_plugin.cpp
-msgid "Error importing"
+#, fuzzy
+msgid "Error Importing"
 msgstr "インポートのエラー"
 
 #: editor/plugins/script_editor_plugin.cpp
@@ -5655,6 +5643,15 @@ msgstr "名前を付けて保存..."
 #: editor/plugins/script_editor_plugin.cpp
 msgid "Import Theme"
 msgstr "テーマのインポート"
+
+#: editor/plugins/script_editor_plugin.cpp
+#, fuzzy
+msgid "Error while saving theme"
+msgstr "テーマを保存する途中でのエラー"
+
+#: editor/plugins/script_editor_plugin.cpp
+msgid "Error saving"
+msgstr "保存エラー"
 
 #: editor/plugins/script_editor_plugin.cpp
 msgid "Save Theme As..."
@@ -5700,8 +5697,8 @@ msgstr "ファイル"
 
 #: editor/plugins/script_editor_plugin.cpp
 #, fuzzy
-msgid "New TextFile"
-msgstr "ビューファイル:"
+msgid "Open..."
+msgstr "開く"
 
 #: editor/plugins/script_editor_plugin.cpp
 msgid "Save All"
@@ -5732,16 +5729,17 @@ msgstr "テーマ"
 
 #: editor/plugins/script_editor_plugin.cpp
 #, fuzzy
+msgid "Import Theme..."
+msgstr "テーマのインポート"
+
+#: editor/plugins/script_editor_plugin.cpp
+#, fuzzy
 msgid "Reload Theme"
 msgstr "テーマを再読込"
 
 #: editor/plugins/script_editor_plugin.cpp
 msgid "Save Theme"
 msgstr "テーマを保存"
-
-#: editor/plugins/script_editor_plugin.cpp
-msgid "Save Theme As"
-msgstr "テーマに名前を付けて保存"
 
 #: editor/plugins/script_editor_plugin.cpp
 #, fuzzy
@@ -5813,7 +5811,7 @@ msgstr "直前の「編集した文書」へ移動."
 
 #: editor/plugins/script_editor_plugin.cpp
 msgid "Go to next edited document."
-msgstr "次のの「編集した文書」へ移動."
+msgstr "次の「編集した文書」へ移動."
 
 #: editor/plugins/script_editor_plugin.cpp
 #, fuzzy
@@ -5860,6 +5858,10 @@ msgstr ""
 msgid "Go to Function"
 msgstr "関数～に移動..."
 
+#: editor/plugins/script_text_editor.cpp editor/plugins/text_editor.cpp
+msgid "Standard"
+msgstr ""
+
 #: editor/plugins/script_text_editor.cpp
 msgid "Only resources from filesystem can be dropped."
 msgstr "ファイルシステムのリソースのみドロップできます."
@@ -5891,10 +5893,6 @@ msgstr "先頭を大文字に"
 
 #: editor/plugins/script_text_editor.cpp editor/plugins/text_editor.cpp
 msgid "Syntax Highlighter"
-msgstr ""
-
-#: editor/plugins/script_text_editor.cpp editor/plugins/text_editor.cpp
-msgid "Standard"
 msgstr ""
 
 #: editor/plugins/script_text_editor.cpp scene/gui/line_edit.cpp
@@ -6116,7 +6114,7 @@ msgstr "描画されたオブジェクト"
 
 #: editor/plugins/spatial_editor_plugin.cpp
 msgid "Material Changes"
-msgstr "素材の変更"
+msgstr "マテリアルの変更"
 
 #: editor/plugins/spatial_editor_plugin.cpp
 msgid "Shader Changes"
@@ -6128,7 +6126,7 @@ msgstr "サーフェースの変更"
 
 #: editor/plugins/spatial_editor_plugin.cpp
 msgid "Draw Calls"
-msgstr "ドローコール（Daw call)"
+msgstr "ドローコール"
 
 #: editor/plugins/spatial_editor_plugin.cpp
 msgid "Vertices"
@@ -6653,12 +6651,18 @@ msgid "Set Region Rect"
 msgstr "テクスチャ　リージョン"
 
 #: editor/plugins/texture_region_editor_plugin.cpp
+#, fuzzy
+msgid "Set Margin"
+msgstr "ハンドルを設定する"
+
+#: editor/plugins/texture_region_editor_plugin.cpp
 msgid "Snap Mode:"
 msgstr "Snapモード:"
 
 #: editor/plugins/texture_region_editor_plugin.cpp
-msgid "<None>"
-msgstr "<None>"
+#: scene/resources/visual_shader.cpp
+msgid "None"
+msgstr "None"
 
 #: editor/plugins/texture_region_editor_plugin.cpp
 msgid "Pixel Snap"
@@ -6915,12 +6919,12 @@ msgstr "トランスフォーム"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 #, fuzzy
-msgid "Add Texture(s) to TileSet"
+msgid "Add Texture(s) to TileSet."
 msgstr "シーンからのノード"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 #, fuzzy
-msgid "Remove current Texture from TileSet"
+msgid "Remove selected Texture from TileSet."
 msgstr "パスのポイントを除去"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
@@ -6932,13 +6936,34 @@ msgid "Merge from Scene"
 msgstr "シーンからマージ"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
-msgid ""
-"Select sub-tile to use as icon, this will be also used on invalid autotile "
-"bindings."
+msgid "Copy bitmask."
 msgstr ""
 
 #: editor/plugins/tile_set_editor_plugin.cpp
-msgid "Display tile's names (hold Alt Key)"
+#, fuzzy
+msgid "Paste bitmask."
+msgstr "アニメーションを貼付け"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Erase bitmask."
+msgstr "点を消す。"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Create a new polygon."
+msgstr "新規にポリゴンを生成する"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+msgid "Keep polygon inside region Rect."
+msgstr ""
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+msgid "Enable snap and show grid (configurable via the Inspector)."
+msgstr ""
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+msgid "Display Tile Names (Hold Alt Key)"
 msgstr ""
 
 #: editor/plugins/tile_set_editor_plugin.cpp
@@ -6970,16 +6995,27 @@ msgid ""
 msgstr ""
 
 #: editor/plugins/tile_set_editor_plugin.cpp
-msgid ""
-"LMB: set bit on.\n"
-"RMB: set bit off.\n"
-"Click on another Tile to edit it."
-msgstr ""
+#, fuzzy
+msgid "Delete selected Rect."
+msgstr "選択したファイルを削除しますか？"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 #, fuzzy
 msgid ""
 "Select current edited sub-tile.\n"
+"Click on another Tile to edit it."
+msgstr "現在編集中のリソースを保存する"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Delete polygon."
+msgstr "点を削除"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid ""
+"LMB: Set bit on.\n"
+"RMB: Set bit off.\n"
 "Click on another Tile to edit it."
 msgstr "現在編集中のリソースを保存する"
 
@@ -6998,12 +7034,19 @@ msgstr ""
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 #, fuzzy
+msgid ""
+"Select sub-tile to change its z index.\n"
+"Click on another Tile to edit it."
+msgstr "現在編集中のリソースを保存する"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
 msgid "This property can't be changed."
 msgstr "この処理にはシーンが必要です."
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 #, fuzzy
-msgid "Tile Set"
+msgid "TileSet"
 msgstr "タイルセット..."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -7020,6 +7063,11 @@ msgstr "引数:"
 #, fuzzy
 msgid "Light"
 msgstr "右側面"
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+#, fuzzy
+msgid "Add Node..."
+msgstr "ノードを追加.."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 #, fuzzy
@@ -7066,8 +7114,8 @@ msgstr "追加..."
 
 #: editor/project_export.cpp
 #, fuzzy
-msgid "Export Path:"
-msgstr "プロジェクトのエクスポート"
+msgid "Export Path"
+msgstr "エクスポートパス:"
 
 #: editor/project_export.cpp
 msgid "Resources"
@@ -7145,9 +7193,8 @@ msgid "Export mode?"
 msgstr "エクスポートのモード:"
 
 #: editor/project_export.cpp
-#, fuzzy
 msgid "Export All"
-msgstr "エクスポート"
+msgstr "すべてエクスポート"
 
 #: editor/project_export.cpp
 #, fuzzy
@@ -7165,18 +7212,18 @@ msgid "The path does not exist."
 msgstr "ファイルが見つかりません."
 
 #: editor/project_manager.cpp
-#, fuzzy
 msgid "Invalid '.zip' project file, does not contain a 'project.godot' file."
-msgstr "'project.godot'がないフォルダを選択してください."
+msgstr ""
+"無効な '.zip' プロジェクトファイルです。'project.godot' ファイルが含まれてい"
+"ません。"
 
 #: editor/project_manager.cpp
 msgid "Please choose an empty folder."
 msgstr "空のフォルダーを選択してください。"
 
 #: editor/project_manager.cpp
-#, fuzzy
 msgid "Please choose a 'project.godot' or '.zip' file."
-msgstr "'project.godot' ファイルを選択してください."
+msgstr "'project.godot' もしくは '.zip' ファイルを選択してください."
 
 #: editor/project_manager.cpp
 msgid "Directory already contains a Godot project."
@@ -7187,9 +7234,8 @@ msgid "Imported Project"
 msgstr "インポートされたプロジェクト"
 
 #: editor/project_manager.cpp
-#, fuzzy
 msgid "Invalid Project Name."
-msgstr "プロジェクト名:"
+msgstr "無効なプロジェクト名です。"
 
 #: editor/project_manager.cpp
 #, fuzzy
@@ -7261,9 +7307,8 @@ msgid "Install Project:"
 msgstr "プロジェクトをインストール:"
 
 #: editor/project_manager.cpp
-#, fuzzy
 msgid "Install & Edit"
-msgstr "インストール"
+msgstr "インストールして編集"
 
 #: editor/project_manager.cpp
 msgid "Project Name:"
@@ -7284,7 +7329,7 @@ msgstr "プロジェクトパス:"
 
 #: editor/project_manager.cpp
 msgid "Browse"
-msgstr "参照…"
+msgstr "参照"
 
 #: editor/project_manager.cpp
 msgid "Unnamed Project"
@@ -7383,9 +7428,8 @@ msgstr ""
 "アセットライブラリで公式のサンプルプロジェクトをチェックしますか？"
 
 #: editor/project_settings_editor.cpp
-#, fuzzy
 msgid "Key "
-msgstr "キー.. "
+msgstr "キー "
 
 #: editor/project_settings_editor.cpp
 #, fuzzy
@@ -7426,9 +7470,8 @@ msgid "Add Input Action Event"
 msgstr "入力アクションイベントを追加"
 
 #: editor/project_settings_editor.cpp
-#, fuzzy
 msgid "All Devices"
-msgstr "デバイス"
+msgstr "すべてのデバイス"
 
 #: editor/project_settings_editor.cpp
 msgid "Device"
@@ -7578,6 +7621,8 @@ msgid ""
 "Invalid action name. It cannot be empty nor contain '/', ':', '=', '\\' or "
 "'\"'."
 msgstr ""
+"無効なアクション名です。空もしくは'/', ':', '=', '\\' や '\"'を含めることはで"
+"きません。"
 
 #: editor/project_settings_editor.cpp
 #, fuzzy
@@ -7729,14 +7774,12 @@ msgid "Show only selected locales"
 msgstr "選択したロケールのみ表示"
 
 #: editor/project_settings_editor.cpp
-#, fuzzy
 msgid "Filter mode:"
-msgstr "フィルター"
+msgstr "フィルターモード:"
 
 #: editor/project_settings_editor.cpp
-#, fuzzy
 msgid "Locales:"
-msgstr "ロケール"
+msgstr "ロケール:"
 
 #: editor/project_settings_editor.cpp
 msgid "AutoLoad"
@@ -7840,9 +7883,8 @@ msgid "Substitute"
 msgstr ""
 
 #: editor/rename_dialog.cpp
-#, fuzzy
 msgid "Node name"
-msgstr "ノードの名前:"
+msgstr "ノード名"
 
 #: editor/rename_dialog.cpp
 msgid "Node's parent name, if available"
@@ -7854,9 +7896,8 @@ msgid "Node type"
 msgstr "ノードタイプを探す"
 
 #: editor/rename_dialog.cpp
-#, fuzzy
 msgid "Current scene name"
-msgstr "現在のシーン"
+msgstr "現在のシーン名"
 
 #: editor/rename_dialog.cpp
 #, fuzzy
@@ -7882,9 +7923,8 @@ msgid "Initial value for the counter"
 msgstr ""
 
 #: editor/rename_dialog.cpp
-#, fuzzy
 msgid "Step"
-msgstr "ステップ:"
+msgstr "ステップ"
 
 #: editor/rename_dialog.cpp
 msgid "Amount by which counter is incremented for each node"
@@ -7906,9 +7946,8 @@ msgid "Regular Expressions"
 msgstr "式を変更"
 
 #: editor/rename_dialog.cpp
-#, fuzzy
 msgid "Post-Process"
-msgstr "後処理スクリプト:"
+msgstr "ポストプロセス"
 
 #: editor/rename_dialog.cpp
 msgid "Keep"
@@ -7937,9 +7976,8 @@ msgid "To Uppercase"
 msgstr "大文字"
 
 #: editor/rename_dialog.cpp
-#, fuzzy
 msgid "Reset"
-msgstr "ズームをリセット"
+msgstr "リセット"
 
 #: editor/rename_dialog.cpp
 msgid "Error"
@@ -8082,19 +8120,16 @@ msgid "Create Root Node:"
 msgstr "ノードを生成"
 
 #: editor/scene_tree_dock.cpp
-#, fuzzy
 msgid "2D Scene"
-msgstr "シーン"
+msgstr "2D シーン"
 
 #: editor/scene_tree_dock.cpp
-#, fuzzy
 msgid "3D Scene"
-msgstr "シーン"
+msgstr "3D シーン"
 
 #: editor/scene_tree_dock.cpp
-#, fuzzy
 msgid "User Interface"
-msgstr "継承をクリアする"
+msgstr "ユーザーインターフェース"
 
 #: editor/scene_tree_dock.cpp
 #, fuzzy
@@ -8111,9 +8146,8 @@ msgid "Can't operate on nodes the current scene inherits from!"
 msgstr "現在のシーンが継承するノードを処理できません!"
 
 #: editor/scene_tree_dock.cpp
-#, fuzzy
 msgid "Attach Script"
-msgstr "スクリプトを付与"
+msgstr "スクリプトをアタッチ"
 
 #: editor/scene_tree_dock.cpp
 msgid "Remove Node(s)"
@@ -8137,9 +8171,8 @@ msgid "Error duplicating scene to save it."
 msgstr "保存のためシーンを複製する際にエラーが発生."
 
 #: editor/scene_tree_dock.cpp
-#, fuzzy
 msgid "Sub-Resources"
-msgstr "サブリソース:"
+msgstr "サブリソース"
 
 #: editor/scene_tree_dock.cpp
 #, fuzzy
@@ -8165,14 +8198,12 @@ msgid "Change Type"
 msgstr "型(type)を変更"
 
 #: editor/scene_tree_dock.cpp
-#, fuzzy
 msgid "Extend Script"
-msgstr "フォルダを作成"
+msgstr "スクリプトを拡張"
 
 #: editor/scene_tree_dock.cpp
-#, fuzzy
 msgid "Make Scene Root"
-msgstr "有意義に!"
+msgstr "ルートシーンを作成"
 
 #: editor/scene_tree_dock.cpp
 msgid "Merge From Scene"
@@ -8189,9 +8220,8 @@ msgid "Copy Node Path"
 msgstr "ノードのパスをコピー"
 
 #: editor/scene_tree_dock.cpp
-#, fuzzy
 msgid "Delete (No Confirm)"
-msgstr "確認してください。"
+msgstr "削除 (確認なし)"
 
 #: editor/scene_tree_dock.cpp
 msgid "Add/Create a New Node"
@@ -8217,9 +8247,8 @@ msgid "Clear a script for the selected node."
 msgstr "選択したノードのスクリプトをクリア"
 
 #: editor/scene_tree_dock.cpp
-#, fuzzy
 msgid "Remote"
-msgstr "削除"
+msgstr "リモート"
 
 #: editor/scene_tree_dock.cpp
 #, fuzzy
@@ -8269,18 +8298,16 @@ msgstr ""
 "クリックしてグループのドックを表示してください."
 
 #: editor/scene_tree_editor.cpp editor/script_create_dialog.cpp
-#, fuzzy
 msgid "Open Script"
-msgstr "フォルダを作成"
+msgstr "スクリプトを開く"
 
 #: editor/scene_tree_editor.cpp
-#, fuzzy
 msgid ""
 "Node is locked.\n"
 "Click to unlock it."
 msgstr ""
-"ノードはロックされています.\n"
-"クリックしてロックを外してください"
+"ノードはロックされています。\n"
+"クリックしてロックを外してください。"
 
 #: editor/scene_tree_editor.cpp
 #, fuzzy
@@ -8324,14 +8351,12 @@ msgid "Select a Node"
 msgstr "ノードを選択"
 
 #: editor/script_create_dialog.cpp
-#, fuzzy
 msgid "Error loading template '%s'"
-msgstr "イメージ読み込みエラー:"
+msgstr "テンプレート %s 読み込みエラー"
 
 #: editor/script_create_dialog.cpp
-#, fuzzy
 msgid "Error - Could not create script in filesystem."
-msgstr "フォルダを作成できませんでした。"
+msgstr "エラー - ファイルシステムにスクリプトを作成できませんでした。"
 
 #: editor/script_create_dialog.cpp
 #, fuzzy
@@ -8352,9 +8377,8 @@ msgid "Path is empty"
 msgstr "パスがありません"
 
 #: editor/script_create_dialog.cpp
-#, fuzzy
 msgid "Filename is empty"
-msgstr "保存するパスがありません!"
+msgstr "ファイル名が空です"
 
 #: editor/script_create_dialog.cpp
 #, fuzzy
@@ -8384,9 +8408,8 @@ msgid "Wrong extension chosen"
 msgstr "拡張子が誤っています"
 
 #: editor/script_create_dialog.cpp
-#, fuzzy
 msgid "Invalid Path"
-msgstr "無効なフォント サイズです。"
+msgstr "無効なパス"
 
 #: editor/script_create_dialog.cpp
 msgid "Invalid class name"
@@ -8411,16 +8434,14 @@ msgid "Built-in script (into scene file)"
 msgstr "組み込みスクリプト(シーンファイルの）"
 
 #: editor/script_create_dialog.cpp
-#, fuzzy
 msgid "Create new script file"
-msgstr "フォルダを作成"
+msgstr "新規スクリプトファイルを作成"
 
 #: editor/script_create_dialog.cpp
 msgid "Load existing script file"
 msgstr "既存のスクリプトファイルを読み込む"
 
 #: editor/script_create_dialog.cpp
-#, fuzzy
 msgid "Language"
 msgstr "言語"
 
@@ -8433,9 +8454,8 @@ msgid "Class Name"
 msgstr "クラス名"
 
 #: editor/script_create_dialog.cpp
-#, fuzzy
 msgid "Template"
-msgstr "選択しているものを削除"
+msgstr "テンプレート"
 
 #: editor/script_create_dialog.cpp
 msgid "Built-in Script"
@@ -8447,18 +8467,16 @@ msgid "Attach Node Script"
 msgstr "ノードにスクリプトを添付する"
 
 #: editor/script_editor_debugger.cpp
-#, fuzzy
 msgid "Remote "
-msgstr "削除"
+msgstr "リモート "
 
 #: editor/script_editor_debugger.cpp
 msgid "Bytes:"
 msgstr "バイト:"
 
 #: editor/script_editor_debugger.cpp
-#, fuzzy
 msgid "Stack Trace"
-msgstr "スタックフレーム"
+msgstr "スタックトレース"
 
 #: editor/script_editor_debugger.cpp
 msgid "Pick one or more items from the list to display the graph."
@@ -8473,9 +8491,8 @@ msgid "Child Process Connected"
 msgstr "子プロセス接続"
 
 #: editor/script_editor_debugger.cpp
-#, fuzzy
 msgid "Copy Error"
-msgstr "読み込みエラー"
+msgstr "コピーエラー"
 
 #: editor/script_editor_debugger.cpp
 #, fuzzy
@@ -8670,9 +8687,8 @@ msgid "Platform:"
 msgstr ""
 
 #: modules/gdnative/gdnative_library_editor_plugin.cpp
-#, fuzzy
 msgid "Platform"
-msgstr "プラットフォームへコピー..."
+msgstr "プラットフォーム"
 
 #: modules/gdnative/gdnative_library_editor_plugin.cpp
 #, fuzzy
@@ -8689,14 +8705,12 @@ msgid "GDNativeLibrary"
 msgstr "メッシュライブラリ..."
 
 #: modules/gdnative/gdnative_library_singleton_editor.cpp
-#, fuzzy
 msgid "Library"
-msgstr "メッシュライブラリ..."
+msgstr "ライブラリ"
 
 #: modules/gdnative/gdnative_library_singleton_editor.cpp
-#, fuzzy
 msgid "Status"
-msgstr "ステータス:"
+msgstr "ステータス"
 
 #: modules/gdnative/gdnative_library_singleton_editor.cpp
 msgid "Libraries: "
@@ -8707,7 +8721,8 @@ msgid "GDNative"
 msgstr ""
 
 #: modules/gdscript/gdscript_functions.cpp
-msgid "step argument is zero!"
+#, fuzzy
+msgid "Step argument is zero!"
 msgstr "ステップ引数はゼロです！"
 
 #: modules/gdscript/gdscript_functions.cpp
@@ -8907,51 +8922,44 @@ msgid "Failed to create solution."
 msgstr "アウトラインを生成できませんでした!"
 
 #: modules/mono/editor/godotsharp_editor.cpp
-#, fuzzy
 msgid "Failed to save solution."
-msgstr "リソース読み込み失敗"
+msgstr "ソリューションの保存に失敗しました。"
 
 #: modules/mono/editor/godotsharp_editor.cpp
-#, fuzzy
 msgid "Done"
-msgstr "完了!"
+msgstr "完了"
 
 #: modules/mono/editor/godotsharp_editor.cpp
-#, fuzzy
 msgid "Failed to create C# project."
-msgstr "リソース読み込み失敗"
+msgstr "C#プロジェクトの生成に失敗しました。"
 
 #: modules/mono/editor/godotsharp_editor.cpp
 msgid "Mono"
-msgstr "モノラル音声"
+msgstr "Mono"
 
 #: modules/mono/editor/godotsharp_editor.cpp
 msgid "About C# support"
 msgstr ""
 
 #: modules/mono/editor/godotsharp_editor.cpp
-#, fuzzy
 msgid "Create C# solution"
-msgstr "アウトラインを生成"
+msgstr "C#ソリューションを生成"
 
 #: modules/mono/editor/mono_bottom_panel.cpp
 msgid "Builds"
 msgstr "ビルド"
 
 #: modules/mono/editor/mono_bottom_panel.cpp
-#, fuzzy
 msgid "Build Project"
-msgstr "プロジェクト"
+msgstr "プロジェクトをビルド"
 
 #: modules/mono/editor/mono_bottom_panel.cpp
-#, fuzzy
 msgid "Warnings"
 msgstr "警告"
 
 #: modules/mono/editor/mono_bottom_panel.cpp
-#, fuzzy
 msgid "View log"
-msgstr "ビューファイル:"
+msgstr "ログを表示"
 
 #: modules/mono/mono_gd/gd_mono_utils.cpp
 msgid "End of inner exception stack trace"
@@ -9101,14 +9109,12 @@ msgid "Name already in use by another func/var/signal:"
 msgstr "他の関数/変数/シグナルにより既に使われている名前です:"
 
 #: modules/visual_script/visual_script_editor.cpp
-#, fuzzy
 msgid "Rename Function"
-msgstr "関数を作成"
+msgstr "関数名を変更"
 
 #: modules/visual_script/visual_script_editor.cpp
-#, fuzzy
 msgid "Rename Variable"
-msgstr "変数の名前を変える"
+msgstr "変数名を変更"
 
 #: modules/visual_script/visual_script_editor.cpp
 msgid "Rename Signal"
@@ -9119,24 +9125,20 @@ msgid "Add Function"
 msgstr "関数を追加"
 
 #: modules/visual_script/visual_script_editor.cpp
-#, fuzzy
 msgid "Add Variable"
-msgstr "変数を加える"
+msgstr "変数を追加"
 
 #: modules/visual_script/visual_script_editor.cpp
-#, fuzzy
 msgid "Add Signal"
-msgstr "signalを加える"
+msgstr "信号を追加"
 
 #: modules/visual_script/visual_script_editor.cpp
-#, fuzzy
 msgid "Change Expression"
 msgstr "式を変更"
 
 #: modules/visual_script/visual_script_editor.cpp
-#, fuzzy
 msgid "Add Node"
-msgstr "ノードを加える"
+msgstr "ノードを追加"
 
 #: modules/visual_script/visual_script_editor.cpp
 #, fuzzy
@@ -9205,9 +9207,8 @@ msgid "Change Base Type"
 msgstr "型(type)を変更"
 
 #: modules/visual_script/visual_script_editor.cpp
-#, fuzzy
 msgid "Move Node(s)"
-msgstr "ノードを除去"
+msgstr "ノードを移動"
 
 #: modules/visual_script/visual_script_editor.cpp
 #, fuzzy
@@ -9244,9 +9245,8 @@ msgid "Can't copy the function node."
 msgstr "'..'を処理できません"
 
 #: modules/visual_script/visual_script_editor.cpp
-#, fuzzy
 msgid "Clipboard is empty!"
-msgstr "リソースのクリップボードは空です!"
+msgstr "クリップボードは空です!"
 
 #: modules/visual_script/visual_script_editor.cpp
 #, fuzzy
@@ -9254,9 +9254,8 @@ msgid "Paste VisualScript Nodes"
 msgstr "ノードを貼り付け:"
 
 #: modules/visual_script/visual_script_editor.cpp
-#, fuzzy
 msgid "Remove Function"
-msgstr "選択しているものを削除"
+msgstr "関数を除去"
 
 #: modules/visual_script/visual_script_editor.cpp
 #, fuzzy
@@ -9269,9 +9268,8 @@ msgid "Editing Variable:"
 msgstr "変数を編集中:"
 
 #: modules/visual_script/visual_script_editor.cpp
-#, fuzzy
 msgid "Remove Signal"
-msgstr "選択しているものを削除"
+msgstr "信号を除去"
 
 #: modules/visual_script/visual_script_editor.cpp
 #, fuzzy
@@ -9297,12 +9295,10 @@ msgid "Select or create a function to edit graph"
 msgstr "グラフを編集する関数を、選択するか生成する"
 
 #: modules/visual_script/visual_script_editor.cpp
-#, fuzzy
 msgid "Edit Signal Arguments:"
 msgstr "シグナルの引数を編集:"
 
 #: modules/visual_script/visual_script_editor.cpp
-#, fuzzy
 msgid "Edit Variable:"
 msgstr "変数を編集:"
 
@@ -9315,7 +9311,6 @@ msgid "Find Node Type"
 msgstr "ノードタイプを探す"
 
 #: modules/visual_script/visual_script_editor.cpp
-#, fuzzy
 msgid "Copy Nodes"
 msgstr "ノードをコピー"
 
@@ -9328,9 +9323,8 @@ msgid "Paste Nodes"
 msgstr "ノードを貼り付け:"
 
 #: modules/visual_script/visual_script_editor.cpp
-#, fuzzy
 msgid "Edit Member"
-msgstr "メンバー:"
+msgstr "メンバーを編集"
 
 #: modules/visual_script/visual_script_flow_control.cpp
 #, fuzzy
@@ -9368,14 +9362,12 @@ msgid "Invalid index property name '%s' in node %s."
 msgstr "ノード%sの不正なインデックスのプロパティ名'%s' ."
 
 #: modules/visual_script/visual_script_nodes.cpp
-#, fuzzy
 msgid ": Invalid argument of type: "
-msgstr ":不正な引数です.引数の型=: "
+msgstr ":無効な引数 引数の型: "
 
 #: modules/visual_script/visual_script_nodes.cpp
-#, fuzzy
 msgid ": Invalid arguments: "
-msgstr ":不正な引数: "
+msgstr ": 無効な引数: "
 
 #: modules/visual_script/visual_script_nodes.cpp
 #, fuzzy
@@ -9415,7 +9407,6 @@ msgid "Set %s"
 msgstr ""
 
 #: platform/javascript/export/export.cpp
-#, fuzzy
 msgid "Run in Browser"
 msgstr "ブラウザで実行"
 
@@ -9425,9 +9416,8 @@ msgid "Run exported HTML in the system's default browser."
 msgstr "エクスポートしたHTMLファイルを既定のブラウザで実行."
 
 #: platform/javascript/export/export.cpp
-#, fuzzy
 msgid "Could not write file:"
-msgstr "ファイルに書き込みできませんでした:\n"
+msgstr "ファイルを書き込めませんでした:"
 
 #: platform/javascript/export/export.cpp
 #, fuzzy
@@ -9710,7 +9700,7 @@ msgstr ""
 
 #: scene/3d/cpu_particles.cpp
 #, fuzzy
-msgid "Nothing is visible because no mesh has not been assigned."
+msgid "Nothing is visible because no mesh has been assigned."
 msgstr "描画パスのためのメッシュが指定されていませんので見えません"
 
 #: scene/3d/cpu_particles.cpp
@@ -9763,7 +9753,9 @@ msgstr ""
 "PathFollow2D は、Path2D ノードの子として設定されている場合のみ動作します。"
 
 #: scene/3d/path.cpp
-msgid "OrientedPathFollow requires up vectors enabled in its parent Path."
+msgid ""
+"OrientedPathFollow requires \"Up Vector\" enabled in its parent Path's Curve "
+"resource."
 msgstr ""
 
 #: scene/3d/physics_body.cpp
@@ -9793,10 +9785,13 @@ msgstr ""
 "セット) ごとに許可されます。"
 
 #: scene/3d/scenario_fx.cpp
+#, fuzzy
 msgid ""
 "This WorldEnvironment is ignored. Either add a Camera (for 3D scenes) or set "
 "this environment's Background Mode to Canvas (for 2D scenes)."
 msgstr ""
+"このWorldEnvironmentは無視されました。カメラを追加するか(3Dシーンの場合)、こ"
+"のEnvironmentの Backgroundモード を Canvas に設定します(2Dシーンの場合)。"
 
 #: scene/3d/soft_body.cpp
 msgid "This body will be ignored until you set a mesh"
@@ -9828,18 +9823,16 @@ msgid "On BlendTree node '%s', animation not found: '%s'"
 msgstr ""
 
 #: scene/animation/animation_blend_tree.cpp
-#, fuzzy
 msgid "Animation not found: '%s'"
-msgstr "アニメーションツール"
+msgstr "見つからないアニメーション: '%s'"
 
 #: scene/animation/animation_tree.cpp
 msgid "In node '%s', invalid animation: '%s'."
 msgstr ""
 
 #: scene/animation/animation_tree.cpp
-#, fuzzy
 msgid "Invalid animation: '%s'."
-msgstr "エラー:アニメーションの名前が不正です!"
+msgstr "無効なアニメーション: '%s'。"
 
 #: scene/animation/animation_tree.cpp
 #, fuzzy
@@ -9864,6 +9857,10 @@ msgstr ""
 msgid "AnimationPlayer root is not a valid node."
 msgstr "アニメーションツリーに問題があります."
 
+#: scene/animation/animation_tree_player.cpp
+msgid "This node has been deprecated. Use AnimationTree instead."
+msgstr ""
+
 #: scene/gui/color_picker.cpp
 #, fuzzy
 msgid "Raw Mode"
@@ -9881,6 +9878,10 @@ msgstr "警告!"
 #: scene/gui/dialogs.cpp
 msgid "Please Confirm..."
 msgstr "確認"
+
+#: scene/gui/graph_edit.cpp
+msgid "Enable snap and show grid."
+msgstr ""
 
 #: scene/gui/popup.cpp
 msgid ""
@@ -9907,7 +9908,6 @@ msgstr ""
 "イズを手動で設定してください。"
 
 #: scene/gui/tree.cpp
-#, fuzzy
 msgid "(Other)"
 msgstr "(その他)"
 
@@ -9949,19 +9949,12 @@ msgid "Invalid font size."
 msgstr "無効なフォント サイズです。"
 
 #: scene/resources/visual_shader.cpp
-#, fuzzy
 msgid "Input"
-msgstr "入力を追加"
-
-#: scene/resources/visual_shader.cpp
-#, fuzzy
-msgid "None"
-msgstr "<None>"
+msgstr "入力"
 
 #: scene/resources/visual_shader_nodes.cpp
-#, fuzzy
 msgid "Invalid source for shader."
-msgstr "不正なソース!"
+msgstr "無効なシェーダーのソースです。"
 
 #: servers/visual/shader_language.cpp
 msgid "Assignment to function."
@@ -9974,6 +9967,56 @@ msgstr ""
 #: servers/visual/shader_language.cpp
 msgid "Varyings can only be assigned in vertex function."
 msgstr ""
+
+#~ msgid "Create Poly"
+#~ msgstr "ポリゴンを作成"
+
+#~ msgid "Create a new polygon from scratch"
+#~ msgstr "新規にポリゴンを作成"
+
+#, fuzzy
+#~ msgid "Zoom out"
+#~ msgstr "ズームアウト"
+
+#, fuzzy
+#~ msgid "Zoom in"
+#~ msgstr "ズームイン"
+
+#~ msgid "Create Poly3D"
+#~ msgstr "3Dポリゴンを生成する"
+
+#~ msgid ""
+#~ "No OccluderPolygon2D resource on this node.\n"
+#~ "Create and assign one?"
+#~ msgstr ""
+#~ "このノードにOccluderPolygon2Dリソースがありません。\n"
+#~ "作成して、割り当てますか ?"
+
+#~ msgid "Edit existing polygon:"
+#~ msgstr "既存のポリゴンを編集:"
+
+#~ msgid "LMB: Move Point."
+#~ msgstr "LMB: 点を移動する。"
+
+#, fuzzy
+#~ msgid "Ctrl+LMB: Split Segment."
+#~ msgstr "Ctrl+マウス左ボタン: セグメントを分割"
+
+#~ msgid "RMB: Erase Point."
+#~ msgstr "右クリック: 点を消す。"
+
+#, fuzzy
+#~ msgid "New TextFile"
+#~ msgstr "ビューファイル:"
+
+#~ msgid "Save Theme As"
+#~ msgstr "テーマに名前を付けて保存"
+
+#~ msgid "<None>"
+#~ msgstr "<None>"
+
+#~ msgid "Zoom:"
+#~ msgstr "ズーム:"
 
 #~ msgid "Are you sure you want to remove all connections from the \""
 #~ msgstr "\" から全ての接続を除去してもよろしいですか"
@@ -10754,10 +10797,6 @@ msgstr ""
 #, fuzzy
 #~ msgid "Source Font:"
 #~ msgstr "ソース　フォント:"
-
-#, fuzzy
-#~ msgid "Source Font Size:"
-#~ msgstr "ソース　フォントサイズ:"
 
 #, fuzzy
 #~ msgid "Dest Resource:"

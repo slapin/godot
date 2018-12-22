@@ -341,6 +341,18 @@ void VisualShaderEditor::_update_graph() {
 			node->add_child(hb);
 
 			node->set_slot(i + port_offset, valid_left, port_left, type_color[port_left], valid_right, port_right, type_color[port_right]);
+
+			if (EditorSettings::get_singleton()->get("interface/theme/use_graph_node_headers")) {
+				Ref<StyleBoxFlat> sb = node->get_stylebox("frame", "GraphNode");
+				Color c = sb->get_border_color(MARGIN_TOP);
+				Color mono_color = ((c.r + c.g + c.b) / 3) < 0.7 ? Color(1.0, 1.0, 1.0) : Color(0.0, 0.0, 0.0);
+				mono_color.a = 0.85;
+				c = mono_color;
+
+				node->add_color_override("title_color", c);
+				c.a = 0.7;
+				node->add_color_override("close_color", c);
+			}
 		}
 
 		if (vsnode->get_output_port_for_preview() >= 0) {
@@ -605,6 +617,9 @@ void VisualShaderEditor::_notification(int p_what) {
 
 		error_panel->add_style_override("panel", get_stylebox("bg", "Tree"));
 		error_label->add_color_override("font_color", get_color("error_color", "Editor"));
+
+		if (p_what == NOTIFICATION_THEME_CHANGED && is_visible_in_tree())
+			_update_graph();
 	}
 
 	if (p_what == NOTIFICATION_PROCESS) {
@@ -633,18 +648,23 @@ void VisualShaderEditor::_duplicate_nodes() {
 	VisualShader::Type type = VisualShader::Type(edit_type->get_selected());
 
 	List<int> nodes;
+	Set<int> excluded;
 
 	for (int i = 0; i < graph->get_child_count(); i++) {
 
-		if (Object::cast_to<GraphNode>(graph->get_child(i))) {
-			int id = String(graph->get_child(i)->get_name()).to_int();
+		GraphNode *gn = Object::cast_to<GraphNode>(graph->get_child(i));
+		if (gn) {
+			int id = String(gn->get_name()).to_int();
 			Ref<VisualShaderNode> node = visual_shader->get_node(type, id);
 			Ref<VisualShaderNodeOutput> output = node;
-			if (output.is_valid()) //can't duplicate output
+			if (output.is_valid()) { // can't duplicate output
+				excluded.insert(id);
 				continue;
-			if (node.is_valid()) {
+			}
+			if (node.is_valid() && gn->is_selected()) {
 				nodes.push_back(id);
 			}
+			excluded.insert(id);
 		}
 	}
 
@@ -683,15 +703,16 @@ void VisualShaderEditor::_duplicate_nodes() {
 	undo_redo->add_undo_method(this, "_update_graph");
 	undo_redo->commit_action();
 
-	//reselect
+	// reselect duplicated nodes by excluding the other ones
 	for (int i = 0; i < graph->get_child_count(); i++) {
 
-		if (Object::cast_to<GraphNode>(graph->get_child(i))) {
-			int id = String(graph->get_child(i)->get_name()).to_int();
-			if (nodes.find(id)) {
-				Object::cast_to<GraphNode>(graph->get_child(i))->set_selected(true);
+		GraphNode *gn = Object::cast_to<GraphNode>(graph->get_child(i));
+		if (gn) {
+			int id = String(gn->get_name()).to_int();
+			if (!excluded.has(id)) {
+				gn->set_selected(true);
 			} else {
-				Object::cast_to<GraphNode>(graph->get_child(i))->set_selected(false);
+				gn->set_selected(false);
 			}
 		}
 	}
@@ -798,7 +819,7 @@ VisualShaderEditor::VisualShaderEditor() {
 
 	add_node = memnew(MenuButton);
 	graph->get_zoom_hbox()->add_child(add_node);
-	add_node->set_text(TTR("Add Node.."));
+	add_node->set_text(TTR("Add Node..."));
 	graph->get_zoom_hbox()->move_child(add_node, 0);
 	add_node->get_popup()->connect("id_pressed", this, "_add_node");
 

@@ -172,6 +172,7 @@ int AudioDriverManager::get_driver_count() {
 }
 
 void AudioDriverManager::initialize(int p_driver) {
+	GLOBAL_DEF_RST("audio/enable_audio_input", false);
 	int failed_driver = -1;
 
 	// Check if there is a selected driver
@@ -737,6 +738,12 @@ float AudioServer::get_bus_volume_db(int p_bus) const {
 	return buses[p_bus]->volume_db;
 }
 
+int AudioServer::get_bus_channels(int p_bus) const {
+
+	ERR_FAIL_INDEX_V(p_bus, buses.size(), 0);
+	return buses[p_bus]->channels.size();
+}
+
 void AudioServer::set_bus_send(int p_bus, const StringName &p_send) {
 
 	ERR_FAIL_INDEX(p_bus, buses.size());
@@ -1021,6 +1028,11 @@ void AudioServer::update() {
 	AudioDriver::get_singleton()->reset_profiling_time();
 	prof_time = 0;
 #endif
+
+	for (Set<CallbackItem>::Element *E = update_callbacks.front(); E; E = E->next()) {
+
+		E->get().callback(E->get().userdata);
+	}
 }
 
 void AudioServer::load_default_bus_layout() {
@@ -1146,6 +1158,25 @@ void AudioServer::remove_callback(AudioCallback p_callback, void *p_userdata) {
 	unlock();
 }
 
+void AudioServer::add_update_callback(AudioCallback p_callback, void *p_userdata) {
+	lock();
+	CallbackItem ci;
+	ci.callback = p_callback;
+	ci.userdata = p_userdata;
+	update_callbacks.insert(ci);
+	unlock();
+}
+
+void AudioServer::remove_update_callback(AudioCallback p_callback, void *p_userdata) {
+
+	lock();
+	CallbackItem ci;
+	ci.callback = p_callback;
+	ci.userdata = p_userdata;
+	update_callbacks.erase(ci);
+	unlock();
+}
+
 void AudioServer::set_bus_layout(const Ref<AudioBusLayout> &p_bus_layout) {
 
 	ERR_FAIL_COND(p_bus_layout.is_null() || p_bus_layout->buses.size() == 0);
@@ -1266,6 +1297,8 @@ void AudioServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_bus_name", "bus_idx", "name"), &AudioServer::set_bus_name);
 	ClassDB::bind_method(D_METHOD("get_bus_name", "bus_idx"), &AudioServer::get_bus_name);
 	ClassDB::bind_method(D_METHOD("get_bus_index", "bus_name"), &AudioServer::get_bus_index);
+
+	ClassDB::bind_method(D_METHOD("get_bus_channels", "bus_idx"), &AudioServer::get_bus_channels);
 
 	ClassDB::bind_method(D_METHOD("set_bus_volume_db", "bus_idx", "volume_db"), &AudioServer::set_bus_volume_db);
 	ClassDB::bind_method(D_METHOD("get_bus_volume_db", "bus_idx"), &AudioServer::get_bus_volume_db);

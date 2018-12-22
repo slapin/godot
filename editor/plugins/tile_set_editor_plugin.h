@@ -40,12 +40,12 @@
 #define WORKSPACE_MARGIN Vector2(10, 10)
 class TilesetEditorContext;
 
-class TileSetEditor : public Control {
+class TileSetEditor : public HSplitContainer {
 
 	friend class TileSetEditorPlugin;
 	friend class TilesetEditorContext;
 
-	GDCLASS(TileSetEditor, Control)
+	GDCLASS(TileSetEditor, HSplitContainer)
 
 	enum TextureToolButtons {
 		TOOL_TILESET_ADD_TEXTURE,
@@ -71,6 +71,7 @@ class TileSetEditor : public Control {
 		EDITMODE_BITMASK,
 		EDITMODE_PRIORITY,
 		EDITMODE_ICON,
+		EDITMODE_Z_INDEX,
 		EDITMODE_MAX
 	};
 
@@ -134,9 +135,11 @@ class TileSetEditor : public Control {
 	HSeparator *separator_editmode;
 	HBoxContainer *toolbar;
 	ToolButton *tools[TOOL_MAX];
+	VSeparator *separator_bitmask;
 	VSeparator *separator_delete;
 	VSeparator *separator_grid;
 	SpinBox *spin_priority;
+	SpinBox *spin_z_index;
 	WorkspaceMode workspace_mode;
 	EditMode edit_mode;
 	int current_tile;
@@ -177,6 +180,7 @@ private:
 	void _on_workspace_input(const Ref<InputEvent> &p_ie);
 	void _on_tool_clicked(int p_tool);
 	void _on_priority_changed(float val);
+	void _on_z_index_changed(float val);
 	void _on_grid_snap_toggled(bool p_val);
 	void _set_snap_step(Vector2 p_val);
 	void _set_snap_off(Vector2 p_val);
@@ -184,7 +188,7 @@ private:
 
 	void _zoom_in();
 	void _zoom_out();
-	void _reset_zoom();
+	void _zoom_reset();
 
 	void draw_highlight_current_tile();
 	void draw_highlight_subtile(Vector2 coord, const Vector<Vector2> &other_highlighted = Vector<Vector2>());
@@ -212,6 +216,7 @@ class TilesetEditorContext : public Object {
 	bool snap_options_visible;
 
 public:
+	bool _hide_script_from_inspector() { return true; }
 	void set_tileset(const Ref<TileSet> &p_tileset);
 
 private:
@@ -221,6 +226,7 @@ protected:
 	bool _set(const StringName &p_name, const Variant &p_value);
 	bool _get(const StringName &p_name, Variant &r_ret) const;
 	void _get_property_list(List<PropertyInfo> *p_list) const;
+	static void _bind_methods();
 
 public:
 	TilesetEditorContext(TileSetEditor *p_tileset_editor);
@@ -240,6 +246,8 @@ public:
 	virtual void edit(Object *p_node);
 	virtual bool handles(Object *p_node) const;
 	virtual void make_visible(bool p_visible);
+	void set_state(const Dictionary &p_state);
+	Dictionary get_state() const;
 
 	TileSetEditorPlugin(EditorNode *p_node);
 };

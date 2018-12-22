@@ -307,10 +307,6 @@ void fill_default_theme(Ref<Theme> &theme, const Ref<Font> &default_font, const 
 
 	theme->set_constant("hseparation", "MenuButton", 3 * scale);
 
-	// ButtonGroup
-
-	theme->set_stylebox("panel", "ButtonGroup", memnew(StyleBoxEmpty));
-
 	// CheckBox
 
 	Ref<StyleBox> cbx_empty = memnew(StyleBoxEmpty);
@@ -604,6 +600,7 @@ void fill_default_theme(Ref<Theme> &theme, const Ref<Font> &default_font, const 
 	theme->set_icon("resizer", "GraphNode", make_icon(window_resizer_png));
 	theme->set_font("title_font", "GraphNode", default_font);
 	theme->set_color("title_color", "GraphNode", Color(0, 0, 0, 1));
+	theme->set_color("close_color", "GraphNode", Color(0, 0, 0, 1));
 	theme->set_constant("title_offset", "GraphNode", 20 * scale);
 	theme->set_constant("close_offset", "GraphNode", 18 * scale);
 	theme->set_constant("port_offset", "GraphNode", 3 * scale);

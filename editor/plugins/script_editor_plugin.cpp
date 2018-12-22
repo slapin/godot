@@ -40,6 +40,7 @@
 #include "editor/editor_settings.h"
 #include "editor/find_in_files.h"
 #include "editor/node_dock.h"
+#include "editor/plugins/shader_editor_plugin.h"
 #include "editor/script_editor_debugger.h"
 #include "scene/main/viewport.h"
 #include "script_text_editor.h"
@@ -896,12 +897,12 @@ void ScriptEditor::_file_dialog_action(String p_file) {
 		} break;
 		case THEME_SAVE_AS: {
 			if (!EditorSettings::get_singleton()->save_text_editor_theme_as(p_file)) {
-				editor->show_warning(TTR("Error while saving theme"), TTR("Error saving"));
+				editor->show_warning(TTR("Error while saving theme."), TTR("Error Saving"));
 			}
 		} break;
 		case THEME_IMPORT: {
 			if (!EditorSettings::get_singleton()->import_text_editor_theme(p_file)) {
-				editor->show_warning(TTR("Error importing theme"), TTR("Error importing"));
+				editor->show_warning(TTR("Error importing theme."), TTR("Error Importing"));
 			}
 		} break;
 	}
@@ -1089,7 +1090,7 @@ void ScriptEditor::_menu_option(int p_option) {
 
 				Ref<Script> scr = current->get_edited_resource();
 				if (scr == NULL || scr.is_null()) {
-					EditorNode::get_singleton()->show_warning("Can't obtain the script for running");
+					EditorNode::get_singleton()->show_warning("Can't obtain the script for running.");
 					break;
 				}
 
@@ -1102,13 +1103,13 @@ void ScriptEditor::_menu_option(int p_option) {
 				}
 				if (!scr->is_tool()) {
 
-					EditorNode::get_singleton()->show_warning("Script is not in tool mode, will not be able to run");
+					EditorNode::get_singleton()->show_warning("Script is not in tool mode, will not be able to run.");
 					return;
 				}
 
 				if (!ClassDB::is_parent_class(scr->get_instance_base_type(), "EditorScript")) {
 
-					EditorNode::get_singleton()->show_warning("To run this script, it must inherit EditorScript and be set to tool mode");
+					EditorNode::get_singleton()->show_warning("To run this script, it must inherit EditorScript and be set to tool mode.");
 					return;
 				}
 
@@ -1815,6 +1816,10 @@ Ref<TextFile> ScriptEditor::_load_text_file(const String &p_path, Error *r_error
 	text_file->set_file_path(local_path);
 	text_file->set_path(local_path, true);
 
+	if (ResourceLoader::get_timestamp_on_load()) {
+		text_file->set_last_modified_time(FileAccess::get_modified_time(path));
+	}
+
 	if (r_error) {
 		*r_error = OK;
 	}
@@ -1843,6 +1848,10 @@ Error ScriptEditor::_save_text_file(Ref<TextFile> p_text_file, const String &p_p
 	}
 	file->close();
 	memdelete(file);
+
+	if (ResourceSaver::get_timestamp_on_save()) {
+		p_text_file->set_last_modified_time(FileAccess::get_modified_time(p_path));
+	}
 
 	_res_saved_callback(sqscr);
 	return OK;
@@ -2770,13 +2779,18 @@ void ScriptEditor::_on_find_in_files_requested(String text) {
 void ScriptEditor::_on_find_in_files_result_selected(String fpath, int line_number, int begin, int end) {
 
 	RES res = ResourceLoader::load(fpath);
-	edit(res);
+	if (fpath.get_extension() == "shader") {
+		ShaderEditorPlugin *shader_editor = Object::cast_to<ShaderEditorPlugin>(EditorNode::get_singleton()->get_editor_data().get_editor("Shader"));
+		shader_editor->edit(res.ptr());
+		shader_editor->make_visible(true);
+		shader_editor->get_shader_editor()->goto_line_selection(line_number - 1, begin, end);
+	} else {
+		edit(res);
 
-	ScriptEditorBase *seb = _get_current_editor();
-
-	ScriptTextEditor *ste = Object::cast_to<ScriptTextEditor>(seb);
-	if (ste) {
-		ste->goto_line_selection(line_number - 1, begin, end);
+		ScriptTextEditor *ste = Object::cast_to<ScriptTextEditor>(_get_current_editor());
+		if (ste) {
+			ste->goto_line_selection(line_number - 1, begin, end);
+		}
 	}
 }
 
@@ -2963,10 +2977,11 @@ ScriptEditor::ScriptEditor(EditorNode *p_editor) {
 	file_menu = memnew(MenuButton);
 	menu_hb->add_child(file_menu);
 	file_menu->set_text(TTR("File"));
+	file_menu->set_switch_on_hover(true);
 	file_menu->get_popup()->set_hide_on_window_lose_focus(true);
-	file_menu->get_popup()->add_shortcut(ED_SHORTCUT("script_editor/new", TTR("New Script")), FILE_NEW);
-	file_menu->get_popup()->add_shortcut(ED_SHORTCUT("script_editor/new_textfile", TTR("New TextFile")), FILE_NEW_TEXTFILE);
-	file_menu->get_popup()->add_shortcut(ED_SHORTCUT("script_editor/open", TTR("Open")), FILE_OPEN);
+	file_menu->get_popup()->add_shortcut(ED_SHORTCUT("script_editor/new", TTR("New Script...")), FILE_NEW);
+	file_menu->get_popup()->add_shortcut(ED_SHORTCUT("script_editor/new_textfile", TTR("New TextFile...")), FILE_NEW_TEXTFILE);
+	file_menu->get_popup()->add_shortcut(ED_SHORTCUT("script_editor/open", TTR("Open...")), FILE_OPEN);
 	file_menu->get_popup()->add_submenu_item(TTR("Open Recent"), "RecentScripts", FILE_OPEN_RECENT);
 
 	recent_scripts = memnew(PopupMenu);
@@ -2995,10 +3010,11 @@ ScriptEditor::ScriptEditor(EditorNode *p_editor) {
 	theme_submenu->set_name("Theme");
 	file_menu->get_popup()->add_child(theme_submenu);
 	theme_submenu->connect("id_pressed", this, "_theme_option");
-	theme_submenu->add_shortcut(ED_SHORTCUT("script_editor/import_theme", TTR("Import Theme")), THEME_IMPORT);
+	theme_submenu->add_shortcut(ED_SHORTCUT("script_editor/import_theme", TTR("Import Theme...")), THEME_IMPORT);
 	theme_submenu->add_shortcut(ED_SHORTCUT("script_editor/reload_theme", TTR("Reload Theme")), THEME_RELOAD);
+	theme_submenu->add_separator();
 	theme_submenu->add_shortcut(ED_SHORTCUT("script_editor/save_theme", TTR("Save Theme")), THEME_SAVE);
-	theme_submenu->add_shortcut(ED_SHORTCUT("script_editor/save_theme_as", TTR("Save Theme As")), THEME_SAVE_AS);
+	theme_submenu->add_shortcut(ED_SHORTCUT("script_editor/save_theme_as", TTR("Save Theme As...")), THEME_SAVE_AS);
 
 	file_menu->get_popup()->add_separator();
 	file_menu->get_popup()->add_shortcut(ED_SHORTCUT("script_editor/close_docs", TTR("Close Docs")), CLOSE_DOCS);
@@ -3014,6 +3030,7 @@ ScriptEditor::ScriptEditor(EditorNode *p_editor) {
 	script_search_menu = memnew(MenuButton);
 	menu_hb->add_child(script_search_menu);
 	script_search_menu->set_text(TTR("Search"));
+	script_search_menu->set_switch_on_hover(true);
 	script_search_menu->get_popup()->set_hide_on_window_lose_focus(true);
 	script_search_menu->get_popup()->add_shortcut(ED_SHORTCUT("script_editor/find", TTR("Find..."), KEY_MASK_CMD | KEY_F), HELP_SEARCH_FIND);
 	script_search_menu->get_popup()->add_shortcut(ED_SHORTCUT("script_editor/find_next", TTR("Find Next"), KEY_F3), HELP_SEARCH_FIND_NEXT);
@@ -3023,6 +3040,7 @@ ScriptEditor::ScriptEditor(EditorNode *p_editor) {
 	debug_menu = memnew(MenuButton);
 	menu_hb->add_child(debug_menu);
 	debug_menu->set_text(TTR("Debug"));
+	debug_menu->set_switch_on_hover(true);
 	debug_menu->get_popup()->set_hide_on_window_lose_focus(true);
 	debug_menu->get_popup()->add_shortcut(ED_SHORTCUT("debugger/step_over", TTR("Step Over"), KEY_F10), DEBUG_NEXT);
 	debug_menu->get_popup()->add_shortcut(ED_SHORTCUT("debugger/step_into", TTR("Step Into"), KEY_F11), DEBUG_STEP);

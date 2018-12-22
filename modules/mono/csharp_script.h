@@ -82,6 +82,21 @@ class CSharpScript : public Script {
 
 	Set<Object *> instances;
 
+#ifdef DEBUG_ENABLED
+	Set<ObjectID> pending_reload_instances;
+#endif
+
+	struct StateBackup {
+		// TODO
+		// Replace with buffer containing the serialized state of managed scripts.
+		// Keep variant state backup to use only with script instance placeholders.
+		List<Pair<StringName, Variant> > properties;
+	};
+
+#ifdef TOOLS_ENABLED
+	Map<ObjectID, CSharpScript::StateBackup> pending_reload_state;
+#endif
+
 	String source;
 	StringName name;
 
@@ -103,10 +118,6 @@ class CSharpScript : public Script {
 	bool exports_invalidated;
 	void _update_exports_values(Map<StringName, Variant> &values, List<PropertyInfo> &propnames);
 	virtual void _placeholder_erased(PlaceHolderScriptInstance *p_placeholder);
-#endif
-
-#ifdef DEBUG_ENABLED
-	Map<ObjectID, List<Pair<StringName, Variant> > > pending_reload_state;
 #endif
 
 	Map<StringName, PropertyInfo> member_info;
@@ -158,14 +169,14 @@ public:
 	virtual void update_exports();
 
 	virtual bool is_tool() const { return tool; }
-	virtual bool is_valid() const;
+	virtual bool is_valid() const { return valid; }
 
 	virtual Ref<Script> get_base_script() const;
 	virtual ScriptLanguage *get_language() const;
 
-	/* TODO */ virtual void get_script_method_list(List<MethodInfo> *p_list) const {}
+	virtual void get_script_method_list(List<MethodInfo> *p_list) const;
 	bool has_method(const StringName &p_method) const;
-	/* TODO */ MethodInfo get_method_info(const StringName &p_method) const { return MethodInfo(); }
+	MethodInfo get_method_info(const StringName &p_method) const;
 
 	virtual int get_member_line(const StringName &p_member) const;
 
@@ -186,6 +197,8 @@ class CSharpInstance : public ScriptInstance {
 	bool base_ref;
 	bool ref_dying;
 	bool unsafe_referenced;
+	bool predelete_notified;
+	bool destructing_script_instance;
 
 	Ref<CSharpScript> script;
 	Ref<MonoGCHandle> gchandle;
@@ -205,6 +218,8 @@ class CSharpInstance : public ScriptInstance {
 
 public:
 	MonoObject *get_mono_object() const;
+
+	_FORCE_INLINE_ bool is_destructing_script_instance() { return destructing_script_instance; }
 
 	virtual bool set(const StringName &p_name, const Variant &p_value);
 	virtual bool get(const StringName &p_name, Variant &r_ret) const;
@@ -255,11 +270,9 @@ class CSharpLanguage : public ScriptLanguage {
 	GDMono *gdmono;
 	SelfList<CSharpScript>::List script_list;
 
-	Mutex *lock;
-	Mutex *script_bind_lock;
-	Mutex *script_gchandle_release_lock;
-
-	Map<Ref<CSharpScript>, Map<ObjectID, List<Pair<StringName, Variant> > > > to_reload;
+	Mutex *script_instances_mutex;
+	Mutex *script_gchandle_release_mutex;
+	Mutex *language_bind_mutex;
 
 	Map<Object *, CSharpScriptBinding> script_bindings;
 
@@ -296,7 +309,8 @@ public:
 	bool debug_break_parse(const String &p_file, int p_line, const String &p_error);
 
 #ifdef TOOLS_ENABLED
-	void reload_assemblies_if_needed(bool p_soft_reload);
+	bool is_assembly_reloading_needed();
+	void reload_assemblies(bool p_soft_reload);
 #endif
 
 	void project_assembly_loaded();
@@ -384,6 +398,7 @@ public:
 };
 
 class ResourceFormatLoaderCSharpScript : public ResourceFormatLoader {
+	GDCLASS(ResourceFormatLoaderCSharpScript, ResourceFormatLoader)
 public:
 	virtual RES load(const String &p_path, const String &p_original_path = "", Error *r_error = NULL);
 	virtual void get_recognized_extensions(List<String> *p_extensions) const;
@@ -392,6 +407,7 @@ public:
 };
 
 class ResourceFormatSaverCSharpScript : public ResourceFormatSaver {
+	GDCLASS(ResourceFormatSaverCSharpScript, ResourceFormatSaver)
 public:
 	virtual Error save(const String &p_path, const RES &p_resource, uint32_t p_flags = 0);
 	virtual void get_recognized_extensions(const RES &p_resource, List<String> *p_extensions) const;

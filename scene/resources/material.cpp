@@ -258,7 +258,7 @@ ShaderMaterial::~ShaderMaterial() {
 /////////////////////////////////
 
 Mutex *SpatialMaterial::material_mutex = NULL;
-SelfList<SpatialMaterial>::List SpatialMaterial::dirty_materials;
+SelfList<SpatialMaterial>::List *SpatialMaterial::dirty_materials = NULL;
 Map<SpatialMaterial::MaterialKey, SpatialMaterial::ShaderData> SpatialMaterial::shader_map;
 SpatialMaterial::ShaderNames *SpatialMaterial::shader_names = NULL;
 
@@ -267,6 +267,8 @@ void SpatialMaterial::init_shaders() {
 #ifndef NO_THREADS
 	material_mutex = Mutex::create();
 #endif
+
+	dirty_materials = memnew(SelfList<SpatialMaterial>::List);
 
 	shader_names = memnew(ShaderNames);
 
@@ -348,12 +350,15 @@ void SpatialMaterial::finish_shaders() {
 	memdelete(material_mutex);
 #endif
 
+	memdelete(dirty_materials);
+	dirty_materials = NULL;
+
 	memdelete(shader_names);
 }
 
 void SpatialMaterial::_update_shader() {
 
-	dirty_materials.remove(&element);
+	dirty_materials->remove(&element);
 
 	MaterialKey mk = _compute_key();
 	if (mk.key == current_key.key)
@@ -699,7 +704,7 @@ void SpatialMaterial::_update_shader() {
 
 	if (features[FEATURE_DEPTH_MAPPING] && !flags[FLAG_UV1_USE_TRIPLANAR]) { //depthmap not supported with triplanar
 		code += "\t{\n";
-		code += "\t\tvec3 view_dir = normalize(normalize(-VERTEX)*mat3(TANGENT*depth_flip.x,BINORMAL*depth_flip.y,NORMAL));\n"; // binormal is negative due to mikktspace
+		code += "\t\tvec3 view_dir = normalize(normalize(-VERTEX)*mat3(TANGENT*depth_flip.x,-BINORMAL*depth_flip.y,NORMAL));\n"; // binormal is negative due to mikktspace, flip 'unflips' it ;-)
 
 		if (deep_parallax) {
 			code += "\t\tfloat num_layers = mix(float(depth_max_layers),float(depth_min_layers), abs(dot(vec3(0.0, 0.0, 1.0), view_dir)));\n";
@@ -1002,9 +1007,9 @@ void SpatialMaterial::flush_changes() {
 	if (material_mutex)
 		material_mutex->lock();
 
-	while (dirty_materials.first()) {
+	while (dirty_materials->first()) {
 
-		dirty_materials.first()->self()->_update_shader();
+		dirty_materials->first()->self()->_update_shader();
 	}
 
 	if (material_mutex)
@@ -1017,7 +1022,7 @@ void SpatialMaterial::_queue_shader_change() {
 		material_mutex->lock();
 
 	if (!element.in_list()) {
-		dirty_materials.add(&element);
+		dirty_materials->add(&element);
 	}
 
 	if (material_mutex)
@@ -1315,7 +1320,7 @@ void SpatialMaterial::set_flag(Flags p_flag, bool p_enabled) {
 		return;
 
 	flags[p_flag] = p_enabled;
-	if (p_flag == FLAG_USE_ALPHA_SCISSOR) {
+	if (p_flag == FLAG_USE_ALPHA_SCISSOR || p_flag == FLAG_UNSHADED) {
 		_change_notify();
 	}
 	_queue_shader_change();
@@ -1420,6 +1425,48 @@ void SpatialMaterial::_validate_property(PropertyInfo &property) const {
 
 	if ((property.name == "depth_min_layers" || property.name == "depth_max_layers") && !deep_parallax) {
 		property.usage = 0;
+	}
+
+	if (flags[FLAG_UNSHADED]) {
+		if (property.name.begins_with("anisotropy")) {
+			property.usage = 0;
+		}
+
+		if (property.name.begins_with("ao")) {
+			property.usage = 0;
+		}
+
+		if (property.name.begins_with("clearcoat")) {
+			property.usage = 0;
+		}
+
+		if (property.name.begins_with("emission")) {
+			property.usage = 0;
+		}
+
+		if (property.name.begins_with("metallic")) {
+			property.usage = 0;
+		}
+
+		if (property.name.begins_with("normal")) {
+			property.usage = 0;
+		}
+
+		if (property.name.begins_with("rim")) {
+			property.usage = 0;
+		}
+
+		if (property.name.begins_with("roughness")) {
+			property.usage = 0;
+		}
+
+		if (property.name.begins_with("subsurf_scatter")) {
+			property.usage = 0;
+		}
+
+		if (property.name.begins_with("transmission")) {
+			property.usage = 0;
+		}
 	}
 }
 

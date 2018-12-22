@@ -435,7 +435,7 @@ void Viewport::_notification(int p_what) {
 						}
 					}
 
-					if (!has_mouse_motion) {
+					if (!has_mouse_motion && physics_has_last_mousepos) {
 						Ref<InputEventMouseMotion> mm;
 						mm.instance();
 						mm->set_global_position(physics_last_mousepos);
@@ -465,6 +465,7 @@ void Viewport::_notification(int p_what) {
 
 						pos = mm->get_position();
 						motion_tested = true;
+						physics_has_last_mousepos = true;
 						physics_last_mousepos = pos;
 						physics_last_mouse_state.alt = mm->get_alt();
 						physics_last_mouse_state.shift = mm->get_shift();
@@ -643,7 +644,7 @@ void Viewport::_notification(int p_what) {
 					}
 				}
 
-				if (!motion_tested && camera && physics_last_mousepos != Vector2(1e20, 1e20)) {
+				if (!motion_tested && camera && physics_has_last_mousepos) {
 
 					//test anyway for mouseenter/exit because objects might move
 					Vector3 from = camera->project_ray_origin(physics_last_mousepos);
@@ -1727,6 +1728,7 @@ void Viewport::_gui_input_event(Ref<InputEvent> p_event) {
 
 				gui.mouse_focus = _gui_find_control(pos);
 				gui.mouse_focus_mask = 1 << (mb->get_button_index() - 1);
+				gui.last_mouse_focus = gui.mouse_focus;
 
 				if (!gui.mouse_focus) {
 					return;
@@ -1747,7 +1749,7 @@ void Viewport::_gui_input_event(Ref<InputEvent> p_event) {
 			mb->set_position(pos);
 
 #ifdef DEBUG_ENABLED
-			if (ScriptDebugger::get_singleton()) {
+			if (ScriptDebugger::get_singleton() && gui.mouse_focus) {
 
 				Array arr;
 				arr.push_back(gui.mouse_focus->get_path());
@@ -1780,7 +1782,7 @@ void Viewport::_gui_input_event(Ref<InputEvent> p_event) {
 				}
 			}
 
-			if (gui.mouse_focus->can_process()) {
+			if (gui.mouse_focus && gui.mouse_focus->can_process()) {
 				_gui_call_input(gui.mouse_focus, mb);
 			}
 
@@ -1850,7 +1852,7 @@ void Viewport::_gui_input_event(Ref<InputEvent> p_event) {
 				gui.mouse_focus = NULL;
 			}
 
-			if (mouse_focus->can_process()) {
+			if (mouse_focus && mouse_focus->can_process()) {
 				_gui_call_input(mouse_focus, mb);
 			}
 
@@ -1955,10 +1957,9 @@ void Viewport::_gui_input_event(Ref<InputEvent> p_event) {
 
 				// If the mouse is over a menu button, this menu will open automatically
 				// if there is already a pop-up menu open at the same hierarchical level.
-				if (popup_menu_parent && menu_button &&
-						popup_menu_parent->get_icon().is_null() &&
-						menu_button->get_icon().is_null() &&
-						(popup_menu->get_parent()->get_parent()->is_a_parent_of(menu_button) ||
+				if (popup_menu_parent && menu_button && popup_menu_parent->is_switch_on_hover() &&
+						!menu_button->is_disabled() && menu_button->is_switch_on_hover() &&
+						(popup_menu_parent->get_parent()->is_a_parent_of(menu_button) ||
 								menu_button->get_parent()->is_a_parent_of(popup_menu))) {
 
 					popup_menu->notification(Control::NOTIFICATION_MODAL_CLOSE);
@@ -2065,7 +2066,7 @@ void Viewport::_gui_input_event(Ref<InputEvent> p_event) {
 
 		OS::get_singleton()->set_cursor_shape((OS::CursorShape)cursor_shape);
 
-		if (over->can_process()) {
+		if (over && over->can_process()) {
 			_gui_call_input(over, mm);
 		}
 
@@ -2115,14 +2116,14 @@ void Viewport::_gui_input_event(Ref<InputEvent> p_event) {
 				set_input_as_handled();
 				return;
 			}
-		} else if (gui.mouse_focus) {
+		} else if (touch_event->get_index() == 0 && gui.last_mouse_focus) {
 
-			if (gui.mouse_focus->can_process()) {
+			if (gui.last_mouse_focus->can_process()) {
 
 				touch_event = touch_event->xformed_by(Transform2D()); //make a copy
 				touch_event->set_position(gui.focus_inv_xform.xform(pos));
 
-				_gui_call_input(gui.mouse_focus, touch_event);
+				_gui_call_input(gui.last_mouse_focus, touch_event);
 			}
 			set_input_as_handled();
 			return;
@@ -3105,7 +3106,8 @@ Viewport::Viewport() {
 	physics_object_picking = false;
 	physics_object_capture = 0;
 	physics_object_over = 0;
-	physics_last_mousepos = Vector2(1e20, 1e20);
+	physics_has_last_mousepos = false;
+	physics_last_mousepos = Vector2(Math_INF, Math_INF);
 
 	shadow_atlas_size = 0;
 	for (int i = 0; i < 4; i++) {

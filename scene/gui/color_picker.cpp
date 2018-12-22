@@ -204,22 +204,9 @@ void ColorPicker::_update_presets() {
 
 	preset->draw_texture_rect(get_icon("preset_bg", "ColorPicker"), Rect2(Point2(), preset_size), true);
 
-#ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
-		PoolColorArray arr_to_save = PoolColorArray();
-
-		for (int i = 0; i < presets.size(); i++) {
-			preset->draw_rect(Rect2(Point2(size.width * i, 0), size), presets[i]);
-			arr_to_save.insert(i, presets[i]);
-		}
-
-		EditorSettings::get_singleton()->set_project_metadata("color_picker", "presets", arr_to_save);
-	}
-#else
 	for (int i = 0; i < presets.size(); i++) {
 		preset->draw_rect(Rect2(Point2(size.width * i, 0), size), presets[i]);
 	}
-#endif
 }
 
 void ColorPicker::_text_type_toggled() {
@@ -251,6 +238,38 @@ void ColorPicker::add_preset(const Color &p_color) {
 	preset->update();
 	if (presets.size() == 10)
 		bt_add_preset->hide();
+
+#ifdef TOOLS_ENABLED
+	if (Engine::get_singleton()->is_editor_hint()) {
+		PoolColorArray arr_to_save = get_presets();
+		EditorSettings::get_singleton()->set_project_metadata("color_picker", "presets", arr_to_save);
+	}
+#endif
+}
+
+void ColorPicker::erase_preset(const Color &p_color) {
+
+	if (presets.find(p_color)) {
+		presets.erase(presets.find(p_color));
+		preset->update();
+
+#ifdef TOOLS_ENABLED
+		if (Engine::get_singleton()->is_editor_hint()) {
+			PoolColorArray arr_to_save = get_presets();
+			EditorSettings::get_singleton()->set_project_metadata("color_picker", "presets", arr_to_save);
+		}
+#endif
+	}
+}
+
+PoolColorArray ColorPicker::get_presets() const {
+
+	PoolColorArray arr;
+	arr.resize(presets.size());
+	for (int i = 0; i < presets.size(); i++) {
+		arr.set(i, presets[i]);
+	}
+	return arr;
 }
 
 void ColorPicker::set_raw_mode(bool p_enabled) {
@@ -444,14 +463,15 @@ void ColorPicker::_preset_input(const Ref<InputEvent> &p_event) {
 		if (bev->is_pressed() && bev->get_button_index() == BUTTON_LEFT) {
 			int index = bev->get_position().x / (preset->get_size().x / presets.size());
 			set_pick_color(presets[index]);
+			_update_color();
+			emit_signal("color_changed", color);
 		} else if (bev->is_pressed() && bev->get_button_index() == BUTTON_RIGHT) {
 			int index = bev->get_position().x / (preset->get_size().x / presets.size());
-			presets.erase(presets[index]);
-			preset->update();
+			Color clicked_preset = presets[index];
+			erase_preset(clicked_preset);
+			emit_signal("preset_removed", clicked_preset);
 			bt_add_preset->show();
 		}
-		_update_color();
-		emit_signal("color_changed", color);
 	}
 
 	Ref<InputEventMouseMotion> mev = p_event;
@@ -501,6 +521,7 @@ void ColorPicker::_screen_input(const Ref<InputEvent> &p_event) {
 
 void ColorPicker::_add_preset_pressed() {
 	add_preset(color);
+	emit_signal("preset_added", color);
 }
 
 void ColorPicker::_screen_pick_pressed() {
@@ -553,6 +574,8 @@ void ColorPicker::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_edit_alpha", "show"), &ColorPicker::set_edit_alpha);
 	ClassDB::bind_method(D_METHOD("is_editing_alpha"), &ColorPicker::is_editing_alpha);
 	ClassDB::bind_method(D_METHOD("add_preset", "color"), &ColorPicker::add_preset);
+	ClassDB::bind_method(D_METHOD("erase_preset", "color"), &ColorPicker::erase_preset);
+	ClassDB::bind_method(D_METHOD("get_presets"), &ColorPicker::get_presets);
 	ClassDB::bind_method(D_METHOD("_value_changed"), &ColorPicker::_value_changed);
 	ClassDB::bind_method(D_METHOD("_html_entered"), &ColorPicker::_html_entered);
 	ClassDB::bind_method(D_METHOD("_text_type_toggled"), &ColorPicker::_text_type_toggled);
@@ -575,6 +598,8 @@ void ColorPicker::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "deferred_mode"), "set_deferred_mode", "is_deferred_mode");
 
 	ADD_SIGNAL(MethodInfo("color_changed", PropertyInfo(Variant::COLOR, "color")));
+	ADD_SIGNAL(MethodInfo("preset_added", PropertyInfo(Variant::COLOR, "color")));
+	ADD_SIGNAL(MethodInfo("preset_removed", PropertyInfo(Variant::COLOR, "color")));
 }
 
 ColorPicker::ColorPicker() :

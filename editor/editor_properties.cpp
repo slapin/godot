@@ -233,7 +233,7 @@ void EditorPropertyPath::_path_pressed() {
 		dialog->set_mode(EditorFileDialog::MODE_OPEN_DIR);
 		dialog->set_current_dir(full_path);
 	} else {
-		dialog->set_mode(EditorFileDialog::MODE_OPEN_FILE);
+		dialog->set_mode(save_mode ? EditorFileDialog::MODE_SAVE_FILE : EditorFileDialog::MODE_OPEN_FILE);
 		for (int i = 0; i < extensions.size(); i++) {
 			String e = extensions[i].strip_edges();
 			if (e != String()) {
@@ -258,6 +258,11 @@ void EditorPropertyPath::setup(const Vector<String> &p_extensions, bool p_folder
 	extensions = p_extensions;
 	folder = p_folder;
 	global = p_global;
+}
+
+void EditorPropertyPath::set_save_mode() {
+
+	save_mode = true;
 }
 
 void EditorPropertyPath::_notification(int p_what) {
@@ -296,6 +301,7 @@ EditorPropertyPath::EditorPropertyPath() {
 	path_edit->connect("pressed", this, "_path_pressed");
 	folder = false;
 	global = false;
+	save_mode = false;
 }
 
 ///////////////////// CLASS NAME /////////////////////////
@@ -1090,6 +1096,8 @@ void EditorPropertyVector2::setup(double p_min, double p_max, double p_step, boo
 		spin[i]->set_max(p_max);
 		spin[i]->set_step(p_step);
 		spin[i]->set_hide_slider(p_no_slider);
+		spin[i]->set_allow_greater(true);
+		spin[i]->set_allow_lesser(true);
 	}
 }
 
@@ -1171,6 +1179,8 @@ void EditorPropertyRect2::setup(double p_min, double p_max, double p_step, bool 
 		spin[i]->set_max(p_max);
 		spin[i]->set_step(p_step);
 		spin[i]->set_hide_slider(p_no_slider);
+		spin[i]->set_allow_greater(true);
+		spin[i]->set_allow_lesser(true);
 	}
 }
 
@@ -1251,6 +1261,8 @@ void EditorPropertyVector3::setup(double p_min, double p_max, double p_step, boo
 		spin[i]->set_max(p_max);
 		spin[i]->set_step(p_step);
 		spin[i]->set_hide_slider(p_no_slider);
+		spin[i]->set_allow_greater(true);
+		spin[i]->set_allow_lesser(true);
 	}
 }
 
@@ -1331,6 +1343,8 @@ void EditorPropertyPlane::setup(double p_min, double p_max, double p_step, bool 
 		spin[i]->set_max(p_max);
 		spin[i]->set_step(p_step);
 		spin[i]->set_hide_slider(p_no_slider);
+		spin[i]->set_allow_greater(true);
+		spin[i]->set_allow_lesser(true);
 	}
 }
 
@@ -1413,6 +1427,8 @@ void EditorPropertyQuat::setup(double p_min, double p_max, double p_step, bool p
 		spin[i]->set_max(p_max);
 		spin[i]->set_step(p_step);
 		spin[i]->set_hide_slider(p_no_slider);
+		spin[i]->set_allow_greater(true);
+		spin[i]->set_allow_lesser(true);
 	}
 }
 
@@ -1500,6 +1516,8 @@ void EditorPropertyAABB::setup(double p_min, double p_max, double p_step, bool p
 		spin[i]->set_max(p_max);
 		spin[i]->set_step(p_step);
 		spin[i]->set_hide_slider(p_no_slider);
+		spin[i]->set_allow_greater(true);
+		spin[i]->set_allow_lesser(true);
 	}
 }
 
@@ -1574,6 +1592,8 @@ void EditorPropertyTransform2D::setup(double p_min, double p_max, double p_step,
 		spin[i]->set_max(p_max);
 		spin[i]->set_step(p_step);
 		spin[i]->set_hide_slider(p_no_slider);
+		spin[i]->set_allow_greater(true);
+		spin[i]->set_allow_lesser(true);
 	}
 }
 
@@ -1653,6 +1673,8 @@ void EditorPropertyBasis::setup(double p_min, double p_max, double p_step, bool 
 		spin[i]->set_max(p_max);
 		spin[i]->set_step(p_step);
 		spin[i]->set_hide_slider(p_no_slider);
+		spin[i]->set_allow_greater(true);
+		spin[i]->set_allow_lesser(true);
 	}
 }
 
@@ -1738,6 +1760,8 @@ void EditorPropertyTransform::setup(double p_min, double p_max, double p_step, b
 		spin[i]->set_max(p_max);
 		spin[i]->set_step(p_step);
 		spin[i]->set_hide_slider(p_no_slider);
+		spin[i]->set_allow_greater(true);
+		spin[i]->set_allow_lesser(true);
 	}
 }
 
@@ -1932,6 +1956,20 @@ EditorPropertyNodePath::EditorPropertyNodePath() {
 void EditorPropertyResource::_file_selected(const String &p_path) {
 
 	RES res = ResourceLoader::load(p_path);
+
+	List<PropertyInfo> prop_list;
+	get_edited_object()->get_property_list(&prop_list);
+	String type;
+
+	for (List<PropertyInfo>::Element *E = prop_list.front(); E; E = E->next()) {
+		if (E->get().name == get_edited_property() && (E->get().hint & PROPERTY_HINT_RESOURCE_TYPE)) {
+			type = E->get().hint_string;
+		}
+	}
+
+	if (!type.empty() && !res->is_class(type))
+		EditorNode::get_singleton()->show_warning(vformat(TTR("The selected resource (%s) does not match the type expected for this property (%s)."), res->get_class(), type));
+
 	emit_signal("property_changed", get_edited_property(), res);
 	update_property();
 }
@@ -2383,6 +2421,7 @@ void EditorPropertyResource::update_property() {
 				sub_inspector->set_keying(is_keying());
 				sub_inspector->set_read_only(is_read_only());
 				sub_inspector->set_use_folding(is_using_folding());
+				sub_inspector->set_undo_redo(EditorNode::get_singleton()->get_undo_redo());
 
 				sub_inspector_vbox = memnew(VBoxContainer);
 				add_child(sub_inspector_vbox);
@@ -3096,7 +3135,7 @@ bool EditorInspectorDefaultPlugin::parse_property(Object *p_object, Variant::Typ
 		} break;
 		case Variant::ARRAY: {
 			EditorPropertyArray *editor = memnew(EditorPropertyArray);
-			editor->setup(Variant::ARRAY);
+			editor->setup(Variant::ARRAY, p_hint_text);
 			add_property_editor(p_path, editor);
 		} break;
 		case Variant::POOL_BYTE_ARRAY: {

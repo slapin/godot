@@ -2,6 +2,7 @@
 [vertex]
 
 #ifdef USE_GLES_OVER_GL
+#define lowp
 #define mediump
 #define highp
 #else
@@ -56,6 +57,7 @@ void main() {
 #define M_PI 3.14159265359
 
 #ifdef USE_GLES_OVER_GL
+#define lowp
 #define mediump
 #define highp
 #else
@@ -92,6 +94,7 @@ uniform float custom_alpha;
 #endif
 
 #if defined(USE_PANORAMA) || defined(USE_ASYM_PANO)
+uniform highp mat4 sky_transform;
 
 vec4 texturePanorama(sampler2D pano, vec3 normal) {
 
@@ -113,7 +116,12 @@ void main() {
 
 #ifdef USE_PANORAMA
 
-	vec4 color = texturePanorama(source, normalize(cube_interp));
+	vec3 cube_normal = normalize(cube_interp);
+	cube_normal.z = -cube_normal.z;
+	cube_normal = mat3(sky_transform) * cube_normal;
+	cube_normal.z = -cube_normal.z;
+
+	vec4 color = texturePanorama(source, cube_normal);
 
 #elif defined(USE_ASYM_PANO)
 
@@ -125,7 +133,7 @@ void main() {
 	cube_normal.z = -1000000.0;
 	cube_normal.x = (cube_normal.z * (-uv_interp.x - asym_proj.x)) / asym_proj.y;
 	cube_normal.y = (cube_normal.z * (-uv_interp.y - asym_proj.z)) / asym_proj.a;
-	cube_normal = mat3(pano_transform) * cube_normal;
+	cube_normal = mat3(sky_transform) * mat3(pano_transform) * cube_normal;
 	cube_normal.z = -cube_normal.z;
 
 	vec4 color = texturePanorama(source, normalize(cube_normal.xyz));

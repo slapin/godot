@@ -209,6 +209,7 @@ private:
 	Transform physics_last_object_transform;
 	Transform physics_last_camera_transform;
 	ObjectID physics_last_id;
+	bool physics_has_last_mousepos;
 	Vector2 physics_last_mousepos;
 	struct {
 
@@ -271,6 +272,7 @@ private:
 
 		bool key_event_accepted;
 		Control *mouse_focus;
+		Control *last_mouse_focus;
 		Control *mouse_click_grabber;
 		int mouse_focus_mask;
 		Control *key_focus;

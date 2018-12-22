@@ -263,6 +263,7 @@ private:
 	};
 
 	Set<CallbackItem> callbacks;
+	Set<CallbackItem> update_callbacks;
 
 	friend class AudioDriver;
 	void _driver_process(int p_frames, int32_t *p_buffer);
@@ -298,6 +299,8 @@ public:
 	void set_bus_name(int p_bus, const String &p_name);
 	String get_bus_name(int p_bus) const;
 	int get_bus_index(const StringName &p_bus_name) const;
+
+	int get_bus_channels(int p_bus) const;
 
 	void set_bus_volume_db(int p_bus, float p_volume_db);
 	float get_bus_volume_db(int p_bus) const;
@@ -358,6 +361,9 @@ public:
 
 	void add_callback(AudioCallback p_callback, void *p_userdata);
 	void remove_callback(AudioCallback p_callback, void *p_userdata);
+
+	void add_update_callback(AudioCallback p_callback, void *p_userdata);
+	void remove_update_callback(AudioCallback p_callback, void *p_userdata);
 
 	void set_bus_layout(const Ref<AudioBusLayout> &p_bus_layout);
 	Ref<AudioBusLayout> generate_bus_layout() const;
