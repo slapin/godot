@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2019 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2019 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -525,7 +525,6 @@ ShaderLanguage::Token ShaderLanguage::_get_token() {
 					bool exponent_found = false;
 					bool hexa_found = false;
 					bool sign_found = false;
-					bool minus_exponent_found = false;
 					bool float_suffix_found = false;
 
 					String str;
@@ -557,8 +556,6 @@ ShaderLanguage::Token ShaderLanguage::_get_token() {
 							if (sign_found)
 								return _make_token(TK_ERROR, "Invalid numeric constant");
 							sign_found = true;
-							if (GETCHAR(i) == '-')
-								minus_exponent_found = true;
 						} else
 							break;
 
@@ -571,7 +568,7 @@ ShaderLanguage::Token ShaderLanguage::_get_token() {
 					if (hexa_found) {
 						//hex integers eg."0xFF" or "0x12AB", etc - NOT supported yet
 						return _make_token(TK_ERROR, "Invalid (hexadecimal) numeric constant - Not supported");
-					} else if (period_found || float_suffix_found) {
+					} else if (period_found || exponent_found || float_suffix_found) {
 						//floats
 						if (period_found) {
 							if (float_suffix_found) {
@@ -614,7 +611,7 @@ ShaderLanguage::Token ShaderLanguage::_get_token() {
 
 					char_idx += str.length();
 					Token tk;
-					if (period_found || minus_exponent_found || float_suffix_found)
+					if (period_found || exponent_found || float_suffix_found)
 						tk.type = TK_REAL_CONSTANT;
 					else
 						tk.type = TK_INT_CONSTANT;

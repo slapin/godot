@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2019 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2019 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -100,6 +100,10 @@ private:
 	LineEdit *custom_features;
 	RichTextLabel *custom_feature_display;
 
+	OptionButton *script_mode;
+	LineEdit *script_key;
+	Label *script_key_error;
+
 	Label *export_error;
 	HBoxContainer *export_templates_error;
 
@@ -119,6 +123,7 @@ private:
 	void _delete_preset_confirm();
 	void _update_export_all();
 
+	void _update_current_preset();
 	void _update_presets();
 
 	void _export_type_changed(int p_which);
@@ -154,6 +159,11 @@ private:
 	void _update_feature_list();
 	void _custom_features_changed(const String &p_text);
 
+	bool updating_script_key;
+	void _script_export_mode_changed(int p_mode);
+	void _script_encryption_key_changed(const String &p_key);
+	bool _validate_script_encryption_key(const String &p_key);
+
 	void _tab_changed(int);
 
 protected:
@@ -165,6 +175,8 @@ public:
 
 	void set_export_path(const String &p_value);
 	String get_export_path();
+
+	Ref<EditorExportPreset> get_current_preset() const;
 
 	ProjectExportDialog();
 	~ProjectExportDialog();

@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2019 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2019 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -87,6 +87,8 @@ public:
 
 		bool srgb_decode_supported;
 
+		bool texture_float_linear_supported;
+
 		bool use_rgba_2d_shadows;
 
 		float anisotropic_level;
@@ -131,6 +133,7 @@ public:
 		GLuint aniso_tex;
 
 		GLuint white_tex_3d;
+		GLuint white_tex_array;
 
 		GLuint quadie;
 		GLuint quadie_array;
@@ -291,6 +294,7 @@ public:
 				width(0),
 				height(0),
 				format(Image::FORMAT_L8),
+				type(VS::TEXTURE_TYPE_2D),
 				target(GL_TEXTURE_2D),
 				data_size(0),
 				compressed(false),
