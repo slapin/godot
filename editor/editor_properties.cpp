@@ -1877,7 +1877,7 @@ void EditorPropertyNodePath::update_property() {
 	assign->set_tooltip(p);
 	if (p == NodePath()) {
 		assign->set_icon(Ref<Texture>());
-		assign->set_text(TTR("Assign.."));
+		assign->set_text(TTR("Assign..."));
 		assign->set_flat(false);
 		return;
 	}
@@ -2421,6 +2421,7 @@ void EditorPropertyResource::update_property() {
 			if (!sub_inspector) {
 				sub_inspector = memnew(EditorInspector);
 				sub_inspector->set_enable_v_scroll(false);
+				sub_inspector->set_use_doc_hints(true);
 
 				sub_inspector->set_use_sub_inspector_bg(true);
 				sub_inspector->set_enable_capitalize_paths(true);

@@ -30,12 +30,14 @@
 # Александр <ol-vin@mail.ru>, 2018.
 # Анатолий Горбунов <afgorbunov@gmail.com>, 2018.
 # Vadim Vergasov <vadim.vergasov2003@gmail.com>, 2018.
+# Аслан Снупов <aslan170505@gmail.com>, 2018.
+# Alexandr Eremeev <ae125529@gmail.com>, 2019.
 msgid ""
 msgstr ""
 "Project-Id-Version: Godot Engine editor\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2018-12-13 14:42+0100\n"
-"Last-Translator: Александр <ol-vin@mail.ru>\n"
+"PO-Revision-Date: 2019-01-02 11:06+0000\n"
+"Last-Translator: Alexandr Eremeev <ae125529@gmail.com>\n"
 "Language-Team: Russian <https://hosted.weblate.org/projects/godot-engine/"
 "godot/ru/>\n"
 "Language: ru\n"
@@ -44,7 +46,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
 "%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Generator: Poedit 2.2\n"
+"X-Generator: Weblate 3.4-dev\n"
 
 #: core/math/expression.cpp modules/gdscript/gdscript_functions.cpp
 #: modules/visual_script/visual_script_builtin_funcs.cpp
@@ -96,9 +98,8 @@ msgid "Balanced"
 msgstr "Сбалансированный"
 
 #: editor/animation_bezier_editor.cpp
-#, fuzzy
 msgid "Mirror"
-msgstr "Зеркало"
+msgstr "Отобразить"
 
 #: editor/animation_bezier_editor.cpp
 msgid "Insert Key Here"
@@ -994,7 +995,8 @@ msgid "Uncompressing Assets"
 msgstr "Распаковка ассетов"
 
 #: editor/editor_asset_installer.cpp editor/project_manager.cpp
-msgid "Package Installed Successfully!"
+#, fuzzy
+msgid "Package installed successfully!"
 msgstr "Пакет успешно установлен!"
 
 #: editor/editor_asset_installer.cpp
@@ -1241,7 +1243,7 @@ msgid "Add AutoLoad"
 msgstr "Добавить автозагрузку"
 
 #: editor/editor_autoload_settings.cpp editor/editor_file_dialog.cpp
-#: scene/gui/file_dialog.cpp
+#: editor/plugins/animation_tree_editor_plugin.cpp scene/gui/file_dialog.cpp
 msgid "Path:"
 msgstr "Путь:"
 
@@ -2606,14 +2608,18 @@ msgid "[Empty]"
 msgstr "[Пусто]"
 
 #: editor/editor_properties.cpp editor/plugins/root_motion_editor_plugin.cpp
-msgid "Assign.."
+#, fuzzy
+msgid "Assign..."
 msgstr "Назначить.."
 
 #: editor/editor_properties.cpp
+#, fuzzy
 msgid ""
-"The selected resource (%s) does not match the type expected for this "
+"The selected resource (%s) does not match any type expected for this "
 "property (%s)."
 msgstr ""
+"Выбранные ресурсы (%s) не соответствуют типу, ожидаемому для данного "
+"свойства (%s)."
 
 #: editor/editor_properties.cpp
 msgid ""
@@ -2991,16 +2997,12 @@ msgid "Unable to update dependencies:"
 msgstr "Не удаётся обновить зависимости:"
 
 #: editor/filesystem_dock.cpp editor/scene_tree_editor.cpp
-msgid "No name provided"
-msgstr "Не указано имя"
+msgid "No name provided."
+msgstr "Не предоставлено имя."
 
 #: editor/filesystem_dock.cpp
 msgid "Provided name contains invalid characters"
 msgstr "Имя содержит недопустимые символы"
-
-#: editor/filesystem_dock.cpp
-msgid "No name provided."
-msgstr "Не предоставлено имя."
 
 #: editor/filesystem_dock.cpp
 msgid "Name contains invalid characters."
@@ -3187,9 +3189,8 @@ msgid "Group name already exists."
 msgstr "Имя группы уже существует."
 
 #: editor/groups_editor.cpp
-#, fuzzy
 msgid "Invalid group name."
-msgstr "недопустимое имя группы."
+msgstr "Неверное название группы."
 
 #: editor/groups_editor.cpp editor/node_dock.cpp
 msgid "Groups"
@@ -3374,6 +3375,10 @@ msgid "Load an existing resource from disk and edit it."
 msgstr "Загрузить существующий ресурс с диска и редактировать его."
 
 #: editor/inspector_dock.cpp
+msgid "Save the currently edited resource."
+msgstr "Сохранить текущий редактируемый ресурс."
+
+#: editor/inspector_dock.cpp
 msgid "Go to the previous edited object in history."
 msgstr "Перейти к предыдущему редактируемому объекту в истории."
 
@@ -3439,7 +3444,6 @@ msgid "Create Polygon"
 msgstr "Создать Полигон"
 
 #: editor/plugins/abstract_polygon_2d_editor.cpp
-#, fuzzy
 msgid "Edit Polygon"
 msgstr "Редактировать полигон"
 
@@ -3448,14 +3452,12 @@ msgid "Insert Point"
 msgstr "Вставить точку"
 
 #: editor/plugins/abstract_polygon_2d_editor.cpp
-#, fuzzy
 msgid "Edit Polygon (Remove Point)"
-msgstr "Редактировать полигон (удалить точку)"
+msgstr "Редактировать Полигон (удалить точку)"
 
 #: editor/plugins/abstract_polygon_2d_editor.cpp
-#, fuzzy
 msgid "Remove Polygon And Point"
-msgstr "Удалить полигон и точку"
+msgstr "Удалить Полигон и Точку"
 
 #: editor/plugins/abstract_polygon_2d_editor.cpp
 #: editor/plugins/animation_blend_space_1d_editor.cpp
@@ -3464,16 +3466,14 @@ msgid "Create points."
 msgstr "Создать точки."
 
 #: editor/plugins/abstract_polygon_2d_editor.cpp
-#, fuzzy
 msgid ""
 "Edit points.\n"
 "LMB: Move Point\n"
 "RMB: Erase Point"
 msgstr ""
-"Редактирование полигона:\n"
-"ЛКМ: переместить точку.\n"
-"Ctrl+ЛКМ: разделить сегмент.\n"
-"ПКМ: удалить точку."
+"Редактирование точек.\n"
+"ЛКМ: Двигать Точку\n"
+"ПКМ: Стереть Точку"
 
 #: editor/plugins/abstract_polygon_2d_editor.cpp
 #: editor/plugins/animation_blend_space_1d_editor.cpp
@@ -3492,7 +3492,8 @@ msgstr "Добавить анимацию"
 #: editor/plugins/animation_blend_space_2d_editor.cpp
 #: editor/plugins/animation_blend_tree_editor_plugin.cpp
 #: editor/plugins/animation_state_machine_editor.cpp
-msgid "Load.."
+#, fuzzy
+msgid "Load..."
 msgstr "Загрузить.."
 
 #: editor/plugins/animation_blend_space_1d_editor.cpp
@@ -3523,6 +3524,11 @@ msgstr "Установить место смешивания в простран
 #: editor/plugins/animation_blend_space_2d_editor.cpp
 msgid "Select and move points, create points with RMB."
 msgstr "Выбирайте, перемещайте и создавайте точки с ПКМ."
+
+#: editor/plugins/animation_blend_space_1d_editor.cpp
+#: editor/plugins/animation_blend_space_2d_editor.cpp scene/gui/graph_edit.cpp
+msgid "Enable snap and show grid."
+msgstr "Включить привязку и отображение сетки."
 
 #: editor/plugins/animation_blend_space_1d_editor.cpp
 #: editor/plugins/animation_blend_space_2d_editor.cpp
@@ -3559,12 +3565,6 @@ msgstr "Удалить точки и треугольники."
 #: editor/plugins/animation_blend_space_2d_editor.cpp
 msgid "Generate blend triangles automatically (instead of manually)"
 msgstr "Создать смесь треугольники автоматически (а не вручную)"
-
-#: editor/plugins/animation_blend_space_2d_editor.cpp
-#: editor/plugins/polygon_2d_editor_plugin.cpp
-#: editor/plugins/spatial_editor_plugin.cpp
-msgid "Snap"
-msgstr "Привязка"
 
 #: editor/plugins/animation_blend_space_2d_editor.cpp
 #: editor/plugins/animation_tree_player_editor_plugin.cpp
@@ -3604,8 +3604,9 @@ msgstr ""
 "удается получить отслеживаемые имена."
 
 #: editor/plugins/animation_blend_tree_editor_plugin.cpp
-msgid "Add Node.."
-msgstr "Добавить Узел.."
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Add Node..."
+msgstr "Добавить узел..."
 
 #: editor/plugins/animation_blend_tree_editor_plugin.cpp
 #: editor/plugins/root_motion_editor_plugin.cpp
@@ -3877,7 +3878,8 @@ msgid "Connect nodes."
 msgstr "Соединить узлы."
 
 #: editor/plugins/animation_state_machine_editor.cpp
-msgid "Remove selected node or transition"
+#, fuzzy
+msgid "Remove selected node or transition."
 msgstr "Удалить выделенный узел или переход"
 
 #: editor/plugins/animation_state_machine_editor.cpp
@@ -4301,13 +4303,14 @@ msgid ""
 "Warning: Children of a container get their position and size determined only "
 "by their parent."
 msgstr ""
+"Внимание: Положение и размер детей контейнера определяется только их "
+"родителями."
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
 #: editor/plugins/texture_region_editor_plugin.cpp
 #: editor/plugins/tile_set_editor_plugin.cpp scene/gui/graph_edit.cpp
-#, fuzzy
 msgid "Zoom Reset"
-msgstr "Сбросить масштаб"
+msgstr "Сбросить масштабирование"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
 msgid "Select Mode"
@@ -4568,9 +4571,8 @@ msgstr ""
 "Drag & drop + Alt : Изменить тип узла"
 
 #: editor/plugins/collision_polygon_editor_plugin.cpp
-#, fuzzy
 msgid "Create Polygon3D"
-msgstr "Создать Полигон"
+msgstr "Создать Polygon3D"
 
 #: editor/plugins/collision_polygon_editor_plugin.cpp
 msgid "Edit Poly"
@@ -4913,6 +4915,7 @@ msgid "Populate"
 msgstr "Заполнить"
 
 #: editor/plugins/navigation_polygon_editor_plugin.cpp
+#: editor/plugins/tile_set_editor_plugin.cpp
 msgid "Create Navigation Polygon"
 msgstr "Создать Navigation Polygon"
 
@@ -5049,9 +5052,8 @@ msgid "Add Point to Curve"
 msgstr "Добавить точку к кривой"
 
 #: editor/plugins/path_2d_editor_plugin.cpp
-#, fuzzy
 msgid "Split Curve"
-msgstr "Сомкнуть кривую"
+msgstr "Разделить кривую"
 
 #: editor/plugins/path_2d_editor_plugin.cpp
 msgid "Move Point in Curve"
@@ -5081,9 +5083,8 @@ msgid "Click: Add Point"
 msgstr "ЛКМ: Добавить точку"
 
 #: editor/plugins/path_2d_editor_plugin.cpp
-#, fuzzy
 msgid "Left Click: Split Segment (in curve)"
-msgstr "Разделить сегмент (в кривой)"
+msgstr "ЛКМ: Разделить сегмент (в кривой)"
 
 #: editor/plugins/path_2d_editor_plugin.cpp
 #: editor/plugins/path_editor_plugin.cpp
@@ -5171,18 +5172,16 @@ msgid ""
 msgstr "Свойство скелета Polygon2D не указывает на узел Skeleton2D"
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
-#, fuzzy
 msgid "Sync Bones"
 msgstr "Синхронизировать кости"
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
-#, fuzzy
 msgid ""
 "No texture in this polygon.\n"
 "Set a texture to be able to edit UV."
 msgstr ""
-"В этом узле нет текстуры.\n"
-"Выберите текстуру, чтобы редактировать область."
+"В этом полигоне нет текстуры.\n"
+"Установите текстуру, чтобы иметь возможность редактировать UV."
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
 msgid "Create UV Map"
@@ -5221,19 +5220,17 @@ msgid "Transform UV Map"
 msgstr "Преобразовать UV карту"
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
-#, fuzzy
 msgid "Transform Polygon"
-msgstr "Тип преобразования"
+msgstr "Преобразовать полигон"
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
 #, fuzzy
 msgid "Paint Bone Weights"
-msgstr "Рисовать веса костей"
+msgstr "Костные грузы для краски"
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
-#, fuzzy
 msgid "Open Polygon 2D UV editor."
-msgstr "Polygon 2D UV редактор"
+msgstr "Открыть UV-редактор Polygon 2D."
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
 msgid "Polygon 2D UV Editor"
@@ -5256,9 +5253,8 @@ msgid "Bones"
 msgstr "Кости"
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
-#, fuzzy
 msgid "Move Points"
-msgstr "Передвинуть точку"
+msgstr "Передвинуть Точку"
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
 msgid "Ctrl: Rotate"
@@ -5285,19 +5281,16 @@ msgid "Scale Polygon"
 msgstr "Масштабировать полигон"
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
-#, fuzzy
 msgid "Connect two points to make a split."
-msgstr "Соединить две точки, чтобы создать разделение"
+msgstr "Соединить две точки, чтобы создать разделение."
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
-#, fuzzy
 msgid "Select a split to erase it."
-msgstr "Выберите разделение, чтобы стереть его"
+msgstr "Выберите разделение, чтобы стереть его."
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
-#, fuzzy
 msgid "Paint weights with specified intensity."
-msgstr "Красить веса с заданной интенсивностью"
+msgstr "Покрасить веса с заданной интенсивностью."
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
 #, fuzzy
@@ -5323,6 +5316,11 @@ msgstr "Очистить UV"
 #: editor/plugins/polygon_2d_editor_plugin.cpp
 msgid "Grid Settings"
 msgstr "Параметры сетки"
+
+#: editor/plugins/polygon_2d_editor_plugin.cpp
+#: editor/plugins/spatial_editor_plugin.cpp
+msgid "Snap"
+msgstr "Привязка"
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
 msgid "Enable Snap"
@@ -5439,24 +5437,20 @@ msgid "Error saving file!"
 msgstr "Ошибка при сохранении файла!"
 
 #: editor/plugins/script_editor_plugin.cpp
-#, fuzzy
 msgid "Error while saving theme."
-msgstr "Ошибка во время сохранения темы"
+msgstr "Ошибка при сохранении темы."
 
 #: editor/plugins/script_editor_plugin.cpp
-#, fuzzy
 msgid "Error Saving"
 msgstr "Ошибка сохранения"
 
 #: editor/plugins/script_editor_plugin.cpp
-#, fuzzy
 msgid "Error importing theme."
-msgstr "Ошибка импортирования темы"
+msgstr "Ошибка импортирования темы."
 
 #: editor/plugins/script_editor_plugin.cpp
-#, fuzzy
 msgid "Error Importing"
-msgstr "Ошибка импортирования"
+msgstr "Ошибка Импорта"
 
 #: editor/plugins/script_editor_plugin.cpp
 msgid "New TextFile..."
@@ -5523,9 +5517,8 @@ msgid "File"
 msgstr "Файл"
 
 #: editor/plugins/script_editor_plugin.cpp
-#, fuzzy
 msgid "Open..."
-msgstr "Открыть"
+msgstr "Открыть..."
 
 #: editor/plugins/script_editor_plugin.cpp
 msgid "Save All"
@@ -5553,9 +5546,8 @@ msgid "Theme"
 msgstr "Тема"
 
 #: editor/plugins/script_editor_plugin.cpp
-#, fuzzy
 msgid "Import Theme..."
-msgstr "Импортировать тему"
+msgstr "Импортировать тему...."
 
 #: editor/plugins/script_editor_plugin.cpp
 msgid "Reload Theme"
@@ -6285,6 +6277,10 @@ msgstr "До"
 msgid "Post"
 msgstr "После"
 
+#: editor/plugins/spatial_editor_plugin.cpp
+msgid "Name-less gizmo"
+msgstr ""
+
 #: editor/plugins/sprite_editor_plugin.cpp
 msgid "Sprite is empty!"
 msgstr "Спрайт пуст!"
@@ -6399,9 +6395,8 @@ msgid "Set Region Rect"
 msgstr "Задать регион"
 
 #: editor/plugins/texture_region_editor_plugin.cpp
-#, fuzzy
 msgid "Set Margin"
-msgstr "Задать обработчик"
+msgstr "Задать отступ"
 
 #: editor/plugins/texture_region_editor_plugin.cpp
 msgid "Snap Mode:"
@@ -6409,9 +6404,8 @@ msgstr "Режим привязки:"
 
 #: editor/plugins/texture_region_editor_plugin.cpp
 #: scene/resources/visual_shader.cpp
-#, fuzzy
 msgid "None"
-msgstr "None"
+msgstr "Пусто"
 
 #: editor/plugins/texture_region_editor_plugin.cpp
 msgid "Pixel Snap"
@@ -6646,14 +6640,12 @@ msgid "Clear transform"
 msgstr "Очистить преобразование"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
-#, fuzzy
 msgid "Add Texture(s) to TileSet."
-msgstr "Добавить текстуры в набор тайлов"
+msgstr "Добавить текстуру(ы) в TileSet."
 
 #: editor/plugins/tile_set_editor_plugin.cpp
-#, fuzzy
 msgid "Remove selected Texture from TileSet."
-msgstr "Удалить текущую текстуру из набора тайлов"
+msgstr "Удалить выбранную текстуру из TileSet."
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 msgid "Create from Scene"
@@ -6665,38 +6657,35 @@ msgstr "Слияние из сцены"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 msgid "Copy bitmask."
-msgstr ""
+msgstr "Копировать битовую маску."
 
 #: editor/plugins/tile_set_editor_plugin.cpp
-#, fuzzy
 msgid "Paste bitmask."
-msgstr "Вставить анимацию"
+msgstr "Вставить битовую маску."
 
 #: editor/plugins/tile_set_editor_plugin.cpp
-#, fuzzy
 msgid "Erase bitmask."
-msgstr "Удалить точки."
+msgstr "Стереть битовую маску."
 
 #: editor/plugins/tile_set_editor_plugin.cpp
-#, fuzzy
 msgid "Create a new polygon."
-msgstr "Создать новый полигон с нуля."
+msgstr "Создать новый полигон."
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 msgid "Keep polygon inside region Rect."
-msgstr ""
+msgstr "Держать полигон внутри области Rect."
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 msgid "Enable snap and show grid (configurable via the Inspector)."
-msgstr ""
+msgstr "Включить привязку и отображение сетки (настраивается через инспектор)."
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+msgid "Display Tile Names (Hold Alt Key)"
+msgstr "Отобразить имена плиток (удерживать нажатой клавишу Alt)"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 #, fuzzy
-msgid "Display Tile Names (Hold Alt Key)"
-msgstr "Отображение имен плитки (удерживайте нажатой клавишу Alt)"
-
-#: editor/plugins/tile_set_editor_plugin.cpp
-msgid "Remove selected texture and ALL TILES which use it?"
+msgid "Remove selected texture? This will remove all tiles which use it."
 msgstr "Удалить выделенную текстуру и ВСЕ ПЛИТКИ, которые ее используют?"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
@@ -6704,12 +6693,17 @@ msgid "You haven't selected a texture to remove."
 msgstr "Вы не выбрали текстуру для удаления."
 
 #: editor/plugins/tile_set_editor_plugin.cpp
-msgid "Create from scene?"
-msgstr "Создать из сцены?"
+msgid "Create from scene? This will overwrite all current tiles."
+msgstr ""
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 msgid "Merge from scene?"
 msgstr "Слияние из сцены?"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Remove Texture"
+msgstr "Удалить шаблон"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 msgid "%s file(s) were not added because was already on the list."
@@ -6724,9 +6718,8 @@ msgstr ""
 "Нажмите на другую плитку, чтобы отредактировать ее."
 
 #: editor/plugins/tile_set_editor_plugin.cpp
-#, fuzzy
 msgid "Delete selected Rect."
-msgstr "Удалить выбранные файлы?"
+msgstr "Удалить выбранный Rect."
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 msgid ""
@@ -6737,12 +6730,10 @@ msgstr ""
 "Нажмите на другой тайл чтобы его отредактировать."
 
 #: editor/plugins/tile_set_editor_plugin.cpp
-#, fuzzy
 msgid "Delete polygon."
-msgstr "Удалить точку"
+msgstr "Удалить полигон."
 
 #: editor/plugins/tile_set_editor_plugin.cpp
-#, fuzzy
 msgid ""
 "LMB: Set bit on.\n"
 "RMB: Set bit off.\n"
@@ -6771,22 +6762,102 @@ msgstr ""
 "Нажмите на другую плитку, чтобы отредактировать ее."
 
 #: editor/plugins/tile_set_editor_plugin.cpp
-#, fuzzy
 msgid ""
 "Select sub-tile to change its z index.\n"
 "Click on another Tile to edit it."
 msgstr ""
-"Выберите суб-плитку, чтобы изменить его приоритет.\n"
+"Выберите суб-плитку, чтобы изменить его индекс z.\n"
 "Нажмите на другую плитку, чтобы отредактировать ее."
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Set Tile Region"
+msgstr "Задать регион"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Create Tile"
+msgstr "Создать папку"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+msgid "Set Tile Icon"
+msgstr ""
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Edit Tile Bitmask"
+msgstr "Редактировать фильтры"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Edit Collision Polygon"
+msgstr "Редактировать существующий полигон:"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Edit Occlusion Polygon"
+msgstr "Редактировать полигон"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Edit Navigation Polygon"
+msgstr "Создать Navigation Polygon"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Paste Tile Bitmask"
+msgstr "Вставить битовую маску."
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+msgid "Clear Tile Bitmask"
+msgstr ""
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Remove Tile"
+msgstr "Удалить шаблон"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Remove Collision Polygon"
+msgstr "Удалить Полигон и Точку"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Remove Occlusion Polygon"
+msgstr "Создан затеняющий полигон"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Remove Navigation Polygon"
+msgstr "Создать Navigation Polygon"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Edit Tile Priority"
+msgstr "Редактировать фильтры"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+msgid "Edit Tile Z Index"
+msgstr ""
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Create Collision Polygon"
+msgstr "Создать Navigation Polygon"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Create Occlusion Polygon"
+msgstr "Создан затеняющий полигон"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 msgid "This property can't be changed."
 msgstr "Это свойство не может быть изменено."
 
 #: editor/plugins/tile_set_editor_plugin.cpp
-#, fuzzy
 msgid "TileSet"
-msgstr "Набор тайлов"
+msgstr "TileSet"
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid "Vertex"
@@ -6799,11 +6870,6 @@ msgstr "Фрагмент"
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid "Light"
 msgstr "Свет"
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-#, fuzzy
-msgid "Add Node..."
-msgstr "Добавить Узел.."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid "VisualShader"
@@ -6842,9 +6908,8 @@ msgid "Add..."
 msgstr "Добавить..."
 
 #: editor/project_export.cpp
-#, fuzzy
 msgid "Export Path"
-msgstr "Путь экспорта:"
+msgstr "Путь экспорта"
 
 #: editor/project_export.cpp
 msgid "Resources"
@@ -6901,6 +6966,35 @@ msgstr "Пользовательский (через запятую):"
 #: editor/project_export.cpp
 msgid "Feature List:"
 msgstr "Список свойств:"
+
+#: editor/project_export.cpp
+#, fuzzy
+msgid "Script"
+msgstr "Новый скрипт"
+
+#: editor/project_export.cpp
+msgid "Script Export Mode:"
+msgstr "Режим экспортирования скриптов:"
+
+#: editor/project_export.cpp
+msgid "Text"
+msgstr "Текстовый"
+
+#: editor/project_export.cpp
+msgid "Compiled"
+msgstr "Компилированный"
+
+#: editor/project_export.cpp
+msgid "Encrypted (Provide Key Below)"
+msgstr "Зашифрованный (Напишите ключ ниже)"
+
+#: editor/project_export.cpp
+msgid "Invalid Encryption Key (must be 64 characters long)"
+msgstr ""
+
+#: editor/project_export.cpp
+msgid "Script Encryption Key (256-bits as hex):"
+msgstr "Ключ шифрования скрипта (256-бит, а в шестнадцатеричном виде):"
 
 #: editor/project_export.cpp
 msgid "Export PCK/Zip"
@@ -7044,12 +7138,31 @@ msgid "Unnamed Project"
 msgstr "Безымянный проект"
 
 #: editor/project_manager.cpp
-msgid "Can't open project"
+#, fuzzy
+msgid "Can't open project at '%s'."
 msgstr "Не удаётся открыть проект"
 
 #: editor/project_manager.cpp
 msgid "Are you sure to open more than one project?"
 msgstr "Вы уверены, что хотите открыть более одного проекта?"
+
+#: editor/project_manager.cpp
+msgid ""
+"The following project settings file was generated by an older engine "
+"version, and needs to be converted for this version:\n"
+"\n"
+"%s\n"
+"\n"
+"Do you want to convert it?\n"
+"Warning: You will not be able to open the project with previous versions of "
+"the engine anymore."
+msgstr ""
+
+#: editor/project_manager.cpp
+msgid ""
+"The project settings were created by a newer engine version, whose settings "
+"are not compatible with this version."
+msgstr ""
 
 #: editor/project_manager.cpp
 msgid ""
@@ -7584,12 +7697,10 @@ msgstr ""
 "Сравните параметров счетчика."
 
 #: editor/rename_dialog.cpp
-#, fuzzy
 msgid "Per Level counter"
-msgstr "Счетчик уровеня"
+msgstr "Счетчик уровня"
 
 #: editor/rename_dialog.cpp
-#, fuzzy
 msgid "If set the counter restarts for each group of child nodes"
 msgstr ""
 "Если установить, счетчик перезапустится для каждой группы дочерних узлов"
@@ -7612,7 +7723,6 @@ msgid "Padding"
 msgstr "Отступ"
 
 #: editor/rename_dialog.cpp
-#, fuzzy
 msgid ""
 "Minimum number of digits for the counter.\n"
 "Missing digits are padded with leading zeros."
@@ -7625,7 +7735,6 @@ msgid "Regular Expressions"
 msgstr "Регулярные Выражения"
 
 #: editor/rename_dialog.cpp
-#, fuzzy
 msgid "Post-Process"
 msgstr "Пост-обработка"
 
@@ -7634,7 +7743,6 @@ msgid "Keep"
 msgstr "Оставить оригинал"
 
 #: editor/rename_dialog.cpp
-#, fuzzy
 msgid "CamelCase to under_scored"
 msgstr "CamelCase в under_scored"
 
@@ -9430,7 +9538,7 @@ msgstr "Корневой элемент AnimationPlayer недействител
 
 #: scene/animation/animation_tree_player.cpp
 msgid "This node has been deprecated. Use AnimationTree instead."
-msgstr ""
+msgstr "Этот узел был удален. Вместо этого используйте AnimationTree."
 
 #: scene/gui/color_picker.cpp
 msgid "Raw Mode"
@@ -9447,10 +9555,6 @@ msgstr "Внимание!"
 #: scene/gui/dialogs.cpp
 msgid "Please Confirm..."
 msgstr "Подтверждение..."
-
-#: scene/gui/graph_edit.cpp
-msgid "Enable snap and show grid."
-msgstr ""
 
 #: scene/gui/popup.cpp
 msgid ""
@@ -9542,6 +9646,15 @@ msgstr "Назначить форму"
 msgid "Varyings can only be assigned in vertex function."
 msgstr "Переменные могут быть назначены только в функции вершин."
 
+#~ msgid "No name provided"
+#~ msgstr "Не указано имя"
+
+#~ msgid "Add Node.."
+#~ msgstr "Добавить Узел.."
+
+#~ msgid "Create from scene?"
+#~ msgstr "Создать из сцены?"
+
 #~ msgid "Create Poly"
 #~ msgstr "Создан полигон"
 
@@ -9563,9 +9676,6 @@ msgstr "Переменные могут быть назначены только
 #~ msgstr ""
 #~ "Нет OccluderPolygon2D ресурса у этого узла.\n"
 #~ "Создать и назначить?"
-
-#~ msgid "Edit existing polygon:"
-#~ msgstr "Редактировать существующий полигон:"
 
 #~ msgid "LMB: Move Point."
 #~ msgstr "ЛКМ: Передвинуть точку."
@@ -9910,9 +10020,6 @@ msgstr "Переменные могут быть назначены только
 
 #~ msgid "Run Script"
 #~ msgstr "Запустить скрипт"
-
-#~ msgid "Save the currently edited resource."
-#~ msgstr "Сохранить текущий редактируемый ресурс."
 
 #~ msgid "Stop Profiling"
 #~ msgstr "Остановить профилирование"
@@ -11044,21 +11151,6 @@ msgstr "Переменные могут быть назначены только
 
 #~ msgid "Trailing Silence:"
 #~ msgstr "Удаление тишины:"
-
-#~ msgid "Script Export Mode:"
-#~ msgstr "Режим экспортирования скриптов:"
-
-#~ msgid "Text"
-#~ msgstr "Текстовый"
-
-#~ msgid "Compiled"
-#~ msgstr "Компилированный"
-
-#~ msgid "Encrypted (Provide Key Below)"
-#~ msgstr "Зашифрованный (Напишите ключ ниже)"
-
-#~ msgid "Script Encryption Key (256-bits as hex):"
-#~ msgstr "Ключ шифрования скрипта (256-бит, а в шестнадцатеричном виде):"
 
 #~ msgid "Export Project PCK"
 #~ msgstr "Экспортировать PCK проекта"
