@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2019 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2019 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -2620,11 +2620,11 @@ void RasterizerSceneGLES2::render_scene(const Transform &p_cam_transform, const 
 		storage->frame.clear_request = false;
 	} else if (!env || env->bg_mode == VS::ENV_BG_CLEAR_COLOR || env->bg_mode == VS::ENV_BG_SKY) {
 		if (storage->frame.clear_request) {
-			clear_color = storage->frame.clear_request_color.to_linear();
+			clear_color = storage->frame.clear_request_color;
 			storage->frame.clear_request = false;
 		}
 	} else if (env->bg_mode == VS::ENV_BG_CANVAS || env->bg_mode == VS::ENV_BG_COLOR || env->bg_mode == VS::ENV_BG_COLOR_SKY) {
-		clear_color = env->bg_color.to_linear();
+		clear_color = env->bg_color;
 		storage->frame.clear_request = false;
 	} else {
 		storage->frame.clear_request = false;

@@ -19,7 +19,7 @@ comments.
 ## bullet
 
 - Upstream: https://github.com/bulletphysics/bullet3
-- Version: git (12409f1118a7c7a266f9071350c70789dfe73bb9, Commits on Sep 6, 2018 )
+- Version: git (126b676, 2018-12-31)
 - License: zlib
 
 Files extracted from upstream source:
@@ -534,12 +534,10 @@ Files extracted from upstream source:
 ## zstd
 
 - Upstream: https://github.com/facebook/zstd
-- Version: 1.3.4
+- Version: 1.3.8
 - License: BSD-3-Clause
 
 Files extracted from upstream source:
 
 - lib/{common/,compress/,decompress/,zstd.h}
 - LICENSE
-
-- Applied the patch in `thirdparty/zstd/1314.diff` (PR 1314 upstream, already merged). Needed to build on UWP ARM. Can be removed when a new version is released with the patch.

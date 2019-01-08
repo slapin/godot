@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2019 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2019 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -264,6 +264,7 @@ public:
 				alloc_width(0),
 				alloc_height(0),
 				format(Image::FORMAT_L8),
+				type(VS::TEXTURE_TYPE_2D),
 				target(0),
 				data_size(0),
 				total_data_size(0),
@@ -837,6 +838,8 @@ public:
 
 		SelfList<Skeleton> update_list;
 		Set<RasterizerScene::InstanceBase *> instances;
+
+		Transform2D base_transform_2d;
 
 		Skeleton() :
 				use_2d(false),

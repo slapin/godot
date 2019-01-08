@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2019 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2019 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -631,6 +631,25 @@ void RasterizerStorageGLES3::texture_allocate(RID p_texture, int p_width, int p_
 	if (p_flags & VS::TEXTURE_FLAG_USED_FOR_STREAMING) {
 		p_flags &= ~VS::TEXTURE_FLAG_MIPMAPS; // no mipies for video
 	}
+
+#ifndef GLES_OVER_GL
+	switch (p_format) {
+		case Image::Format::FORMAT_RF:
+		case Image::Format::FORMAT_RGF:
+		case Image::Format::FORMAT_RGBF:
+		case Image::Format::FORMAT_RGBAF:
+		case Image::Format::FORMAT_RH:
+		case Image::Format::FORMAT_RGH:
+		case Image::Format::FORMAT_RGBH:
+		case Image::Format::FORMAT_RGBAH: {
+			if (!config.texture_float_linear_supported) {
+				// disable linear texture filtering when not supported for float format on some devices (issue #24295)
+				p_flags &= ~VS::TEXTURE_FLAG_FILTER;
+			}
+		} break;
+		default: {}
+	}
+#endif
 
 	Texture *texture = texture_owner.get(p_texture);
 	ERR_FAIL_COND(!texture);
@@ -1995,7 +2014,8 @@ void RasterizerStorageGLES3::_update_shader(Shader *p_shader) const {
 			actions = &shaders.actions_particles;
 			actions->uniforms = &p_shader->uniforms;
 		} break;
-		case VS::SHADER_MAX: break; // Can't happen, but silences warning
+		case VS::SHADER_MAX:
+			break; // Can't happen, but silences warning
 	}
 
 	Error err = shaders.compiler.compile(p_shader->mode, p_shader->code, actions, p_shader->path, gen_code);
@@ -7019,6 +7039,7 @@ RID RasterizerStorageGLES3::render_target_create() {
 
 	Texture *t = memnew(Texture);
 
+	t->type = VS::TEXTURE_TYPE_2D;
 	t->flags = 0;
 	t->width = 0;
 	t->height = 0;
@@ -7669,11 +7690,13 @@ void RasterizerStorageGLES3::initialize() {
 	config.etc2_supported = false;
 	config.s3tc_supported = true;
 	config.rgtc_supported = true; //RGTC - core since OpenGL version 3.0
+	config.texture_float_linear_supported = true;
 #else
 	config.etc2_supported = true;
 	config.hdr_supported = false;
 	config.s3tc_supported = config.extensions.has("GL_EXT_texture_compression_dxt1") || config.extensions.has("GL_EXT_texture_compression_s3tc") || config.extensions.has("WEBGL_compressed_texture_s3tc");
 	config.rgtc_supported = config.extensions.has("GL_EXT_texture_compression_rgtc") || config.extensions.has("GL_ARB_texture_compression_rgtc") || config.extensions.has("EXT_texture_compression_rgtc");
+	config.texture_float_linear_supported = config.extensions.has("GL_OES_texture_float_linear");
 #endif
 
 	config.pvrtc_supported = config.extensions.has("GL_IMG_texture_compression_pvrtc");
@@ -7753,6 +7776,14 @@ void RasterizerStorageGLES3::initialize() {
 
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, 0);
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAX_LEVEL, 0);
+
+		glGenTextures(1, &resources.white_tex_array);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D_ARRAY, resources.white_tex_array);
+		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB, 8, 8, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, 8, 8, 1, GL_RGB, GL_UNSIGNED_BYTE, whitetexdata);
+		glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
 	glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &config.max_texture_image_units);

@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2019 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2019 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -94,6 +94,7 @@ class TileSetEditor : public HSplitContainer {
 	Ref<TileSet> tileset;
 	TilesetEditorContext *helper;
 	EditorNode *editor;
+	UndoRedo *undo_redo;
 
 	ConfirmationDialog *cd;
 	AcceptDialog *err_dialog;
@@ -107,7 +108,7 @@ class TileSetEditor : public HSplitContainer {
 
 	bool creating_shape;
 	int dragging_point;
-	float tile_names_opacity;
+	bool tile_names_visible;
 	Vector2 region_from;
 	Rect2 edited_region;
 	bool draw_edited_region;
@@ -151,10 +152,14 @@ class TileSetEditor : public HSplitContainer {
 	void update_texture_list();
 	void update_texture_list_icon();
 
+	void add_texture(Ref<Texture> p_texture);
+	void remove_texture(Ref<Texture> p_texture);
+
 	Ref<Texture> get_current_texture();
 
 	static void _import_node(Node *p_node, Ref<TileSet> p_library);
 	static void _import_scene(Node *p_scene, Ref<TileSet> p_library, bool p_merge);
+	void _undo_redo_import_scene(Node *p_scene, bool p_merge);
 
 protected:
 	static void _bind_methods();
@@ -185,6 +190,10 @@ private:
 	void _set_snap_step(Vector2 p_val);
 	void _set_snap_off(Vector2 p_val);
 	void _set_snap_sep(Vector2 p_val);
+
+	void _validate_current_tile_id();
+	void _select_edited_shape_coord();
+	void _undo_tile_removal(int p_id);
 
 	void _zoom_in();
 	void _zoom_out();

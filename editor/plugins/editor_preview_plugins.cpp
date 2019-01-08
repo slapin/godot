@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2019 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2019 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -86,6 +86,7 @@ Ref<Texture> EditorTexturePreviewPlugin::generate(const RES &p_from, const Size2
 
 	Ref<Image> img;
 	Ref<AtlasTexture> atex = p_from;
+	Ref<LargeTexture> ltex = p_from;
 	if (atex.is_valid()) {
 		Ref<Texture> tex = atex->get_atlas();
 		if (!tex.is_valid()) {
@@ -93,6 +94,8 @@ Ref<Texture> EditorTexturePreviewPlugin::generate(const RES &p_from, const Size2
 		}
 		Ref<Image> atlas = tex->get_data();
 		img = atlas->get_rect(atex->get_region());
+	} else if (ltex.is_valid()) {
+		img = ltex->to_image();
 	} else {
 		Ref<Texture> tex = p_from;
 		img = tex->get_data();

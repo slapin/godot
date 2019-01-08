@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2019 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2019 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -487,7 +487,7 @@ void HeightMapShapeBullet::set_data(const Variant &p_data) {
 
 		PoolByteArray im_data = l_image->get_data();
 
-		l_heights.resize(l_image->get_width() * l_image->get_width());
+		l_heights.resize(l_image->get_width() * l_image->get_height());
 
 		PoolRealArray::Write w = l_heights.write();
 		PoolByteArray::Read r = im_data.read();
