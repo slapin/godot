@@ -79,7 +79,7 @@ public:
 
 			if (script_mode == EditorExportPreset::MODE_SCRIPT_ENCRYPTED) {
 
-				String tmp_path = EditorSettings::get_singleton()->get_settings_dir().plus_file("tmp/script.gde");
+				String tmp_path = EditorSettings::get_singleton()->get_cache_dir().plus_file("script.gde");
 				FileAccess *fa = FileAccess::open(tmp_path, FileAccess::WRITE);
 
 				Vector<uint8_t> key;
@@ -161,13 +161,9 @@ void unregister_gdscript_types() {
 	if (script_language_gd)
 		memdelete(script_language_gd);
 
-	if (resource_loader_gd.is_valid()) {
-		ResourceLoader::remove_resource_format_loader(resource_loader_gd);
-		resource_loader_gd.unref();
-	}
+	ResourceLoader::remove_resource_format_loader(resource_loader_gd);
+	resource_loader_gd.unref();
 
-	if (resource_saver_gd.is_valid()) {
-		ResourceSaver::remove_resource_format_saver(resource_saver_gd);
-		resource_saver_gd.unref();
-	}
+	ResourceSaver::remove_resource_format_saver(resource_saver_gd);
+	resource_saver_gd.unref();
 }

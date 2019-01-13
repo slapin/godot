@@ -38,6 +38,7 @@
 #include "nativescript/register_types.h"
 #include "net/register_types.h"
 #include "pluginscript/register_types.h"
+#include "videodecoder/register_types.h"
 
 #include "core/engine.h"
 #include "core/io/resource_loader.h"
@@ -313,9 +314,9 @@ void register_gdnative_types() {
 	ClassDB::register_class<GDNative>();
 
 	resource_loader_gdnlib.instance();
-	resource_saver_gdnlib.instance();
-
 	ResourceLoader::add_resource_format_loader(resource_loader_gdnlib);
+
+	resource_saver_gdnlib.instance();
 	ResourceSaver::add_resource_format_saver(resource_saver_gdnlib);
 
 	GDNativeCallRegistry::singleton = memnew(GDNativeCallRegistry);
@@ -326,6 +327,7 @@ void register_gdnative_types() {
 	register_arvr_types();
 	register_nativescript_types();
 	register_pluginscript_types();
+	register_videodecoder_types();
 
 	// run singletons
 
@@ -378,6 +380,7 @@ void unregister_gdnative_types() {
 	}
 	singleton_gdnatives.clear();
 
+	unregister_videodecoder_types();
 	unregister_pluginscript_types();
 	unregister_nativescript_types();
 	unregister_arvr_types();
@@ -392,9 +395,9 @@ void unregister_gdnative_types() {
 #endif
 
 	ResourceLoader::remove_resource_format_loader(resource_loader_gdnlib);
-	ResourceSaver::remove_resource_format_saver(resource_saver_gdnlib);
-
 	resource_loader_gdnlib.unref();
+
+	ResourceSaver::remove_resource_format_saver(resource_saver_gdnlib);
 	resource_saver_gdnlib.unref();
 
 	// This is for printing out the sizes of the core types
