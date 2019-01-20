@@ -80,6 +80,11 @@ Size2 EditorProperty::get_minimum_size() const {
 	return ms;
 }
 
+void EditorProperty::emit_changed(const StringName &p_property, const Variant &p_value, const StringName &p_field, bool p_changing) {
+
+	emit_signal("property_changed", p_property, p_value, p_field, p_changing);
+}
+
 void EditorProperty::_notification(int p_what) {
 
 	if (p_what == NOTIFICATION_SORT_CHILDREN) {
@@ -634,7 +639,7 @@ void EditorProperty::_gui_input(const Ref<InputEvent> &p_event) {
 			emit_signal("property_keyed", property, use_keying_next());
 
 			if (use_keying_next()) {
-				call_deferred("emit_signal", "property_changed", property, object->get(property).operator int64_t() + 1);
+				call_deferred("emit_changed", property, object->get(property).operator int64_t() + 1, "", false);
 				call_deferred("update_property");
 			}
 		}
@@ -646,14 +651,14 @@ void EditorProperty::_gui_input(const Ref<InputEvent> &p_event) {
 			Node *node = Object::cast_to<Node>(object);
 			if (node && EditorPropertyRevert::may_node_be_in_instance(node) && EditorPropertyRevert::get_instanced_node_original_property(node, property, vorig)) {
 
-				emit_signal("property_changed", property, vorig.duplicate(true));
+				emit_changed(property, vorig.duplicate(true));
 				update_property();
 				return;
 			}
 
 			if (object->call("property_can_revert", property).operator bool()) {
 				Variant rev = object->call("property_get_revert", property);
-				emit_signal("property_changed", property, rev);
+				emit_changed(property, rev);
 				update_property();
 				return;
 			}
@@ -662,7 +667,7 @@ void EditorProperty::_gui_input(const Ref<InputEvent> &p_event) {
 				Ref<Script> scr = object->get_script();
 				Variant orig_value;
 				if (scr->get_property_default_value(property, orig_value)) {
-					emit_signal("property_changed", property, orig_value);
+					emit_changed(property, orig_value);
 					update_property();
 					return;
 				}
@@ -670,7 +675,7 @@ void EditorProperty::_gui_input(const Ref<InputEvent> &p_event) {
 
 			Variant default_value = ClassDB::class_get_default_property_value(object->get_class_name(), property);
 			if (default_value != Variant()) {
-				emit_signal("property_changed", property, default_value);
+				emit_changed(property, default_value);
 				update_property();
 				return;
 			}
@@ -791,6 +796,8 @@ void EditorProperty::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_focusable_focused"), &EditorProperty::_focusable_focused);
 
 	ClassDB::bind_method(D_METHOD("get_tooltip_text"), &EditorProperty::get_tooltip_text);
+
+	ClassDB::bind_method(D_METHOD("emit_changed", "property", "value", "field", "changing"), &EditorProperty::emit_changed, DEFVAL(StringName()), DEFVAL(false));
 
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "label"), "set_label", "get_label");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "read_only"), "set_read_only", "is_read_only");
@@ -1941,10 +1948,6 @@ void EditorInspector::_edit_set(const String &p_name, const Variant &p_value, bo
 
 		Resource *r = Object::cast_to<Resource>(object);
 		if (r) {
-			if (!r->is_edited() && String(p_name) != "resource/edited") {
-				undo_redo->add_do_method(r, "set_edited", true);
-				undo_redo->add_undo_method(r, "set_edited", false);
-			}
 
 			if (String(p_name) == "resource_local_to_scene") {
 				bool prev = object->get(p_name);
@@ -1969,14 +1972,14 @@ void EditorInspector::_edit_set(const String &p_name, const Variant &p_value, bo
 	}
 }
 
-void EditorInspector::_property_changed(const String &p_path, const Variant &p_value, bool changing) {
+void EditorInspector::_property_changed(const String &p_path, const Variant &p_value, const String &p_name, bool changing) {
 
 	// The "changing" variable must be true for properties that trigger events as typing occurs,
 	// like "text_changed" signal. eg: Text property of Label, Button, RichTextLabel, etc.
 	if (changing)
 		this->changing++;
 
-	_edit_set(p_path, p_value, false, "");
+	_edit_set(p_path, p_value, false, p_name);
 
 	if (changing)
 		this->changing--;
@@ -2203,7 +2206,7 @@ String EditorInspector::get_object_class() const {
 
 void EditorInspector::_bind_methods() {
 
-	ClassDB::bind_method("_property_changed", &EditorInspector::_property_changed, DEFVAL(false));
+	ClassDB::bind_method("_property_changed", &EditorInspector::_property_changed, DEFVAL(""), DEFVAL(false));
 	ClassDB::bind_method("_multiple_properties_changed", &EditorInspector::_multiple_properties_changed);
 	ClassDB::bind_method("_property_changed_update_all", &EditorInspector::_property_changed_update_all);
 

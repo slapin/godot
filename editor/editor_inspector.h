@@ -102,6 +102,8 @@ protected:
 	void _gui_input(const Ref<InputEvent> &p_event);
 
 public:
+	void emit_changed(const StringName &p_property, const Variant &p_value, const StringName &p_field = StringName(), bool p_changing = false);
+
 	virtual Size2 get_minimum_size() const;
 
 	void set_label(const String &p_label);
@@ -299,7 +301,7 @@ class EditorInspector : public ScrollContainer {
 
 	void _edit_set(const String &p_name, const Variant &p_value, bool p_refresh_all, const String &p_changed_field);
 
-	void _property_changed(const String &p_path, const Variant &p_value, bool changing = false);
+	void _property_changed(const String &p_path, const Variant &p_value, const String &p_name = "", bool changing = false);
 	void _property_changed_update_all(const String &p_path, const Variant &p_value);
 	void _multiple_properties_changed(Vector<String> p_paths, Array p_values);
 	void _property_keyed(const String &p_path, bool p_advance);

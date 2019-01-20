@@ -4204,6 +4204,7 @@ void RasterizerStorageGLES2::render_target_set_msaa(RID p_render_target, VS::Vie
 RID RasterizerStorageGLES2::canvas_light_shadow_buffer_create(int p_width) {
 
 	CanvasLightShadow *cls = memnew(CanvasLightShadow);
+
 	if (p_width > config.max_texture_size)
 		p_width = config.max_texture_size;
 
@@ -4657,6 +4658,13 @@ void RasterizerStorageGLES2::initialize() {
 #else
 	config.use_rgba_2d_shadows = !(config.float_texture_supported && config.extensions.has("GL_EXT_texture_rg"));
 #endif
+
+#ifdef GLES_OVER_GL
+	config.support_32_bits_indices = true;
+#else
+	config.support_32_bits_indices = config.extensions.has("GL_OES_element_index_uint");
+#endif
+
 	frame.count = 0;
 	frame.delta = 0;
 	frame.current_rt = NULL;
