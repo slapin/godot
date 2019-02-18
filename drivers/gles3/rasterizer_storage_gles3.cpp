@@ -101,6 +101,10 @@
 #define _EXT_COMPRESSED_RGB_BPTC_SIGNED_FLOAT 0x8E8E
 #define _EXT_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT 0x8E8F
 
+#ifndef GLES_OVER_GL
+#define glClearDepth glClearDepthf
+#endif
+
 #ifdef __EMSCRIPTEN__
 #include <emscripten/emscripten.h>
 
@@ -1539,7 +1543,7 @@ RID RasterizerStorageGLES3::texture_create_radiance_cubemap(RID p_source, int p_
 	ERR_FAIL_COND_V(!texture, RID());
 	ERR_FAIL_COND_V(texture->type != VS::TEXTURE_TYPE_CUBEMAP, RID());
 
-	bool use_float = config.hdr_supported;
+	bool use_float = config.framebuffer_half_float_supported;
 
 	if (p_resolution < 0) {
 		p_resolution = texture->width;
@@ -1787,7 +1791,7 @@ void RasterizerStorageGLES3::sky_set_texture(RID p_sky, RID p_panorama, int p_ra
 
 		int array_level = 6;
 
-		bool use_float = config.hdr_supported;
+		bool use_float = config.framebuffer_half_float_supported;
 
 		GLenum internal_format = use_float ? GL_RGBA16F : GL_RGB10_A2;
 		GLenum format = GL_RGBA;
@@ -1899,7 +1903,7 @@ void RasterizerStorageGLES3::sky_set_texture(RID p_sky, RID p_panorama, int p_ra
 
 		int mm_level = mipmaps;
 
-		bool use_float = config.hdr_supported;
+		bool use_float = config.framebuffer_half_float_supported;
 
 		GLenum internal_format = use_float ? GL_RGBA16F : GL_RGB10_A2;
 		GLenum format = GL_RGBA;
@@ -6800,7 +6804,7 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 	GLuint color_type;
 	Image::Format image_format;
 
-	bool hdr = rt->flags[RENDER_TARGET_HDR] && config.hdr_supported;
+	bool hdr = rt->flags[RENDER_TARGET_HDR] && config.framebuffer_half_float_supported;
 	//hdr = false;
 
 	if (!hdr || rt->flags[RENDER_TARGET_NO_3D]) {
@@ -6836,8 +6840,9 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 
 		glGenTextures(1, &rt->depth);
 		glBindTexture(GL_TEXTURE_2D, rt->depth);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, rt->width, rt->height, 0,
-				GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, rt->width, rt->height, 0,
+				GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, NULL);
+
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -6904,9 +6909,9 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 		glGenRenderbuffers(1, &rt->buffers.depth);
 		glBindRenderbuffer(GL_RENDERBUFFER, rt->buffers.depth);
 		if (msaa == 0)
-			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, rt->width, rt->height);
+			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, rt->width, rt->height);
 		else
-			glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa, GL_DEPTH24_STENCIL8, rt->width, rt->height);
+			glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa, GL_DEPTH_COMPONENT24, rt->width, rt->height);
 
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rt->buffers.depth);
 
@@ -7054,7 +7059,14 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 
 			glGenTextures(1, &rt->exposure.color);
 			glBindTexture(GL_TEXTURE_2D, rt->exposure.color);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 1, 1, 0, GL_RED, GL_FLOAT, NULL);
+			if (config.framebuffer_float_supported) {
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 1, 1, 0, GL_RED, GL_FLOAT, NULL);
+			} else if (config.framebuffer_half_float_supported) {
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, 1, 1, 0, GL_RED, GL_HALF_FLOAT, NULL);
+			} else {
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB10_A2, 1, 1, 0, GL_RGBA, GL_UNSIGNED_INT_2_10_10_10_REV, NULL);
+			}
+
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rt->exposure.color, 0);
 
 			status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -7139,7 +7151,8 @@ void RasterizerStorageGLES3::_render_target_allocate(RenderTarget *rt) {
 				glViewport(0, 0, rt->effects.mip_maps[i].sizes[j].width, rt->effects.mip_maps[i].sizes[j].height);
 				glClearBufferfv(GL_COLOR, 0, zero);
 				if (used_depth) {
-					glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0, 0);
+					glClearDepth(1.0);
+					glClear(GL_DEPTH_BUFFER_BIT);
 				}
 			}
 
@@ -7809,17 +7822,21 @@ void RasterizerStorageGLES3::initialize() {
 	config.latc_supported = config.extensions.has("GL_EXT_texture_compression_latc");
 	config.bptc_supported = config.extensions.has("GL_ARB_texture_compression_bptc");
 #ifdef GLES_OVER_GL
-	config.hdr_supported = true;
 	config.etc2_supported = false;
 	config.s3tc_supported = true;
 	config.rgtc_supported = true; //RGTC - core since OpenGL version 3.0
 	config.texture_float_linear_supported = true;
+	config.framebuffer_float_supported = true;
+	config.framebuffer_half_float_supported = true;
+
 #else
 	config.etc2_supported = true;
-	config.hdr_supported = false;
 	config.s3tc_supported = config.extensions.has("GL_EXT_texture_compression_dxt1") || config.extensions.has("GL_EXT_texture_compression_s3tc") || config.extensions.has("WEBGL_compressed_texture_s3tc");
 	config.rgtc_supported = config.extensions.has("GL_EXT_texture_compression_rgtc") || config.extensions.has("GL_ARB_texture_compression_rgtc") || config.extensions.has("EXT_texture_compression_rgtc");
 	config.texture_float_linear_supported = config.extensions.has("GL_OES_texture_float_linear");
+	config.framebuffer_float_supported = config.extensions.has("GL_EXT_color_buffer_float");
+	config.framebuffer_half_float_supported = config.extensions.has("GL_EXT_color_buffer_half_float") || config.framebuffer_float_supported;
+
 #endif
 
 	config.pvrtc_supported = config.extensions.has("GL_IMG_texture_compression_pvrtc");
@@ -7912,11 +7929,7 @@ void RasterizerStorageGLES3::initialize() {
 	glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &config.max_texture_image_units);
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &config.max_texture_size);
 
-#ifdef GLES_OVER_GL
-	config.use_rgba_2d_shadows = false;
-#else
-	config.use_rgba_2d_shadows = true;
-#endif
+	config.use_rgba_2d_shadows = config.framebuffer_float_supported;
 
 	//generic quadie for copying
 

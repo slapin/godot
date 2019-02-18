@@ -243,8 +243,37 @@ Error OS_X11::initialize(const VideoMode &p_desired, int p_video_driver, int p_a
 // maybe contextgl wants to be in charge of creating the window
 #if defined(OPENGL_ENABLED)
 	if (getenv("DRI_PRIME") == NULL) {
-		print_verbose("Detecting GPUs, set DRI_PRIME in the environment to override GPU detection logic.");
-		int use_prime = detect_prime();
+		int use_prime = -1;
+
+		if (getenv("PRIMUS_DISPLAY") ||
+				getenv("PRIMUS_libGLd") ||
+				getenv("PRIMUS_libGLa") ||
+				getenv("PRIMUS_libGL") ||
+				getenv("PRIMUS_LOAD_GLOBAL") ||
+				getenv("BUMBLEBEE_SOCKET")) {
+
+			print_verbose("Optirun/primusrun detected. Skipping GPU detection");
+			use_prime = 0;
+		}
+
+		if (getenv("LD_LIBRARY_PATH")) {
+			String ld_library_path(getenv("LD_LIBRARY_PATH"));
+			Vector<String> libraries = ld_library_path.split(":");
+
+			for (int i = 0; i < libraries.size(); ++i) {
+				if (FileAccess::exists(libraries[i] + "/libGL.so.1") ||
+						FileAccess::exists(libraries[i] + "/libGL.so")) {
+
+					print_verbose("Custom libGL override detected. Skipping GPU detection");
+					use_prime = 0;
+				}
+			}
+		}
+
+		if (use_prime == -1) {
+			print_verbose("Detecting GPUs, set DRI_PRIME in the environment to override GPU detection logic.");
+			use_prime = detect_prime();
+		}
 
 		if (use_prime) {
 			print_line("Found discrete GPU, setting DRI_PRIME=1 to use it.");
@@ -3004,7 +3033,9 @@ bool OS_X11::is_vsync_enabled() const {
 */
 void OS_X11::set_context(int p_context) {
 
+	char *config_name = NULL;
 	XClassHint *classHint = XAllocClassHint();
+
 	if (classHint) {
 
 		char *wm_class = (char *)"Godot";
@@ -3015,13 +3046,20 @@ void OS_X11::set_context(int p_context) {
 
 		if (p_context == CONTEXT_ENGINE) {
 			classHint->res_name = (char *)"Godot_Engine";
-			wm_class = (char *)((String)GLOBAL_GET("application/config/name")).utf8().ptrw();
+			char *config_name_tmp = (char *)((String)GLOBAL_GET("application/config/name")).utf8().ptrw();
+			if (config_name_tmp)
+				config_name = strdup(config_name_tmp);
+			else
+				config_name = strdup("Godot Engine");
+
+			wm_class = config_name;
 		}
 
 		classHint->res_class = wm_class;
 
 		XSetClassHint(x11_display, x11_window, classHint);
 		XFree(classHint);
+		free(config_name);
 	}
 }
 

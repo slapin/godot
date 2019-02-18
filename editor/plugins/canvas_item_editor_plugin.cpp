@@ -42,9 +42,9 @@
 #include "scene/2d/light_2d.h"
 #include "scene/2d/particles_2d.h"
 #include "scene/2d/polygon_2d.h"
-#include "scene/2d/screen_button.h"
 #include "scene/2d/skeleton_2d.h"
 #include "scene/2d/sprite.h"
+#include "scene/2d/touch_screen_button.h"
 #include "scene/gui/grid_container.h"
 #include "scene/gui/nine_patch_rect.h"
 #include "scene/main/canvas_layer.h"
@@ -3288,7 +3288,7 @@ void CanvasItemEditor::_notification(int p_what) {
 				Control *control = Object::cast_to<Control>(E->get());
 				if (!control || Object::cast_to<Container>(control->get_parent())) {
 					presets_menu->set_disabled(true);
-					presets_menu->set_tooltip(TTR("A child of a container gets its anchors and margins values overriden by its parent."));
+					presets_menu->set_tooltip(TTR("Children of containers have their anchors and margins values overridden by their parent."));
 					break;
 				}
 			}
@@ -4559,6 +4559,7 @@ CanvasItemEditor::CanvasItemEditor(EditorNode *p_editor) {
 	snap_grid = true;
 	snap_guides = true;
 	snap_rotation = false;
+	snap_relative = false;
 	snap_pixel = false;
 
 	skeleton_show_bones = true;

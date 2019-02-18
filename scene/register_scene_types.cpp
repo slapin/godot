@@ -48,7 +48,7 @@
 #include "scene/2d/light_occluder_2d.h"
 #include "scene/2d/line_2d.h"
 #include "scene/2d/mesh_instance_2d.h"
-#include "scene/2d/navigation2d.h"
+#include "scene/2d/navigation_2d.h"
 #include "scene/2d/parallax_background.h"
 #include "scene/2d/parallax_layer.h"
 #include "scene/2d/particles_2d.h"
@@ -58,10 +58,10 @@
 #include "scene/2d/position_2d.h"
 #include "scene/2d/ray_cast_2d.h"
 #include "scene/2d/remote_transform_2d.h"
-#include "scene/2d/screen_button.h"
 #include "scene/2d/skeleton_2d.h"
 #include "scene/2d/sprite.h"
 #include "scene/2d/tile_map.h"
+#include "scene/2d/touch_screen_button.h"
 #include "scene/2d/visibility_notifier_2d.h"
 #include "scene/2d/y_sort.h"
 #include "scene/animation/animation_blend_space_1d.h"
@@ -73,7 +73,7 @@
 #include "scene/animation/animation_tree_player.h"
 #include "scene/animation/root_motion_view.h"
 #include "scene/animation/tween.h"
-#include "scene/audio/audio_player.h"
+#include "scene/audio/audio_stream_player.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
 #include "scene/gui/center_container.h"
@@ -125,12 +125,11 @@
 #include "scene/main/timer.h"
 #include "scene/main/viewport.h"
 #include "scene/resources/audio_stream_sample.h"
-#include "scene/resources/bit_mask.h"
+#include "scene/resources/bit_map.h"
 #include "scene/resources/box_shape.h"
 #include "scene/resources/capsule_shape.h"
 #include "scene/resources/capsule_shape_2d.h"
 #include "scene/resources/circle_shape_2d.h"
-#include "scene/resources/color_ramp.h"
 #include "scene/resources/concave_polygon_shape.h"
 #include "scene/resources/concave_polygon_shape_2d.h"
 #include "scene/resources/convex_polygon_shape.h"
@@ -139,21 +138,23 @@
 #include "scene/resources/default_theme/default_theme.h"
 #include "scene/resources/dynamic_font.h"
 #include "scene/resources/dynamic_font_stb.h"
+#include "scene/resources/gradient.h"
+#include "scene/resources/line_shape_2d.h"
 #include "scene/resources/material.h"
 #include "scene/resources/mesh.h"
 #include "scene/resources/mesh_data_tool.h"
 #include "scene/resources/mesh_library.h"
 #include "scene/resources/packed_scene.h"
 #include "scene/resources/particles_material.h"
+#include "scene/resources/physics_material.h"
 #include "scene/resources/plane_shape.h"
 #include "scene/resources/polygon_path_finder.h"
 #include "scene/resources/primitive_meshes.h"
 #include "scene/resources/ray_shape.h"
 #include "scene/resources/rectangle_shape_2d.h"
-#include "scene/resources/scene_format_text.h"
+#include "scene/resources/resource_format_text.h"
 #include "scene/resources/segment_shape_2d.h"
-#include "scene/resources/shape_line_2d.h"
-#include "scene/resources/sky_box.h"
+#include "scene/resources/sky.h"
 #include "scene/resources/sphere_shape.h"
 #include "scene/resources/surface_tool.h"
 #include "scene/resources/text_file.h"
@@ -166,8 +167,8 @@
 #include "scene/resources/world_2d.h"
 #include "scene/scene_string_names.h"
 
-#include "scene/3d/scenario_fx.h"
 #include "scene/3d/spatial.h"
+#include "scene/3d/world_environment.h"
 
 #ifndef _3D_DISABLED
 #include "scene/3d/area.h"
@@ -207,7 +208,6 @@
 #include "scene/3d/visibility_notifier.h"
 #include "scene/animation/skeleton_ik.h"
 #include "scene/resources/environment.h"
-#include "scene/resources/physics_material.h"
 #endif
 
 static Ref<ResourceFormatSaverText> resource_saver_text;
@@ -602,8 +602,8 @@ void register_scene_types() {
 
 	ClassDB::register_class<SpatialVelocityTracker>();
 
-	ClassDB::register_class<PhysicsMaterial>();
 #endif
+	ClassDB::register_class<PhysicsMaterial>();
 	ClassDB::register_class<World>();
 	ClassDB::register_class<Environment>();
 	ClassDB::register_class<World2D>();

@@ -303,7 +303,7 @@ Ref<Texture> Environment::get_adjustment_color_correction() const {
 
 void Environment::_validate_property(PropertyInfo &property) const {
 
-	if (property.name == "background_sky" || property.name == "background_sky_custom_fov" || property.name == "background_sky_orientation" || property.name == "ambient_light/sky_contribution") {
+	if (property.name == "background_sky" || property.name == "background_sky_custom_fov" || property.name == "background_sky_orientation" || property.name == "background_sky_rotation" || property.name == "background_sky_rotation_degrees" || property.name == "ambient_light/sky_contribution") {
 		if (bg_mode != BG_SKY && bg_mode != BG_COLOR_SKY) {
 			property.usage = PROPERTY_USAGE_NOEDITOR | PROPERTY_USAGE_INTERNAL;
 		}
@@ -1291,7 +1291,14 @@ void Environment::_bind_methods() {
 	BIND_ENUM_CONSTANT(SSAO_QUALITY_HIGH);
 }
 
-Environment::Environment() {
+Environment::Environment() :
+		bg_mode(BG_CLEAR_COLOR),
+		tone_mapper(TONE_MAPPER_LINEAR),
+		ssao_blur(SSAO_BLUR_DISABLED),
+		ssao_quality(SSAO_QUALITY_LOW),
+		glow_blend_mode(GLOW_BLEND_MODE_ADDITIVE),
+		dof_blur_far_quality(DOF_BLUR_QUALITY_LOW),
+		dof_blur_near_quality(DOF_BLUR_QUALITY_LOW) {
 
 	environment = VS::get_singleton()->environment_create();
 

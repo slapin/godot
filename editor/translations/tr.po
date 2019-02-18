@@ -20,12 +20,13 @@
 # Onur Sanır <onursanir@gmail.com>, 2018.
 # Oğuzhan Özdemir <ozdemiroguzhan0@gmail.com>, 2018.
 # Alper Çitmen <alper.citmen@gmail.com>, 2019.
+# ege1212 <owlphp@gmail.com>, 2019.
 msgid ""
 msgstr ""
 "Project-Id-Version: Godot Engine editor\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2019-01-19 19:22+0000\n"
-"Last-Translator: Alper Çitmen <alper.citmen@gmail.com>\n"
+"PO-Revision-Date: 2019-02-13 07:10+0000\n"
+"Last-Translator: ege1212 <owlphp@gmail.com>\n"
 "Language-Team: Turkish <https://hosted.weblate.org/projects/godot-engine/"
 "godot/tr/>\n"
 "Language: tr\n"
@@ -33,7 +34,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 3.4-dev\n"
+"X-Generator: Weblate 3.5-dev\n"
 
 #: core/math/expression.cpp modules/gdscript/gdscript_functions.cpp
 #: modules/visual_script/visual_script_builtin_funcs.cpp
@@ -49,7 +50,7 @@ msgstr "Byte kodu çözmek için yetersiz byte, ya da Geçersiz format."
 
 #: core/math/expression.cpp
 msgid "Invalid input %i (not passed) in expression"
-msgstr ""
+msgstr "Geçersiz girdi, ifadede %i (geçirilmedi)"
 
 #: core/math/expression.cpp
 msgid "self can't be used because instance is null (not passed)"
@@ -582,23 +583,13 @@ msgstr "Uzaklaştır"
 msgid "Reset Zoom"
 msgstr "Yaklaşmayı Sıfırla"
 
-#: editor/code_editor.cpp
-#, fuzzy
-msgid "Warnings:"
+#: editor/code_editor.cpp modules/mono/editor/mono_bottom_panel.cpp
+msgid "Warnings"
 msgstr "Uyarılar"
 
 #: editor/code_editor.cpp
-#, fuzzy
-msgid "Font Size:"
-msgstr "Kaynak Yazı Türü Boyutu:"
-
-#: editor/code_editor.cpp
-msgid "Line:"
-msgstr "Satır:"
-
-#: editor/code_editor.cpp
-msgid "Col:"
-msgstr "Sütun:"
+msgid "Line and column numbers."
+msgstr ""
 
 #: editor/connections_dialog.cpp
 msgid "Method in target Node must be specified!"
@@ -907,8 +898,8 @@ msgstr "Seçili dosyalar silinsin mi?"
 #: editor/dependency_editor.cpp editor/editor_audio_buses.cpp
 #: editor/editor_file_dialog.cpp editor/editor_node.cpp
 #: editor/filesystem_dock.cpp editor/plugins/item_list_editor_plugin.cpp
-#: editor/project_export.cpp editor/project_settings_editor.cpp
-#: editor/scene_tree_dock.cpp
+#: editor/plugins/sprite_frames_editor_plugin.cpp editor/project_export.cpp
+#: editor/project_settings_editor.cpp editor/scene_tree_dock.cpp
 msgid "Delete"
 msgstr "Sil"
 
@@ -1165,8 +1156,9 @@ msgid "Add Bus"
 msgstr "Bus ekle"
 
 #: editor/editor_audio_buses.cpp
-msgid "Create a new Bus Layout."
-msgstr "Yeni bir Bus Yerleşim Düzeni oluştur."
+#, fuzzy
+msgid "Add a new Audio Bus to this layout."
+msgstr "Audio Bus Yerleşim Düzenini Farklı Kaydet..."
 
 #: editor/editor_audio_buses.cpp editor/editor_properties.cpp
 #: editor/plugins/animation_player_editor_plugin.cpp editor/property_editor.cpp
@@ -1193,6 +1185,10 @@ msgstr "Varsayılanı Yükle"
 #: editor/editor_audio_buses.cpp
 msgid "Load the default Bus Layout."
 msgstr "Varsayılan Bus Yerleşim Düzenini Yükle."
+
+#: editor/editor_audio_buses.cpp
+msgid "Create a new Bus Layout."
+msgstr "Yeni bir Bus Yerleşim Düzeni oluştur."
 
 #: editor/editor_autoload_settings.cpp
 msgid "Invalid name."
@@ -2463,7 +2459,8 @@ msgid "Save & Restart"
 msgstr "Kaydet & Yeniden İçe Aktar"
 
 #: editor/editor_node.cpp
-msgid "Spins when the editor window repaints!"
+#, fuzzy
+msgid "Spins when the editor window redraws."
 msgstr "Düzenleyici penceresi yeniden boyandığında döndürülür!"
 
 #: editor/editor_node.cpp
@@ -3562,25 +3559,6 @@ msgid "Create Polygon"
 msgstr "Çoklu Oluşturun"
 
 #: editor/plugins/abstract_polygon_2d_editor.cpp
-#, fuzzy
-msgid "Edit Polygon"
-msgstr "Çokluyu Düzenleyin"
-
-#: editor/plugins/abstract_polygon_2d_editor.cpp
-msgid "Insert Point"
-msgstr "Nokta Yerleştir"
-
-#: editor/plugins/abstract_polygon_2d_editor.cpp
-#, fuzzy
-msgid "Edit Polygon (Remove Point)"
-msgstr "Çokluyu Düzenleyin (Noktayı Silin)"
-
-#: editor/plugins/abstract_polygon_2d_editor.cpp
-#, fuzzy
-msgid "Remove Polygon And Point"
-msgstr "Çokluyu ve Noktayı Kaldır"
-
-#: editor/plugins/abstract_polygon_2d_editor.cpp
 #: editor/plugins/animation_blend_space_1d_editor.cpp
 #: editor/plugins/animation_blend_space_2d_editor.cpp
 #, fuzzy
@@ -3604,6 +3582,25 @@ msgstr ""
 #, fuzzy
 msgid "Erase points."
 msgstr "RMB: Noktayı Sil."
+
+#: editor/plugins/abstract_polygon_2d_editor.cpp
+#, fuzzy
+msgid "Edit Polygon"
+msgstr "Çokluyu Düzenleyin"
+
+#: editor/plugins/abstract_polygon_2d_editor.cpp
+msgid "Insert Point"
+msgstr "Nokta Yerleştir"
+
+#: editor/plugins/abstract_polygon_2d_editor.cpp
+#, fuzzy
+msgid "Edit Polygon (Remove Point)"
+msgstr "Çokluyu Düzenleyin (Noktayı Silin)"
+
+#: editor/plugins/abstract_polygon_2d_editor.cpp
+#, fuzzy
+msgid "Remove Polygon And Point"
+msgstr "Çokluyu ve Noktayı Kaldır"
 
 #: editor/plugins/animation_blend_space_1d_editor.cpp
 #: editor/plugins/animation_blend_space_2d_editor.cpp
@@ -4422,6 +4419,16 @@ msgstr "CanvasItem Düzenle"
 #, fuzzy
 msgid "Move CanvasItem"
 msgstr "CanvasItem Düzenle"
+
+#: editor/plugins/canvas_item_editor_plugin.cpp
+msgid "Presets for the anchors and margins values of a Control node."
+msgstr ""
+
+#: editor/plugins/canvas_item_editor_plugin.cpp
+msgid ""
+"Children of containers have their anchors and margins values overridden by "
+"their parent."
+msgstr ""
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
 msgid "Anchors only"
@@ -5339,6 +5346,12 @@ msgstr ""
 #: editor/plugins/polygon_2d_editor_plugin.cpp
 msgid "Create UV Map"
 msgstr "UV Haritası Oluştur"
+
+#: editor/plugins/polygon_2d_editor_plugin.cpp
+msgid ""
+"Polygon 2D has internal vertices, so it can no longer be edited in the "
+"viewport."
+msgstr ""
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
 #, fuzzy
@@ -6481,7 +6494,7 @@ msgid "Post"
 msgstr "Sonrası"
 
 #: editor/plugins/spatial_editor_plugin.cpp
-msgid "Name-less gizmo"
+msgid "Nameless gizmo"
 msgstr ""
 
 #: editor/plugins/sprite_editor_plugin.cpp
@@ -6564,8 +6577,14 @@ msgid "(empty)"
 msgstr "(boş)"
 
 #: editor/plugins/sprite_frames_editor_plugin.cpp
-msgid "Animations"
+#, fuzzy
+msgid "Animations:"
 msgstr "Animasyonlar"
+
+#: editor/plugins/sprite_frames_editor_plugin.cpp
+#, fuzzy
+msgid "New Animation"
+msgstr "Animasyon"
 
 #: editor/plugins/sprite_frames_editor_plugin.cpp
 msgid "Speed (FPS):"
@@ -6576,7 +6595,8 @@ msgid "Loop"
 msgstr "Döngü"
 
 #: editor/plugins/sprite_frames_editor_plugin.cpp
-msgid "Animation Frames"
+#, fuzzy
+msgid "Animation Frames:"
 msgstr "Animasyon Çerçeveleri"
 
 #: editor/plugins/sprite_frames_editor_plugin.cpp
@@ -7411,6 +7431,19 @@ msgstr "Proje Açılamadı"
 #: editor/project_manager.cpp
 msgid "Are you sure to open more than one project?"
 msgstr "Birden fazla proje açmakta kararlı mısınız?"
+
+#: editor/project_manager.cpp
+msgid ""
+"The following project settings file does not specify the version of Godot "
+"through which it was created.\n"
+"\n"
+"%s\n"
+"\n"
+"If you proceed with opening it, it will be converted to Godot's current "
+"configuration file format.\n"
+"Warning: You will not be able to open the project with previous versions of "
+"the engine anymore."
+msgstr ""
 
 #: editor/project_manager.cpp
 msgid ""
@@ -8964,10 +8997,6 @@ msgid "Build Project"
 msgstr "Projeyi İnşa et"
 
 #: modules/mono/editor/mono_bottom_panel.cpp
-msgid "Warnings"
-msgstr "Uyarılar"
-
-#: modules/mono/editor/mono_bottom_panel.cpp
 #, fuzzy
 msgid "View log"
 msgstr "Dosyaları Görüntüle"
@@ -9642,6 +9671,13 @@ msgstr ""
 "ParallaxLayer, yalnızca ParallaxBackground düğümünün çocuğu olduğu zaman "
 "çalışır."
 
+#: scene/2d/particles_2d.cpp
+msgid ""
+"GPU-based particles are not supported by the GLES2 video driver.\n"
+"Use the CPUParticles2D node instead. You can use the \"Convert to "
+"CPUParticles\" option for this purpose."
+msgstr ""
+
 #: scene/2d/particles_2d.cpp scene/3d/particles.cpp
 msgid ""
 "A material to process the particles is not assigned, so no behavior is "
@@ -9828,6 +9864,13 @@ msgstr ""
 
 #: scene/3d/particles.cpp
 msgid ""
+"GPU-based particles are not supported by the GLES2 video driver.\n"
+"Use the CPUParticles node instead. You can use the \"Convert to CPUParticles"
+"\" option for this purpose."
+msgstr ""
+
+#: scene/3d/particles.cpp
+msgid ""
 "Nothing is visible because meshes have not been assigned to draw passes."
 msgstr ""
 "Hiçbirşey görünebilir değil çünkü örüntüler çizim geçişlerine atanmış değil."
@@ -9865,25 +9908,6 @@ msgid "Path property must point to a valid Spatial node to work."
 msgstr ""
 "Yol özelliği, çalışmak için geçerli bir Spatial düğümüne işaret etmelidir."
 
-#: scene/3d/scenario_fx.cpp
-msgid "WorldEnvironment needs an Environment resource."
-msgstr "WorldEnvironment bir Environment kaynağı gerektirir."
-
-#: scene/3d/scenario_fx.cpp
-msgid ""
-"Only one WorldEnvironment is allowed per scene (or set of instanced scenes)."
-msgstr ""
-"Her sahne başına (ya da örneklenmiş sahneler dizisine) sadece bir tane "
-"WorldEnvironment 'a izin verilir."
-
-#: scene/3d/scenario_fx.cpp
-msgid ""
-"This WorldEnvironment is ignored. Either add a Camera (for 3D scenes) or set "
-"this environment's Background Mode to Canvas (for 2D scenes)."
-msgstr ""
-"Bu WorldEnvironment yoksayıldı. (3B sahneler için) Bir Kamera ekleyin veya "
-"(2B sahneler için) bu ortamın Arkaplan Kipini Canvas olarak ayarlayın."
-
 #: scene/3d/soft_body.cpp
 msgid "This body will be ignored until you set a mesh"
 msgstr ""
@@ -9914,6 +9938,25 @@ msgid ""
 msgstr ""
 "VehicleWheel VehicleBody'ye bir tekerlek sistemi sağlaması için hizmet eder. "
 "Lütfen bunu VehicleBody'nin çocuğu olarak kullanın."
+
+#: scene/3d/world_environment.cpp
+msgid "WorldEnvironment needs an Environment resource."
+msgstr "WorldEnvironment bir Environment kaynağı gerektirir."
+
+#: scene/3d/world_environment.cpp
+msgid ""
+"Only one WorldEnvironment is allowed per scene (or set of instanced scenes)."
+msgstr ""
+"Her sahne başına (ya da örneklenmiş sahneler dizisine) sadece bir tane "
+"WorldEnvironment 'a izin verilir."
+
+#: scene/3d/world_environment.cpp
+msgid ""
+"This WorldEnvironment is ignored. Either add a Camera (for 3D scenes) or set "
+"this environment's Background Mode to Canvas (for 2D scenes)."
+msgstr ""
+"Bu WorldEnvironment yoksayıldı. (3B sahneler için) Bir Kamera ekleyin veya "
+"(2B sahneler için) bu ortamın Arkaplan Kipini Canvas olarak ayarlayın."
 
 #: scene/animation/animation_blend_tree.cpp
 msgid "On BlendTree node '%s', animation not found: '%s'"
@@ -9963,11 +10006,20 @@ msgid "This node has been deprecated. Use AnimationTree instead."
 msgstr ""
 
 #: scene/gui/color_picker.cpp
+msgid "Pick a color from the screen."
+msgstr ""
+
+#: scene/gui/color_picker.cpp
 msgid "Raw Mode"
 msgstr "Ham Kip"
 
 #: scene/gui/color_picker.cpp
-msgid "Add current color as a preset"
+msgid "Switch between hexadecimal and code values."
+msgstr ""
+
+#: scene/gui/color_picker.cpp
+#, fuzzy
+msgid "Add current color as a preset."
 msgstr "Şuanki rengi bir önayar olarak kaydet"
 
 #: scene/gui/dialogs.cpp
@@ -10063,6 +10115,20 @@ msgstr ""
 #: servers/visual/shader_language.cpp
 msgid "Varyings can only be assigned in vertex function."
 msgstr ""
+
+#, fuzzy
+#~ msgid "Warnings:"
+#~ msgstr "Uyarılar"
+
+#, fuzzy
+#~ msgid "Font Size:"
+#~ msgstr "Kaynak Yazı Türü Boyutu:"
+
+#~ msgid "Line:"
+#~ msgstr "Satır:"
+
+#~ msgid "Col:"
+#~ msgstr "Sütun:"
 
 #, fuzzy
 #~ msgid "OrientedPathFollow only works when set as a child of a Path node."

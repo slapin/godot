@@ -18,8 +18,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Godot Engine editor\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2019-01-26 21:22+0000\n"
-"Last-Translator: ssantos <ssantos@web.de>\n"
+"PO-Revision-Date: 2019-02-01 12:09+0000\n"
+"Last-Translator: João Lopes <linux-man@hotmail.com>\n"
 "Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
 "godot-engine/godot/pt_PT/>\n"
 "Language: pt_PT\n"
@@ -554,21 +554,13 @@ msgstr "Zoom Out"
 msgid "Reset Zoom"
 msgstr "Repor Zoom"
 
-#: editor/code_editor.cpp
-msgid "Warnings:"
-msgstr "Avisos:"
+#: editor/code_editor.cpp modules/mono/editor/mono_bottom_panel.cpp
+msgid "Warnings"
+msgstr "Avisos"
 
 #: editor/code_editor.cpp
-msgid "Font Size:"
-msgstr "Tamanho do tipo de letra:"
-
-#: editor/code_editor.cpp
-msgid "Line:"
-msgstr "Linha:"
-
-#: editor/code_editor.cpp
-msgid "Col:"
-msgstr "Coluna:"
+msgid "Line and column numbers."
+msgstr ""
 
 #: editor/connections_dialog.cpp
 msgid "Method in target Node must be specified!"
@@ -870,8 +862,8 @@ msgstr "Apagar arquivos selecionados?"
 #: editor/dependency_editor.cpp editor/editor_audio_buses.cpp
 #: editor/editor_file_dialog.cpp editor/editor_node.cpp
 #: editor/filesystem_dock.cpp editor/plugins/item_list_editor_plugin.cpp
-#: editor/project_export.cpp editor/project_settings_editor.cpp
-#: editor/scene_tree_dock.cpp
+#: editor/plugins/sprite_frames_editor_plugin.cpp editor/project_export.cpp
+#: editor/project_settings_editor.cpp editor/scene_tree_dock.cpp
 msgid "Delete"
 msgstr "Apagar"
 
@@ -1127,8 +1119,9 @@ msgid "Add Bus"
 msgstr "Adicionar Barramento"
 
 #: editor/editor_audio_buses.cpp
-msgid "Create a new Bus Layout."
-msgstr "Criar um novo Modelo de Barramento."
+#, fuzzy
+msgid "Add a new Audio Bus to this layout."
+msgstr "Guardar Modelo do barramento de áudio como..."
 
 #: editor/editor_audio_buses.cpp editor/editor_properties.cpp
 #: editor/plugins/animation_player_editor_plugin.cpp editor/property_editor.cpp
@@ -1155,6 +1148,10 @@ msgstr "Carregar Padrão"
 #: editor/editor_audio_buses.cpp
 msgid "Load the default Bus Layout."
 msgstr "Carregar o Modelo padrão de barramento."
+
+#: editor/editor_audio_buses.cpp
+msgid "Create a new Bus Layout."
+msgstr "Criar um novo Modelo de Barramento."
 
 #: editor/editor_autoload_settings.cpp
 msgid "Invalid name."
@@ -2403,7 +2400,8 @@ msgid "Save & Restart"
 msgstr "Guardar & Reiniciar"
 
 #: editor/editor_node.cpp
-msgid "Spins when the editor window repaints!"
+#, fuzzy
+msgid "Spins when the editor window redraws."
 msgstr "Roda quando a janela do Editor atualiza!"
 
 #: editor/editor_node.cpp
@@ -3327,17 +3325,18 @@ msgstr "Reimportar"
 
 #: editor/import_dock.cpp
 msgid "Save scenes, re-import and restart"
-msgstr ""
+msgstr "Guardar cenas, reimportar e reiniciar"
 
 #: editor/import_dock.cpp
-#, fuzzy
 msgid "Changing the type of an imported file requires editor restart."
-msgstr "Alterar o driver de vídeo requer reiniciar o editor."
+msgstr "Alterar o tipo de um ficheiro importado requer reiniciar o editor."
 
 #: editor/import_dock.cpp
 msgid ""
 "WARNING: Assets exist that use this resource, they may stop loading properly."
 msgstr ""
+"AVISO: Existem Ativos que usam este recurso, podendo não ser carregados "
+"corretamente."
 
 #: editor/inspector_dock.cpp
 msgid "Failed to load resource."
@@ -3462,22 +3461,6 @@ msgid "Create Polygon"
 msgstr "Criar Polígono"
 
 #: editor/plugins/abstract_polygon_2d_editor.cpp
-msgid "Edit Polygon"
-msgstr "Editar Polígono"
-
-#: editor/plugins/abstract_polygon_2d_editor.cpp
-msgid "Insert Point"
-msgstr "Inserir Ponto"
-
-#: editor/plugins/abstract_polygon_2d_editor.cpp
-msgid "Edit Polygon (Remove Point)"
-msgstr "Editar Polígono (Remover Ponto)"
-
-#: editor/plugins/abstract_polygon_2d_editor.cpp
-msgid "Remove Polygon And Point"
-msgstr "Remover Polígono e Ponto"
-
-#: editor/plugins/abstract_polygon_2d_editor.cpp
 #: editor/plugins/animation_blend_space_1d_editor.cpp
 #: editor/plugins/animation_blend_space_2d_editor.cpp
 msgid "Create points."
@@ -3497,6 +3480,22 @@ msgstr ""
 #: editor/plugins/animation_blend_space_1d_editor.cpp
 msgid "Erase points."
 msgstr "Apagar pontos."
+
+#: editor/plugins/abstract_polygon_2d_editor.cpp
+msgid "Edit Polygon"
+msgstr "Editar Polígono"
+
+#: editor/plugins/abstract_polygon_2d_editor.cpp
+msgid "Insert Point"
+msgstr "Inserir Ponto"
+
+#: editor/plugins/abstract_polygon_2d_editor.cpp
+msgid "Edit Polygon (Remove Point)"
+msgstr "Editar Polígono (Remover Ponto)"
+
+#: editor/plugins/abstract_polygon_2d_editor.cpp
+msgid "Remove Polygon And Point"
+msgstr "Remover Polígono e Ponto"
 
 #: editor/plugins/animation_blend_space_1d_editor.cpp
 #: editor/plugins/animation_blend_space_2d_editor.cpp
@@ -4295,6 +4294,19 @@ msgstr "Escalar CanvasItem"
 #: editor/plugins/canvas_item_editor_plugin.cpp
 msgid "Move CanvasItem"
 msgstr "Mover CanvasItem"
+
+#: editor/plugins/canvas_item_editor_plugin.cpp
+msgid "Presets for the anchors and margins values of a Control node."
+msgstr ""
+
+#: editor/plugins/canvas_item_editor_plugin.cpp
+#, fuzzy
+msgid ""
+"Children of containers have their anchors and margins values overridden by "
+"their parent."
+msgstr ""
+"Atenção: as crianças de um contentor obtêm a sua posição e tamanho "
+"determinados apenas pelos seus pais."
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
 msgid "Anchors only"
@@ -5199,6 +5211,12 @@ msgstr ""
 #: editor/plugins/polygon_2d_editor_plugin.cpp
 msgid "Create UV Map"
 msgstr "Criar mapa UV"
+
+#: editor/plugins/polygon_2d_editor_plugin.cpp
+msgid ""
+"Polygon 2D has internal vertices, so it can no longer be edited in the "
+"viewport."
+msgstr ""
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
 msgid "Create Polygon & UV"
@@ -6291,7 +6309,8 @@ msgid "Post"
 msgstr "Pós"
 
 #: editor/plugins/spatial_editor_plugin.cpp
-msgid "Name-less gizmo"
+#, fuzzy
+msgid "Nameless gizmo"
 msgstr "Bugiganga sem nome"
 
 #: editor/plugins/sprite_editor_plugin.cpp
@@ -6367,8 +6386,14 @@ msgid "(empty)"
 msgstr "(vazio)"
 
 #: editor/plugins/sprite_frames_editor_plugin.cpp
-msgid "Animations"
+#, fuzzy
+msgid "Animations:"
 msgstr "Animações"
+
+#: editor/plugins/sprite_frames_editor_plugin.cpp
+#, fuzzy
+msgid "New Animation"
+msgstr "Animação"
 
 #: editor/plugins/sprite_frames_editor_plugin.cpp
 msgid "Speed (FPS):"
@@ -6379,7 +6404,8 @@ msgid "Loop"
 msgstr "Ciclo"
 
 #: editor/plugins/sprite_frames_editor_plugin.cpp
-msgid "Animation Frames"
+#, fuzzy
+msgid "Animation Frames:"
 msgstr "Frames da Animação"
 
 #: editor/plugins/sprite_frames_editor_plugin.cpp
@@ -7134,11 +7160,11 @@ msgstr "Navegar"
 
 #: editor/project_manager.cpp
 msgid "Renderer:"
-msgstr ""
+msgstr "Renderizador:"
 
 #: editor/project_manager.cpp
 msgid "OpenGL ES 3.0"
-msgstr ""
+msgstr "OpenGL ES 3.0"
 
 #: editor/project_manager.cpp
 msgid ""
@@ -7147,10 +7173,14 @@ msgid ""
 "Incompatible with older hardware\n"
 "Not recommended for web games"
 msgstr ""
+"Qualidade visual superior\n"
+"Todas as características disponíveis\n"
+"Incompatível com hardware antigo\n"
+"Não recomendado para jogos Web"
 
 #: editor/project_manager.cpp
 msgid "OpenGL ES 2.0"
-msgstr ""
+msgstr "OpenGL ES 2.0"
 
 #: editor/project_manager.cpp
 msgid ""
@@ -7159,10 +7189,16 @@ msgid ""
 "Works on most hardware\n"
 "Recommended for web games"
 msgstr ""
+"Qualidade visual inferior\n"
+"Algumas características indisponíveis\n"
+"Funciona na maioria do hardware\n"
+"Recomendado para jogos Web"
 
 #: editor/project_manager.cpp
 msgid "Renderer can be changed later, but scenes may need to be adjusted."
 msgstr ""
+"O Renderizador pode ser alterado mais tarde, mas as cenas poderão ter de ser "
+"ajustadas."
 
 #: editor/project_manager.cpp
 msgid "Unnamed Project"
@@ -7175,6 +7211,28 @@ msgstr "Impossível abrir Projeto em '%s'."
 #: editor/project_manager.cpp
 msgid "Are you sure to open more than one project?"
 msgstr "Está seguro que quer abrir mais do que um Projeto?"
+
+#: editor/project_manager.cpp
+#, fuzzy
+msgid ""
+"The following project settings file does not specify the version of Godot "
+"through which it was created.\n"
+"\n"
+"%s\n"
+"\n"
+"If you proceed with opening it, it will be converted to Godot's current "
+"configuration file format.\n"
+"Warning: You will not be able to open the project with previous versions of "
+"the engine anymore."
+msgstr ""
+"A seguinte configuração do projeto foi gerada por um motor mais antigo, e "
+"precisa de ser convertida para esta versão.\n"
+"\n"
+"%s\n"
+"\n"
+"Deseja convertê-la?\n"
+"Aviso: Não conseguirá mais abrir o projeto em versões anteriores à deste "
+"motor."
 
 #: editor/project_manager.cpp
 msgid ""
@@ -7888,7 +7946,7 @@ msgstr "Duplicar Nó(s)"
 
 #: editor/scene_tree_dock.cpp
 msgid "Can't reparent nodes in inherited scenes, order of nodes can't change."
-msgstr ""
+msgstr "Impossível mudar nó em cenas herdadas, a ordem dos nós não pode mudar."
 
 #: editor/scene_tree_dock.cpp
 msgid "Node must belong to the edited scene to become root."
@@ -8705,10 +8763,6 @@ msgid "Build Project"
 msgstr "Construir Projeto"
 
 #: modules/mono/editor/mono_bottom_panel.cpp
-msgid "Warnings"
-msgstr "Avisos"
-
-#: modules/mono/editor/mono_bottom_panel.cpp
 msgid "View log"
 msgstr "Ver log"
 
@@ -9119,16 +9173,15 @@ msgstr "Os segmentos de pacote devem ser de comprimento diferente de zero."
 #: platform/android/export/export.cpp
 msgid "The character '%s' is not allowed in Android application package names."
 msgstr ""
-"O caractere '%s' não é permitido em nomes de pacotes de aplicativos Android."
+"O caráter '%s' não é permitido em nomes de pacotes de aplicações Android."
 
 #: platform/android/export/export.cpp
 msgid "A digit cannot be the first character in a package segment."
-msgstr "Um dígito não pode ser o primeiro caractere num segmento de pacote."
+msgstr "Um dígito não pode ser o primeiro caráter num segmento de pacote."
 
 #: platform/android/export/export.cpp
 msgid "The character '%s' cannot be the first character in a package segment."
-msgstr ""
-"O caractere '%s' não pode ser o primeiro caractere num segmento de pacote."
+msgstr "O caráter '%s' não pode ser o primeiro caráter num segmento de pacote."
 
 #: platform/android/export/export.cpp
 msgid "The package must have at least one '.' separator."
@@ -9166,18 +9219,18 @@ msgstr "Identificador de segmentos devem ser de comprimento diferente de zero."
 
 #: platform/iphone/export/export.cpp
 msgid "The character '%s' is not allowed in Identifier."
-msgstr "O caractere \"%s\" não é permitido no Identificador."
+msgstr "O caráter \"%s\" não é permitido no Identificador."
 
 #: platform/iphone/export/export.cpp
 msgid "A digit cannot be the first character in a Identifier segment."
 msgstr ""
-"Um dígito não pode ser o primeiro caractere em um segmento de Identificador."
+"Um dígito não pode ser o primeiro caráter num segmento de Identificador."
 
 #: platform/iphone/export/export.cpp
 msgid ""
 "The character '%s' cannot be the first character in a Identifier segment."
 msgstr ""
-"O caractere \"%s\" não pode ser o primeiro caractere num segmento de "
+"O caráter \"%s\" não pode ser o primeiro caráter num segmento de "
 "Identificador."
 
 #: platform/iphone/export/export.cpp
@@ -9390,6 +9443,13 @@ msgstr ""
 "O Nó ParallaxLayer só funciona quando definido como filho de um Nó "
 "ParallaxBackground."
 
+#: scene/2d/particles_2d.cpp
+msgid ""
+"GPU-based particles are not supported by the GLES2 video driver.\n"
+"Use the CPUParticles2D node instead. You can use the \"Convert to "
+"CPUParticles\" option for this purpose."
+msgstr ""
+
 #: scene/2d/particles_2d.cpp scene/3d/particles.cpp
 msgid ""
 "A material to process the particles is not assigned, so no behavior is "
@@ -9579,6 +9639,13 @@ msgstr ""
 
 #: scene/3d/particles.cpp
 msgid ""
+"GPU-based particles are not supported by the GLES2 video driver.\n"
+"Use the CPUParticles node instead. You can use the \"Convert to CPUParticles"
+"\" option for this purpose."
+msgstr ""
+
+#: scene/3d/particles.cpp
+msgid ""
 "Nothing is visible because meshes have not been assigned to draw passes."
 msgstr ""
 "Nada é visível porque não foram atribuídas Meshes aos passos de desenho."
@@ -9600,8 +9667,8 @@ msgid ""
 "PathFollow ROTATION_ORIENTED requires \"Up Vector\" enabled in its parent "
 "Path's Curve resource."
 msgstr ""
-"PathFollow ROTATION_ORIENTED requer \"Up Vector\" habilitado em seu recurso "
-"de Curva do caminho pai."
+"PathFollow ROTATION_ORIENTED requer \"Up Vector\" habilitado no recurso de "
+"Curva do Caminho do seu pai."
 
 #: scene/3d/physics_body.cpp
 msgid ""
@@ -9618,25 +9685,6 @@ msgid "Path property must point to a valid Spatial node to work."
 msgstr ""
 "Para funcionar, a Propriedade Caminho tem de apontar para um Nó Spatial "
 "válido."
-
-#: scene/3d/scenario_fx.cpp
-msgid "WorldEnvironment needs an Environment resource."
-msgstr "WorldEnvironment precisa de um recurso Environment."
-
-#: scene/3d/scenario_fx.cpp
-msgid ""
-"Only one WorldEnvironment is allowed per scene (or set of instanced scenes)."
-msgstr ""
-"Apenas um WorldEnvironment é permitido por Cena (ou grupo de cenas "
-"instanciadas)."
-
-#: scene/3d/scenario_fx.cpp
-msgid ""
-"This WorldEnvironment is ignored. Either add a Camera (for 3D scenes) or set "
-"this environment's Background Mode to Canvas (for 2D scenes)."
-msgstr ""
-"Este WorldEnvironment ė ignorado. Pode adicionar uma Camera (para cenas 3D) "
-"ou definir o Modo Background  deste ambiente como Canvas (para cenas 2D)."
 
 #: scene/3d/soft_body.cpp
 msgid "This body will be ignored until you set a mesh"
@@ -9667,6 +9715,25 @@ msgid ""
 msgstr ""
 "VehicleWheel fornece um sistema de rodas a um VehicleBody. Use-o como um "
 "filho de VehicleBody."
+
+#: scene/3d/world_environment.cpp
+msgid "WorldEnvironment needs an Environment resource."
+msgstr "WorldEnvironment precisa de um recurso Environment."
+
+#: scene/3d/world_environment.cpp
+msgid ""
+"Only one WorldEnvironment is allowed per scene (or set of instanced scenes)."
+msgstr ""
+"Apenas um WorldEnvironment é permitido por Cena (ou grupo de cenas "
+"instanciadas)."
+
+#: scene/3d/world_environment.cpp
+msgid ""
+"This WorldEnvironment is ignored. Either add a Camera (for 3D scenes) or set "
+"this environment's Background Mode to Canvas (for 2D scenes)."
+msgstr ""
+"Este WorldEnvironment ė ignorado. Pode adicionar uma Camera (para cenas 3D) "
+"ou definir o Modo Background  deste ambiente como Canvas (para cenas 2D)."
 
 #: scene/animation/animation_blend_tree.cpp
 msgid "On BlendTree node '%s', animation not found: '%s'"
@@ -9711,11 +9778,20 @@ msgid "This node has been deprecated. Use AnimationTree instead."
 msgstr "Este nó foi depreciado. Use AnimationTree em vez disso."
 
 #: scene/gui/color_picker.cpp
+msgid "Pick a color from the screen."
+msgstr ""
+
+#: scene/gui/color_picker.cpp
 msgid "Raw Mode"
 msgstr "Modo Raw"
 
 #: scene/gui/color_picker.cpp
-msgid "Add current color as a preset"
+msgid "Switch between hexadecimal and code values."
+msgstr ""
+
+#: scene/gui/color_picker.cpp
+#, fuzzy
+msgid "Add current color as a preset."
 msgstr "Adicionar cor atual como predefinição"
 
 #: scene/gui/dialogs.cpp
@@ -9809,6 +9885,18 @@ msgstr "Atribuição a uniforme."
 #: servers/visual/shader_language.cpp
 msgid "Varyings can only be assigned in vertex function."
 msgstr "Variações só podem ser atribuídas na função vértice."
+
+#~ msgid "Warnings:"
+#~ msgstr "Avisos:"
+
+#~ msgid "Font Size:"
+#~ msgstr "Tamanho do tipo de letra:"
+
+#~ msgid "Line:"
+#~ msgstr "Linha:"
+
+#~ msgid "Col:"
+#~ msgstr "Coluna:"
 
 #~ msgid "OrientedPathFollow only works when set as a child of a Path node."
 #~ msgstr ""

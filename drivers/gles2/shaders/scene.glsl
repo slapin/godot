@@ -158,6 +158,7 @@ varying highp vec3 specular_interp;
 
 // general for all lights
 uniform highp vec4 light_color;
+uniform highp vec4 shadow_color;
 uniform highp float light_specular;
 
 // directional
@@ -912,6 +913,7 @@ uniform highp vec3 light_direction; //may be used by fog, so leave here
 //done in fragment
 // general for all lights
 uniform highp vec4 light_color;
+uniform highp vec4 shadow_color;
 uniform highp float light_specular;
 
 // directional
@@ -1680,7 +1682,7 @@ FRAGMENT_SHADER_CODE
 
 		float shadow = sample_shadow(light_shadow_atlas, splane);
 
-		light_att *= shadow;
+		light_att *= mix(shadow_color.rgb, vec3(1.0), shadow);
 	}
 #endif
 
@@ -1757,7 +1759,7 @@ FRAGMENT_SHADER_CODE
 			shadow_att = mix(shadow_att, shadow_att2, pssm_blend);
 		}
 #endif
-		light_att *= shadow_att;
+		light_att *= mix(shadow_color.rgb, vec3(1.0), shadow_att);
 	}
 
 #endif //LIGHT_USE_PSSM4
@@ -1798,7 +1800,7 @@ FRAGMENT_SHADER_CODE
 			shadow_att = mix(shadow_att, shadow_att2, pssm_blend);
 		}
 #endif
-		light_att *= shadow_att;
+		light_att *= mix(shadow_color.rgb, vec3(1.0), shadow_att);
 	}
 
 #endif //LIGHT_USE_PSSM2
@@ -1905,7 +1907,7 @@ FRAGMENT_SHADER_CODE
 			}
 #endif
 
-			light_att *= shadow;
+			light_att *= mix(shadow_color.rgb, vec3(1.0), shadow);
 		}
 	}
 #endif //use vertex lighting
@@ -1953,7 +1955,7 @@ FRAGMENT_SHADER_CODE
 		highp vec4 splane = shadow_coord;
 
 		float shadow = sample_shadow(light_shadow_atlas, splane);
-		light_att *= shadow;
+		light_att *= mix(shadow_color.rgb, vec3(1.0), shadow);
 	}
 #endif
 
@@ -2049,7 +2051,13 @@ FRAGMENT_SHADER_CODE
 
 #if defined(USE_VERTEX_LIGHTING)
 
+#if defined(BASE_PASS)
 	gl_FragColor.rgb = mix(gl_FragColor.rgb, fog_interp.rgb, fog_interp.a);
+#else
+	gl_FragColor.rgb *= (1.0 - fog_interp.a);
+#endif // BASE_PASS
+
+
 #else //pixel based fog
 	float fog_amount = 0.0;
 
@@ -2083,7 +2091,11 @@ FRAGMENT_SHADER_CODE
 	}
 #endif
 
+#if defined(BASE_PASS)
 	gl_FragColor.rgb = mix(gl_FragColor.rgb, fog_color, fog_amount);
+#else
+	gl_FragColor.rgb *= (1.0 - fog_amount);
+#endif // BASE_PASS
 
 #endif //use vertex lit
 

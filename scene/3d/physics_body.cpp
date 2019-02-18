@@ -1222,7 +1222,7 @@ Vector3 KinematicBody::move_and_slide(const Vector3 &p_linear_velocity, const Ve
 						floor_velocity = collision.collider_vel;
 
 						if (p_stop_on_slope) {
-							if (Vector3() == lv_n + p_floor_direction) {
+							if ((lv_n + p_floor_direction).length() < 0.01) {
 								Transform gt = get_global_transform();
 								gt.origin -= collision.travel;
 								set_global_transform(gt);
@@ -1243,6 +1243,7 @@ Vector3 KinematicBody::move_and_slide(const Vector3 &p_linear_velocity, const Ve
 					motion = motion.slide(p_floor_direction);
 					lv = lv.slide(p_floor_direction);
 				} else {
+
 					Vector3 n = collision.normal;
 					motion = motion.slide(n);
 					lv = lv.slide(n);
@@ -1280,13 +1281,21 @@ Vector3 KinematicBody::move_and_slide_with_snap(const Vector3 &p_linear_velocity
 	Transform gt = get_global_transform();
 
 	if (move_and_collide(p_snap, p_infinite_inertia, col, true)) {
-		gt.origin += col.travel;
-		if (p_floor_direction != Vector3() && Math::acos(p_floor_direction.normalized().dot(col.normal)) < p_floor_max_angle) {
-			on_floor = true;
-			on_floor_body = col.collider_rid;
-			floor_velocity = col.collider_vel;
+
+		bool apply = true;
+		if (p_floor_direction != Vector3()) {
+			if (Math::acos(p_floor_direction.normalized().dot(col.normal)) < p_floor_max_angle) {
+				on_floor = true;
+				on_floor_body = col.collider_rid;
+				floor_velocity = col.collider_vel;
+			} else {
+				apply = false; //snapped with floor direction, but did not snap to a floor, do not snap.
+			}
 		}
-		set_global_transform(gt);
+		if (apply) {
+			gt.origin += col.travel;
+			set_global_transform(gt);
+		}
 	}
 
 	return ret;

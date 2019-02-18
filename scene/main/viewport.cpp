@@ -37,8 +37,8 @@
 #include "scene/3d/camera.h"
 #include "scene/3d/collision_object.h"
 #include "scene/3d/listener.h"
-#include "scene/3d/scenario_fx.h"
 #include "scene/3d/spatial.h"
+#include "scene/3d/world_environment.h"
 #include "scene/gui/control.h"
 #include "scene/gui/label.h"
 #include "scene/gui/menu_button.h"
@@ -239,7 +239,7 @@ void Viewport::_collision_object_input_event(CollisionObject *p_object, Camera *
 	ObjectID id = p_object->get_instance_id();
 
 	if (p_discard_empty_motion) {
-		//avoid sending the event unnecesarily if nothing really changed in the context
+		//avoid sending the event unnecessarily if nothing really changed in the context
 		Ref<InputEventMouseMotion> mm = p_input_event;
 		if (mm.is_valid() && object_transform == physics_last_object_transform && camera_transform == physics_last_camera_transform && physics_last_id == id) {
 			return; //discarded
@@ -425,7 +425,7 @@ void Viewport::_notification(int p_what) {
 				bool discard_empty_motion = false;
 
 				{ // if no motion event exists, create a new one. This is necessary because objects or camera may have moved.
-					// while this extra event is sent, it is checked if both camera and last object and last ID did not move. If nothing changed, the event is discarded to avoid flooding with unnecesary motion events every frame
+					// while this extra event is sent, it is checked if both camera and last object and last ID did not move. If nothing changed, the event is discarded to avoid flooding with unnecessary motion events every frame
 					bool has_mouse_motion = false;
 					for (List<Ref<InputEvent> >::Element *E = physics_picking_events.front(); E; E = E->next()) {
 						Ref<InputEventMouseMotion> mm = E->get();
@@ -2495,6 +2495,9 @@ void Viewport::_gui_remove_control(Control *p_control) {
 	if (gui.mouse_focus == p_control) {
 		gui.mouse_focus = NULL;
 		gui.mouse_focus_mask = 0;
+	}
+	if (gui.last_mouse_focus == p_control) {
+		gui.last_mouse_focus = NULL;
 	}
 	if (gui.key_focus == p_control)
 		gui.key_focus = NULL;

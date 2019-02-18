@@ -36,12 +36,13 @@
 # asyncial <mahlburg@posteo.de>, 2018.
 # ssantos <ssantos@web.de>, 2018.
 # Rémi Verschelde <akien@godotengine.org>, 2019.
+# Martin <martinreininger@gmx.net>, 2019.
 msgid ""
 msgstr ""
 "Project-Id-Version: Godot Engine editor\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2019-01-26 21:22+0000\n"
-"Last-Translator: So Wieso <sowieso@dukun.de>\n"
+"PO-Revision-Date: 2019-02-13 23:10+0000\n"
+"Last-Translator: Martin <martinreininger@gmx.net>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/godot-engine/"
 "godot/de/>\n"
 "Language: de\n"
@@ -576,21 +577,14 @@ msgstr "Verkleinern"
 msgid "Reset Zoom"
 msgstr "Vergrößerung zurücksetzen"
 
-#: editor/code_editor.cpp
-msgid "Warnings:"
-msgstr "Warnungen:"
+#: editor/code_editor.cpp modules/mono/editor/mono_bottom_panel.cpp
+msgid "Warnings"
+msgstr "Warnungen"
 
 #: editor/code_editor.cpp
-msgid "Font Size:"
-msgstr "Schriftgröße:"
-
-#: editor/code_editor.cpp
-msgid "Line:"
-msgstr "Zeile:"
-
-#: editor/code_editor.cpp
-msgid "Col:"
-msgstr "Spalte:"
+#, fuzzy
+msgid "Line and column numbers."
+msgstr "Zeilen- und Spaltennummern"
 
 #: editor/connections_dialog.cpp
 msgid "Method in target Node must be specified!"
@@ -633,7 +627,7 @@ msgstr "Zusätzliche Aufrufparameter:"
 
 #: editor/connections_dialog.cpp
 msgid "Path to Node:"
-msgstr "Pfad zur Node:"
+msgstr "Pfad zum Node:"
 
 #: editor/connections_dialog.cpp
 msgid "Make Function"
@@ -895,8 +889,8 @@ msgstr "Ausgewählte Dateien löschen?"
 #: editor/dependency_editor.cpp editor/editor_audio_buses.cpp
 #: editor/editor_file_dialog.cpp editor/editor_node.cpp
 #: editor/filesystem_dock.cpp editor/plugins/item_list_editor_plugin.cpp
-#: editor/project_export.cpp editor/project_settings_editor.cpp
-#: editor/scene_tree_dock.cpp
+#: editor/plugins/sprite_frames_editor_plugin.cpp editor/project_export.cpp
+#: editor/project_settings_editor.cpp editor/scene_tree_dock.cpp
 msgid "Delete"
 msgstr "Löschen"
 
@@ -1007,12 +1001,12 @@ msgstr "Inhalte werden entpackt"
 
 #: editor/editor_asset_installer.cpp editor/project_manager.cpp
 msgid "Package installed successfully!"
-msgstr "Paket erfolgreich installiert!"
+msgstr "Paket wurde erfolgreich installiert!"
 
 #: editor/editor_asset_installer.cpp
 #: editor/plugins/asset_library_editor_plugin.cpp
 msgid "Success!"
-msgstr "Erfolgreich!"
+msgstr "Geschafft!"
 
 #: editor/editor_asset_installer.cpp
 #: editor/plugins/asset_library_editor_plugin.cpp
@@ -1153,8 +1147,9 @@ msgid "Add Bus"
 msgstr "Audiobus hinzufügen"
 
 #: editor/editor_audio_buses.cpp
-msgid "Create a new Bus Layout."
-msgstr "Neues Audiobus-Layout erstellen."
+#, fuzzy
+msgid "Add a new Audio Bus to this layout."
+msgstr "Audiobus-Layout speichern als..."
 
 #: editor/editor_audio_buses.cpp editor/editor_properties.cpp
 #: editor/plugins/animation_player_editor_plugin.cpp editor/property_editor.cpp
@@ -1181,6 +1176,10 @@ msgstr "Standard laden"
 #: editor/editor_audio_buses.cpp
 msgid "Load the default Bus Layout."
 msgstr "Standard Bus-Layout laden."
+
+#: editor/editor_audio_buses.cpp
+msgid "Create a new Bus Layout."
+msgstr "Neues Audiobus-Layout erstellen."
 
 #: editor/editor_autoload_settings.cpp
 msgid "Invalid name."
@@ -2440,7 +2439,8 @@ msgid "Save & Restart"
 msgstr "Speichern & Neu starten"
 
 #: editor/editor_node.cpp
-msgid "Spins when the editor window repaints!"
+#, fuzzy
+msgid "Spins when the editor window redraws."
 msgstr "Dreht sich, wenn das Editorfenster neu gezeichnet wird!"
 
 #: editor/editor_node.cpp
@@ -2648,7 +2648,7 @@ msgstr "[leer]"
 
 #: editor/editor_properties.cpp editor/plugins/root_motion_editor_plugin.cpp
 msgid "Assign..."
-msgstr "Zuweisen.."
+msgstr "Zuweisen..."
 
 #: editor/editor_properties.cpp
 msgid "Invalid RID"
@@ -3368,17 +3368,20 @@ msgstr "Neuimport"
 
 #: editor/import_dock.cpp
 msgid "Save scenes, re-import and restart"
-msgstr ""
+msgstr "Szenen speichern, reimportieren und neu starten"
 
 #: editor/import_dock.cpp
-#, fuzzy
 msgid "Changing the type of an imported file requires editor restart."
-msgstr "Das Ändern des Video-Treibers erfordert einen Neustart des Editors."
+msgstr ""
+"Den Typ einer importierten Datei zu ändern erfordert einen Neustart des "
+"Editors."
 
 #: editor/import_dock.cpp
 msgid ""
 "WARNING: Assets exist that use this resource, they may stop loading properly."
 msgstr ""
+"ACHTUNG: Es existieren Inhalte die diese Ressource nutzen und nachher "
+"möglicherweise nicht mehr ordnungsgemäß laden können."
 
 #: editor/inspector_dock.cpp
 msgid "Failed to load resource."
@@ -3503,22 +3506,6 @@ msgid "Create Polygon"
 msgstr "Polygon erstellen"
 
 #: editor/plugins/abstract_polygon_2d_editor.cpp
-msgid "Edit Polygon"
-msgstr "Polygon bearbeiten"
-
-#: editor/plugins/abstract_polygon_2d_editor.cpp
-msgid "Insert Point"
-msgstr "Punkt einfügen"
-
-#: editor/plugins/abstract_polygon_2d_editor.cpp
-msgid "Edit Polygon (Remove Point)"
-msgstr "Polygon bearbeiten (Punkt entfernen)"
-
-#: editor/plugins/abstract_polygon_2d_editor.cpp
-msgid "Remove Polygon And Point"
-msgstr "Polygon und Punkt entfernen"
-
-#: editor/plugins/abstract_polygon_2d_editor.cpp
 #: editor/plugins/animation_blend_space_1d_editor.cpp
 #: editor/plugins/animation_blend_space_2d_editor.cpp
 msgid "Create points."
@@ -3538,6 +3525,22 @@ msgstr ""
 #: editor/plugins/animation_blend_space_1d_editor.cpp
 msgid "Erase points."
 msgstr "Punkte löschen."
+
+#: editor/plugins/abstract_polygon_2d_editor.cpp
+msgid "Edit Polygon"
+msgstr "Polygon bearbeiten"
+
+#: editor/plugins/abstract_polygon_2d_editor.cpp
+msgid "Insert Point"
+msgstr "Punkt einfügen"
+
+#: editor/plugins/abstract_polygon_2d_editor.cpp
+msgid "Edit Polygon (Remove Point)"
+msgstr "Polygon bearbeiten (Punkt entfernen)"
+
+#: editor/plugins/abstract_polygon_2d_editor.cpp
+msgid "Remove Polygon And Point"
+msgstr "Polygon und Punkt entfernen"
 
 #: editor/plugins/animation_blend_space_1d_editor.cpp
 #: editor/plugins/animation_blend_space_2d_editor.cpp
@@ -4340,6 +4343,18 @@ msgstr "CanvasItem skalieren"
 #: editor/plugins/canvas_item_editor_plugin.cpp
 msgid "Move CanvasItem"
 msgstr "CanvasItem verschieben"
+
+#: editor/plugins/canvas_item_editor_plugin.cpp
+msgid "Presets for the anchors and margins values of a Control node."
+msgstr "Voreinstellungen für die Anker- und Ränderwerte eines Kontroll-Nodes."
+
+#: editor/plugins/canvas_item_editor_plugin.cpp
+msgid ""
+"Children of containers have their anchors and margins values overridden by "
+"their parent."
+msgstr ""
+"Bei Containern für Kinder werden die Anker- und Randwerte von ihren Eltern "
+"überschrieben."
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
 msgid "Anchors only"
@@ -5252,6 +5267,12 @@ msgstr ""
 #: editor/plugins/polygon_2d_editor_plugin.cpp
 msgid "Create UV Map"
 msgstr "Erzeuge UV-Map"
+
+#: editor/plugins/polygon_2d_editor_plugin.cpp
+msgid ""
+"Polygon 2D has internal vertices, so it can no longer be edited in the "
+"viewport."
+msgstr ""
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
 msgid "Create Polygon & UV"
@@ -6345,7 +6366,7 @@ msgid "Post"
 msgstr "Nachher"
 
 #: editor/plugins/spatial_editor_plugin.cpp
-msgid "Name-less gizmo"
+msgid "Nameless gizmo"
 msgstr "Namenloser Anfasser"
 
 #: editor/plugins/sprite_editor_plugin.cpp
@@ -6423,8 +6444,12 @@ msgid "(empty)"
 msgstr "(leer)"
 
 #: editor/plugins/sprite_frames_editor_plugin.cpp
-msgid "Animations"
-msgstr "Animationen"
+msgid "Animations:"
+msgstr "Animationen:"
+
+#: editor/plugins/sprite_frames_editor_plugin.cpp
+msgid "New Animation"
+msgstr "Neue Animation"
 
 #: editor/plugins/sprite_frames_editor_plugin.cpp
 msgid "Speed (FPS):"
@@ -6435,8 +6460,8 @@ msgid "Loop"
 msgstr "Wiederholung"
 
 #: editor/plugins/sprite_frames_editor_plugin.cpp
-msgid "Animation Frames"
-msgstr "Animationsframes"
+msgid "Animation Frames:"
+msgstr "Animationsbilder:"
 
 #: editor/plugins/sprite_frames_editor_plugin.cpp
 msgid "Insert Empty (Before)"
@@ -6763,7 +6788,7 @@ msgstr "Keine Textur zum Entfernen ausgewählt."
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 msgid "Create from scene? This will overwrite all current tiles."
-msgstr "Aus Szene erstellen? Alle gegenwärtigen Kacheln werden überschrieben."
+msgstr "Aus Szene erstellen? Alle aktuellen Kacheln werden überschrieben!"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 msgid "Merge from scene?"
@@ -6849,7 +6874,7 @@ msgstr "Kachel erstellen"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 msgid "Set Tile Icon"
-msgstr "Kachel-Icon setzen"
+msgstr "Kachel Icon zuweisen"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 msgid "Edit Tile Bitmask"
@@ -6873,7 +6898,7 @@ msgstr "Kachel-Bitmaske einfügen"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 msgid "Clear Tile Bitmask"
-msgstr "Kachel-Bitmaske leeren"
+msgstr "Kachel Bitmaske löschen"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 msgid "Remove Tile"
@@ -7188,15 +7213,15 @@ msgstr "Projektinstallationspfad:"
 
 #: editor/project_manager.cpp
 msgid "Browse"
-msgstr "Durchstöbern"
+msgstr "Durchsuchen"
 
 #: editor/project_manager.cpp
 msgid "Renderer:"
-msgstr ""
+msgstr "Renderer:"
 
 #: editor/project_manager.cpp
 msgid "OpenGL ES 3.0"
-msgstr ""
+msgstr "OpenGL ES 3.0"
 
 #: editor/project_manager.cpp
 msgid ""
@@ -7205,10 +7230,14 @@ msgid ""
 "Incompatible with older hardware\n"
 "Not recommended for web games"
 msgstr ""
+"Höhere Grafikqualität\n"
+"Alle Funktionen verfügbar\n"
+"Inkompatibel mit älterer Hardware\n"
+"Nicht empfohlen für Webanwendungen"
 
 #: editor/project_manager.cpp
 msgid "OpenGL ES 2.0"
-msgstr ""
+msgstr "OpenGL ES 2.0"
 
 #: editor/project_manager.cpp
 msgid ""
@@ -7217,10 +7246,16 @@ msgid ""
 "Works on most hardware\n"
 "Recommended for web games"
 msgstr ""
+"Geringere Grafikqualität\n"
+"Einige Funktionen sind nicht vorhanden\n"
+"Läuft auf fast jeder Hardware\n"
+"Empfohlen für Webanwendungen"
 
 #: editor/project_manager.cpp
 msgid "Renderer can be changed later, but scenes may need to be adjusted."
 msgstr ""
+"Der Renderer kann auch später noch ausgetauscht werden, allerdings kann es "
+"sein, dass dann manche Szenen angepasst werden müssen."
 
 #: editor/project_manager.cpp
 msgid "Unnamed Project"
@@ -7236,6 +7271,28 @@ msgstr "Sollen wirklich mehrere Projekte geöffnet werden?"
 
 #: editor/project_manager.cpp
 msgid ""
+"The following project settings file does not specify the version of Godot "
+"through which it was created.\n"
+"\n"
+"%s\n"
+"\n"
+"If you proceed with opening it, it will be converted to Godot's current "
+"configuration file format.\n"
+"Warning: You will not be able to open the project with previous versions of "
+"the engine anymore."
+msgstr ""
+"Die folgenden Projekteinstellungsdatei enthält keine Information darüber, "
+"mit welcher Version von Godot sie erstellt wurde.\n"
+"\n"
+"%s\n"
+"\n"
+"Wenn Sie mit dem Öffnen fortfahren, wird die Datei in das aktuelle "
+"Konfigurationsdateiformat von Godot konvertiert.\n"
+"Warnung: Das Projekt kann nach der Konvertierung nicht mehr mit einer "
+"älteren Version geöffnet werden."
+
+#: editor/project_manager.cpp
+msgid ""
 "The following project settings file was generated by an older engine "
 "version, and needs to be converted for this version:\n"
 "\n"
@@ -7245,14 +7302,14 @@ msgid ""
 "Warning: You will not be able to open the project with previous versions of "
 "the engine anymore."
 msgstr ""
-"Die folgende Projekteinstellungsdatei wurde mit einer älteren Godot-Version "
-"erzeugt und muss für die gegenwärtige Version angepasst werden:\n"
+"Die Projekteinstellungsdatei ist mit einer älteren Version erstellt worden "
+"und muss in die  folgende Version konvertiert werden:\n"
 "\n"
 "%s\n"
 "\n"
-"Sollen die Anpassungen vorgenommen werden?\n"
-"Achtung: Das Projekt kann nach der Anpassung nicht mehr mit einer älteren "
-"Godot-Version geöffnet werden."
+"Möchten Sie die Konvertierung durchführen?\n"
+"Warnung: Das Projekt kann nach der Konvertierung nicht mehr mit einer "
+"älteren Version geöffnet werden."
 
 #: editor/project_manager.cpp
 msgid ""
@@ -7480,7 +7537,7 @@ msgstr "Ereignis hinzufügen"
 
 #: editor/project_settings_editor.cpp
 msgid "Button"
-msgstr "Knopf"
+msgstr "Button"
 
 #: editor/project_settings_editor.cpp
 msgid "Left Button."
@@ -7953,6 +8010,7 @@ msgstr "Dupliziere Node(s)"
 #: editor/scene_tree_dock.cpp
 msgid "Can't reparent nodes in inherited scenes, order of nodes can't change."
 msgstr ""
+"Nodes in geerbtet Szenen können nicht umgehängt oder umgeordnet werden."
 
 #: editor/scene_tree_dock.cpp
 msgid "Node must belong to the edited scene to become root."
@@ -8770,10 +8828,6 @@ msgid "Build Project"
 msgstr "Projekt bauen"
 
 #: modules/mono/editor/mono_bottom_panel.cpp
-msgid "Warnings"
-msgstr "Warnungen"
-
-#: modules/mono/editor/mono_bottom_panel.cpp
 msgid "View log"
 msgstr "Log anschauen"
 
@@ -9457,6 +9511,16 @@ msgstr ""
 "Das ParallaxLayer-Node lässt sich nur als Unterobjekt eines "
 "ParallaxBackground-Node verwenden."
 
+#: scene/2d/particles_2d.cpp
+msgid ""
+"GPU-based particles are not supported by the GLES2 video driver.\n"
+"Use the CPUParticles2D node instead. You can use the \"Convert to "
+"CPUParticles\" option for this purpose."
+msgstr ""
+"GPU-basierte Partikel werden vom GLES2-Grafiktreiber nicht unterstützt.\n"
+"Verwenden Sie stattdessen den CPUParticles2D Node. Sie können dazu die "
+"Option \"In CPUPartikel konvertieren\" verwenden."
+
 #: scene/2d/particles_2d.cpp scene/3d/particles.cpp
 msgid ""
 "A material to process the particles is not assigned, so no behavior is "
@@ -9652,6 +9716,16 @@ msgstr ""
 
 #: scene/3d/particles.cpp
 msgid ""
+"GPU-based particles are not supported by the GLES2 video driver.\n"
+"Use the CPUParticles node instead. You can use the \"Convert to CPUParticles"
+"\" option for this purpose."
+msgstr ""
+"GPU-basierte Partikel werden vom GLES2-Grafiktreiber nicht unterstützt.\n"
+"Verwenden Sie stattdessen den CPUParticles Knoten. Sie können dazu die "
+"Option \"In CPUPartikel konvertieren\" verwenden."
+
+#: scene/3d/particles.cpp
+msgid ""
 "Nothing is visible because meshes have not been assigned to draw passes."
 msgstr ""
 "Nichts ist sichtbar da keine Meshe den Zeichendurchläufen zugewiesen wurden."
@@ -9693,26 +9767,6 @@ msgstr ""
 msgid "Path property must point to a valid Spatial node to work."
 msgstr "Die Pfad-Eigenschaft muss auf ein gültiges Spatial-Node verweisen."
 
-#: scene/3d/scenario_fx.cpp
-msgid "WorldEnvironment needs an Environment resource."
-msgstr "Ein WorldEnvironment benötigt eine Environment-Ressource."
-
-#: scene/3d/scenario_fx.cpp
-msgid ""
-"Only one WorldEnvironment is allowed per scene (or set of instanced scenes)."
-msgstr ""
-"Pro Szene (oder einem Satz von instanzierten Szenen) ist nur ein einziges "
-"WorldEnvironment erlaubt."
-
-#: scene/3d/scenario_fx.cpp
-msgid ""
-"This WorldEnvironment is ignored. Either add a Camera (for 3D scenes) or set "
-"this environment's Background Mode to Canvas (for 2D scenes)."
-msgstr ""
-"Dieses WorldEnvironment wird ignoriert. Entweder füge eine Kamera (für 3D-"
-"Szenen) hinzu oder setze den Hintergrund-Modus des Environments nach Canvas "
-"(für 2D-Szenen)."
-
 #: scene/3d/soft_body.cpp
 msgid "This body will be ignored until you set a mesh"
 msgstr "Diese Körper wird ignoriert werden bis ein Mesh gesetzt wurde"
@@ -9744,6 +9798,26 @@ msgstr ""
 "VehicleWheel ist verfügbar um mit VehicleBody ein Rädersystem zu "
 "implementieren. Es kann ausschließlich als Unterobjekt von VehicleBody "
 "verwendet werden."
+
+#: scene/3d/world_environment.cpp
+msgid "WorldEnvironment needs an Environment resource."
+msgstr "Ein WorldEnvironment benötigt eine Environment-Ressource."
+
+#: scene/3d/world_environment.cpp
+msgid ""
+"Only one WorldEnvironment is allowed per scene (or set of instanced scenes)."
+msgstr ""
+"Pro Szene (oder einem Satz von instanzierten Szenen) ist nur ein einziges "
+"WorldEnvironment erlaubt."
+
+#: scene/3d/world_environment.cpp
+msgid ""
+"This WorldEnvironment is ignored. Either add a Camera (for 3D scenes) or set "
+"this environment's Background Mode to Canvas (for 2D scenes)."
+msgstr ""
+"Dieses WorldEnvironment wird ignoriert. Entweder füge eine Kamera (für 3D-"
+"Szenen) hinzu oder setze den Hintergrund-Modus des Environments nach Canvas "
+"(für 2D-Szenen)."
 
 #: scene/animation/animation_blend_tree.cpp
 msgid "On BlendTree node '%s', animation not found: '%s'"
@@ -9792,11 +9866,20 @@ msgstr ""
 "AnimationTree."
 
 #: scene/gui/color_picker.cpp
+msgid "Pick a color from the screen."
+msgstr "Wählt eine Farbe vom Bildschirm aus."
+
+#: scene/gui/color_picker.cpp
 msgid "Raw Mode"
 msgstr "Rohdatenmodus"
 
 #: scene/gui/color_picker.cpp
-msgid "Add current color as a preset"
+msgid "Switch between hexadecimal and code values."
+msgstr "Wechselt zwischen Hexadezimal- und Zahlenwerten."
+
+#: scene/gui/color_picker.cpp
+#, fuzzy
+msgid "Add current color as a preset."
 msgstr "Füge aktuelle Farbe als Vorlage hinzu"
 
 #: scene/gui/dialogs.cpp
@@ -9894,6 +9977,18 @@ msgstr "Zuweisung an Uniform."
 #: servers/visual/shader_language.cpp
 msgid "Varyings can only be assigned in vertex function."
 msgstr "Varyings können nur in Vertex-Funktion zugewiesen werden."
+
+#~ msgid "Warnings:"
+#~ msgstr "Warnungen:"
+
+#~ msgid "Font Size:"
+#~ msgstr "Schriftgröße:"
+
+#~ msgid "Line:"
+#~ msgstr "Zeile:"
+
+#~ msgid "Col:"
+#~ msgstr "Spalte:"
 
 #~ msgid "OrientedPathFollow only works when set as a child of a Path node."
 #~ msgstr ""

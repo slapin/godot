@@ -15,7 +15,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Ukrainian (Godot Engine)\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2019-01-26 21:22+0000\n"
+"PO-Revision-Date: 2019-02-13 07:10+0000\n"
 "Last-Translator: Yuri Chornoivan <yurchor@ukr.net>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/godot-engine/"
 "godot/uk/>\n"
@@ -552,21 +552,14 @@ msgstr "Зменшення"
 msgid "Reset Zoom"
 msgstr "Скинути масштаб"
 
-#: editor/code_editor.cpp
-msgid "Warnings:"
-msgstr "Попередження:"
+#: editor/code_editor.cpp modules/mono/editor/mono_bottom_panel.cpp
+msgid "Warnings"
+msgstr "Попередження"
 
 #: editor/code_editor.cpp
-msgid "Font Size:"
-msgstr "Розмір шрифту:"
-
-#: editor/code_editor.cpp
-msgid "Line:"
-msgstr "Рядок:"
-
-#: editor/code_editor.cpp
-msgid "Col:"
-msgstr "Колонка:"
+#, fuzzy
+msgid "Line and column numbers."
+msgstr "Номери рядків і позицій"
 
 #: editor/connections_dialog.cpp
 msgid "Method in target Node must be specified!"
@@ -868,8 +861,8 @@ msgstr "Видалити вибрані файли?"
 #: editor/dependency_editor.cpp editor/editor_audio_buses.cpp
 #: editor/editor_file_dialog.cpp editor/editor_node.cpp
 #: editor/filesystem_dock.cpp editor/plugins/item_list_editor_plugin.cpp
-#: editor/project_export.cpp editor/project_settings_editor.cpp
-#: editor/scene_tree_dock.cpp
+#: editor/plugins/sprite_frames_editor_plugin.cpp editor/project_export.cpp
+#: editor/project_settings_editor.cpp editor/scene_tree_dock.cpp
 msgid "Delete"
 msgstr "Вилучити"
 
@@ -1125,8 +1118,9 @@ msgid "Add Bus"
 msgstr "Додати шину"
 
 #: editor/editor_audio_buses.cpp
-msgid "Create a new Bus Layout."
-msgstr "Створення нового компонування шини."
+#, fuzzy
+msgid "Add a new Audio Bus to this layout."
+msgstr "Зберегти компонування аудіо шини як..."
 
 #: editor/editor_audio_buses.cpp editor/editor_properties.cpp
 #: editor/plugins/animation_player_editor_plugin.cpp editor/property_editor.cpp
@@ -1153,6 +1147,10 @@ msgstr "Завантажити типовий"
 #: editor/editor_audio_buses.cpp
 msgid "Load the default Bus Layout."
 msgstr "Завантажити типове компонування шини."
+
+#: editor/editor_audio_buses.cpp
+msgid "Create a new Bus Layout."
+msgstr "Створення нового компонування шини."
 
 #: editor/editor_autoload_settings.cpp
 msgid "Invalid name."
@@ -2400,7 +2398,8 @@ msgid "Save & Restart"
 msgstr "Зберегти і перезапустити"
 
 #: editor/editor_node.cpp
-msgid "Spins when the editor window repaints!"
+#, fuzzy
+msgid "Spins when the editor window redraws."
 msgstr "Обертається, коли перемальовується вікно редактора!"
 
 #: editor/editor_node.cpp
@@ -3326,17 +3325,18 @@ msgstr "Переімпортувати"
 
 #: editor/import_dock.cpp
 msgid "Save scenes, re-import and restart"
-msgstr ""
+msgstr "Зберегти сцени, повторно імпортувати і перезапустити"
 
 #: editor/import_dock.cpp
-#, fuzzy
 msgid "Changing the type of an imported file requires editor restart."
-msgstr "Зміна відеодрайвера потребує перезапуску редактора."
+msgstr "Зміна типу імпортованого файла потребує перезапуску редактора."
 
 #: editor/import_dock.cpp
 msgid ""
 "WARNING: Assets exist that use this resource, they may stop loading properly."
 msgstr ""
+"Увага: ісують об'єкти, які використовують цей ресурс, — вони можуть "
+"припинити завантажуватися належним чином."
 
 #: editor/inspector_dock.cpp
 msgid "Failed to load resource."
@@ -3461,22 +3461,6 @@ msgid "Create Polygon"
 msgstr "Створити полігон"
 
 #: editor/plugins/abstract_polygon_2d_editor.cpp
-msgid "Edit Polygon"
-msgstr "Редагувати полігон"
-
-#: editor/plugins/abstract_polygon_2d_editor.cpp
-msgid "Insert Point"
-msgstr "Вставити точку"
-
-#: editor/plugins/abstract_polygon_2d_editor.cpp
-msgid "Edit Polygon (Remove Point)"
-msgstr "Редагувати полігон (вилучити точку)"
-
-#: editor/plugins/abstract_polygon_2d_editor.cpp
-msgid "Remove Polygon And Point"
-msgstr "Вилучити полігон та точку"
-
-#: editor/plugins/abstract_polygon_2d_editor.cpp
 #: editor/plugins/animation_blend_space_1d_editor.cpp
 #: editor/plugins/animation_blend_space_2d_editor.cpp
 msgid "Create points."
@@ -3496,6 +3480,22 @@ msgstr ""
 #: editor/plugins/animation_blend_space_1d_editor.cpp
 msgid "Erase points."
 msgstr "Витерти точки."
+
+#: editor/plugins/abstract_polygon_2d_editor.cpp
+msgid "Edit Polygon"
+msgstr "Редагувати полігон"
+
+#: editor/plugins/abstract_polygon_2d_editor.cpp
+msgid "Insert Point"
+msgstr "Вставити точку"
+
+#: editor/plugins/abstract_polygon_2d_editor.cpp
+msgid "Edit Polygon (Remove Point)"
+msgstr "Редагувати полігон (вилучити точку)"
+
+#: editor/plugins/abstract_polygon_2d_editor.cpp
+msgid "Remove Polygon And Point"
+msgstr "Вилучити полігон та точку"
 
 #: editor/plugins/animation_blend_space_1d_editor.cpp
 #: editor/plugins/animation_blend_space_2d_editor.cpp
@@ -4302,6 +4302,18 @@ msgstr "Масштабувати CanvasItem"
 #: editor/plugins/canvas_item_editor_plugin.cpp
 msgid "Move CanvasItem"
 msgstr "Пересунути CanvasItem"
+
+#: editor/plugins/canvas_item_editor_plugin.cpp
+msgid "Presets for the anchors and margins values of a Control node."
+msgstr "Шаблони для прив'язок та значення полів вузла керування."
+
+#: editor/plugins/canvas_item_editor_plugin.cpp
+msgid ""
+"Children of containers have their anchors and margins values overridden by "
+"their parent."
+msgstr ""
+"Дані щодо прив'язок та значень полів дочірніх об'єктів перевизначаються "
+"їхніми батьківськими об'єктами."
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
 msgid "Anchors only"
@@ -5209,6 +5221,12 @@ msgstr ""
 #: editor/plugins/polygon_2d_editor_plugin.cpp
 msgid "Create UV Map"
 msgstr "Створити UV-карту"
+
+#: editor/plugins/polygon_2d_editor_plugin.cpp
+msgid ""
+"Polygon 2D has internal vertices, so it can no longer be edited in the "
+"viewport."
+msgstr ""
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp
 msgid "Create Polygon & UV"
@@ -6300,7 +6318,7 @@ msgid "Post"
 msgstr "Після"
 
 #: editor/plugins/spatial_editor_plugin.cpp
-msgid "Name-less gizmo"
+msgid "Nameless gizmo"
 msgstr "Штука без назви"
 
 #: editor/plugins/sprite_editor_plugin.cpp
@@ -6378,8 +6396,12 @@ msgid "(empty)"
 msgstr "(порожньо)"
 
 #: editor/plugins/sprite_frames_editor_plugin.cpp
-msgid "Animations"
-msgstr "Анімації"
+msgid "Animations:"
+msgstr "Анімації:"
+
+#: editor/plugins/sprite_frames_editor_plugin.cpp
+msgid "New Animation"
+msgstr "Нова анімація"
 
 #: editor/plugins/sprite_frames_editor_plugin.cpp
 msgid "Speed (FPS):"
@@ -6390,8 +6412,8 @@ msgid "Loop"
 msgstr "Зациклити"
 
 #: editor/plugins/sprite_frames_editor_plugin.cpp
-msgid "Animation Frames"
-msgstr "Кадри анімації"
+msgid "Animation Frames:"
+msgstr "Кадри анімації:"
 
 #: editor/plugins/sprite_frames_editor_plugin.cpp
 msgid "Insert Empty (Before)"
@@ -7148,11 +7170,11 @@ msgstr "Вибрати"
 
 #: editor/project_manager.cpp
 msgid "Renderer:"
-msgstr ""
+msgstr "Обробник:"
 
 #: editor/project_manager.cpp
 msgid "OpenGL ES 3.0"
-msgstr ""
+msgstr "OpenGL ES 3.0"
 
 #: editor/project_manager.cpp
 msgid ""
@@ -7161,10 +7183,14 @@ msgid ""
 "Incompatible with older hardware\n"
 "Not recommended for web games"
 msgstr ""
+"Висока якість зображення\n"
+"Доступні усі можливості\n"
+"Несумісний із застарілим обладнанням\n"
+"Не рекомендовано для інтернет-ігор"
 
 #: editor/project_manager.cpp
 msgid "OpenGL ES 2.0"
-msgstr ""
+msgstr "OpenGL ES 2.0"
 
 #: editor/project_manager.cpp
 msgid ""
@@ -7173,10 +7199,16 @@ msgid ""
 "Works on most hardware\n"
 "Recommended for web games"
 msgstr ""
+"Нижча якість зображення\n"
+"Деякі можливості є недоступними\n"
+"Працює майже всюди\n"
+"Рекомендовано для інтернет-ігор"
 
 #: editor/project_manager.cpp
 msgid "Renderer can be changed later, but scenes may need to be adjusted."
 msgstr ""
+"Обробник можна змінити пізніше, але, можливо, виникне потреба у коригуванні "
+"сцен."
 
 #: editor/project_manager.cpp
 msgid "Unnamed Project"
@@ -7189,6 +7221,28 @@ msgstr "Не вдалося відкрити проект у «%s»."
 #: editor/project_manager.cpp
 msgid "Are you sure to open more than one project?"
 msgstr "Ви справді хочете відкрити декілька проектів одразу?"
+
+#: editor/project_manager.cpp
+msgid ""
+"The following project settings file does not specify the version of Godot "
+"through which it was created.\n"
+"\n"
+"%s\n"
+"\n"
+"If you proceed with opening it, it will be converted to Godot's current "
+"configuration file format.\n"
+"Warning: You will not be able to open the project with previous versions of "
+"the engine anymore."
+msgstr ""
+"У вказаному нижче файлі параметрів проекту не вказано версію Godot, за "
+"допомогою якої його було створено.\n"
+"\n"
+"%s\n"
+"\n"
+"Якщо ви продовжите процедуру його відкриття, дані буде перетворено до "
+"формату файла налаштувань поточної версії Godot.\n"
+"Попередження: у результаті перетворення ви втратите можливість відкриття "
+"проекту у застарілих версіях рушія."
 
 #: editor/project_manager.cpp
 msgid ""
@@ -7907,6 +7961,8 @@ msgstr "Дублювати вузли"
 #: editor/scene_tree_dock.cpp
 msgid "Can't reparent nodes in inherited scenes, order of nodes can't change."
 msgstr ""
+"Не можна змінювати батьківський об'єкт вузлів в успадкованих сценах — "
+"порядок вузлів не можна змінювати."
 
 #: editor/scene_tree_dock.cpp
 msgid "Node must belong to the edited scene to become root."
@@ -8723,10 +8779,6 @@ msgid "Build Project"
 msgstr "Зібрати проект"
 
 #: modules/mono/editor/mono_bottom_panel.cpp
-msgid "Warnings"
-msgstr "Попередження"
-
-#: modules/mono/editor/mono_bottom_panel.cpp
 msgid "View log"
 msgstr "Переглянути журнал"
 
@@ -9411,6 +9463,17 @@ msgstr ""
 "Вузол ParallaxLayer працює, лише якщо його встановлено як дочірній для вузла "
 "ParallaxBackground."
 
+#: scene/2d/particles_2d.cpp
+msgid ""
+"GPU-based particles are not supported by the GLES2 video driver.\n"
+"Use the CPUParticles2D node instead. You can use the \"Convert to "
+"CPUParticles\" option for this purpose."
+msgstr ""
+"У драйвері GLES2 не передбачено підтримки часток із обробкою за допомогою "
+"графічного процесора.\n"
+"Вам слід скористатися вузлом CPUParticles2D. Для цього можете вибрати пункт "
+"«Перетворити на CPUParticles»."
+
 #: scene/2d/particles_2d.cpp scene/3d/particles.cpp
 msgid ""
 "A material to process the particles is not assigned, so no behavior is "
@@ -9601,6 +9664,17 @@ msgstr ""
 
 #: scene/3d/particles.cpp
 msgid ""
+"GPU-based particles are not supported by the GLES2 video driver.\n"
+"Use the CPUParticles node instead. You can use the \"Convert to CPUParticles"
+"\" option for this purpose."
+msgstr ""
+"У драйвері GLES2 не передбачено підтримки часток із обробкою за допомогою "
+"графічного процесора.\n"
+"Вам слід скористатися вузлом CPUParticles. Для цього можете вибрати пункт "
+"«Перетворити на CPUParticles»."
+
+#: scene/3d/particles.cpp
+msgid ""
 "Nothing is visible because meshes have not been assigned to draw passes."
 msgstr ""
 "Нічого не видно, оскільки сітки не було пов'язано із проходами малювання."
@@ -9641,26 +9715,6 @@ msgstr ""
 "Щоб усе працювало як слід, властивість шляху (path) має вказувати на "
 "коректний вузол Spatial."
 
-#: scene/3d/scenario_fx.cpp
-msgid "WorldEnvironment needs an Environment resource."
-msgstr "WorldEnvironment потребує ресурсу Environment."
-
-#: scene/3d/scenario_fx.cpp
-msgid ""
-"Only one WorldEnvironment is allowed per scene (or set of instanced scenes)."
-msgstr ""
-"У сцені (або наборі екземплярів сцен) може бути лише один елемент "
-"WorldEnvironment."
-
-#: scene/3d/scenario_fx.cpp
-msgid ""
-"This WorldEnvironment is ignored. Either add a Camera (for 3D scenes) or set "
-"this environment's Background Mode to Canvas (for 2D scenes)."
-msgstr ""
-"Цей запис WorldEnvironment проігноровано. Або додайте запис Camera (для "
-"просторових сцен) або встановіть для Background Mode цього середовища "
-"значення Canvas (для двовимірних сцен)."
-
 #: scene/3d/soft_body.cpp
 msgid "This body will be ignored until you set a mesh"
 msgstr "Це тіло буде проігноровано, аж доки ви не встановите сітку"
@@ -9689,6 +9743,26 @@ msgid ""
 msgstr ""
 "VehicleWheel слугує для забезпечення роботи системи коліс у VehicleBody. "
 "Будь ласка, використовуйте цей елемент як дочірній елемент вузла VehicleBody."
+
+#: scene/3d/world_environment.cpp
+msgid "WorldEnvironment needs an Environment resource."
+msgstr "WorldEnvironment потребує ресурсу Environment."
+
+#: scene/3d/world_environment.cpp
+msgid ""
+"Only one WorldEnvironment is allowed per scene (or set of instanced scenes)."
+msgstr ""
+"У сцені (або наборі екземплярів сцен) може бути лише один елемент "
+"WorldEnvironment."
+
+#: scene/3d/world_environment.cpp
+msgid ""
+"This WorldEnvironment is ignored. Either add a Camera (for 3D scenes) or set "
+"this environment's Background Mode to Canvas (for 2D scenes)."
+msgstr ""
+"Цей запис WorldEnvironment проігноровано. Або додайте запис Camera (для "
+"просторових сцен) або встановіть для Background Mode цього середовища "
+"значення Canvas (для двовимірних сцен)."
 
 #: scene/animation/animation_blend_tree.cpp
 msgid "On BlendTree node '%s', animation not found: '%s'"
@@ -9733,11 +9807,20 @@ msgstr ""
 "Цей вузол вважається застарілим. Скористайтеся замість нього AnimationTree."
 
 #: scene/gui/color_picker.cpp
+msgid "Pick a color from the screen."
+msgstr "Вибрати колір з екрана."
+
+#: scene/gui/color_picker.cpp
 msgid "Raw Mode"
 msgstr "Raw (сирий) режим"
 
 #: scene/gui/color_picker.cpp
-msgid "Add current color as a preset"
+msgid "Switch between hexadecimal and code values."
+msgstr "Перемикання між шістнадцятковими значеннями і кодами."
+
+#: scene/gui/color_picker.cpp
+#, fuzzy
+msgid "Add current color as a preset."
 msgstr "Додати поточний колір в якості пресету"
 
 #: scene/gui/dialogs.cpp
@@ -9832,6 +9915,18 @@ msgstr "Призначення однорідного."
 #: servers/visual/shader_language.cpp
 msgid "Varyings can only be assigned in vertex function."
 msgstr "Змінні величини можна пов'язувати лише із функцією вузлів."
+
+#~ msgid "Warnings:"
+#~ msgstr "Попередження:"
+
+#~ msgid "Font Size:"
+#~ msgstr "Розмір шрифту:"
+
+#~ msgid "Line:"
+#~ msgstr "Рядок:"
+
+#~ msgid "Col:"
+#~ msgstr "Колонка:"
 
 #~ msgid "OrientedPathFollow only works when set as a child of a Path node."
 #~ msgstr "OrientedPathFollow працюватиме лише як дочірній елемент вузла Path."

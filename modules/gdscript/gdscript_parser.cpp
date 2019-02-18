@@ -3494,16 +3494,20 @@ void GDScriptParser::_parse_class(ClassNode *p_class) {
 					tokenizer->advance();
 
 					if ((tokenizer->get_token() == GDScriptTokenizer::TK_CONSTANT && tokenizer->get_token_constant().get_type() == Variant::STRING)) {
-						Variant constant = tokenizer->get_token_constant();
-						String icon_path = constant.operator String();
+#ifdef TOOLS_ENABLED
+						if (Engine::get_singleton()->is_editor_hint()) {
+							Variant constant = tokenizer->get_token_constant();
+							String icon_path = constant.operator String();
 
-						String abs_icon_path = icon_path.is_rel_path() ? self_path.get_base_dir().plus_file(icon_path).simplify_path() : icon_path;
-						if (!FileAccess::exists(abs_icon_path)) {
-							_set_error("No class icon found at: " + abs_icon_path);
-							return;
+							String abs_icon_path = icon_path.is_rel_path() ? self_path.get_base_dir().plus_file(icon_path).simplify_path() : icon_path;
+							if (!FileAccess::exists(abs_icon_path)) {
+								_set_error("No class icon found at: " + abs_icon_path);
+								return;
+							}
+
+							p_class->icon_path = icon_path;
 						}
-
-						p_class->icon_path = icon_path;
+#endif
 
 						tokenizer->advance();
 					} else {
@@ -4553,6 +4557,7 @@ void GDScriptParser::_parse_class(ClassNode *p_class) {
 				//variale declaration and (eventual) initialization
 
 				ClassNode::Member member;
+
 				bool autoexport = tokenizer->get_token(-1) == GDScriptTokenizer::TK_PR_EXPORT;
 				if (current_export.type != Variant::NIL) {
 					member._export = current_export;
@@ -4719,6 +4724,25 @@ void GDScriptParser::_parse_class(ClassNode *p_class) {
 					if (autoexport && !member.data_type.has_type) {
 						_set_error("Type-less export needs a constant expression assigned to infer type.");
 						return;
+					}
+
+					if (member._export.type != Variant::NIL) {
+						IdentifierNode *id = alloc_node<IdentifierNode>();
+						id->name = member.identifier;
+
+						ConstantNode *cn = alloc_node<ConstantNode>();
+
+						Variant::CallError ce;
+						cn->value = Variant::construct(member._export.type, NULL, 0, ce);
+
+						OperatorNode *op = alloc_node<OperatorNode>();
+						op->op = OperatorNode::OP_INIT_ASSIGN;
+						op->arguments.push_back(id);
+						op->arguments.push_back(cn);
+
+						p_class->initializer->statements.push_back(op);
+
+						member.initial_assignment = op;
 					}
 				}
 
@@ -5594,6 +5618,9 @@ GDScriptParser::DataType GDScriptParser::_type_from_gdtype(const GDScriptDataTyp
 	result.script_type = p_gdtype.script_type;
 
 	switch (p_gdtype.kind) {
+		case GDScriptDataType::UNINITIALIZED: {
+			ERR_EXPLAIN("Uninitialized datatype. Please report a bug.");
+		} break;
 		case GDScriptDataType::BUILTIN: {
 			result.kind = DataType::BUILTIN;
 		} break;
@@ -6795,7 +6822,7 @@ GDScriptParser::DataType GDScriptParser::_reduce_function_call_type(const Operat
 				return_type = original_type;
 				return_type.is_meta_type = false;
 
-				valid = true; // There's always an initializer, we can asume this is true
+				valid = true; // There's always an initializer, we can assume this is true
 			}
 
 			if (!valid) {
