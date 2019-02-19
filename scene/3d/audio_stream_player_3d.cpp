@@ -32,12 +32,13 @@
 #include "core/engine.h"
 #include "scene/3d/area.h"
 #include "scene/3d/camera.h"
+#include "scene/3d/listener.h"
 #include "scene/main/viewport.h"
 
 void AudioStreamPlayer3D::_mix_audio() {
 
 	if (!stream_playback.is_valid() || !active ||
-			(stream_paused && !stream_paused_fade_out)) {
+			(stream_paused && !stream_fade_out)) {
 		return;
 	}
 
@@ -52,7 +53,7 @@ void AudioStreamPlayer3D::_mix_audio() {
 	AudioFrame *buffer = mix_buffer.ptrw();
 	int buffer_size = mix_buffer.size();
 
-	if (stream_paused_fade_out) {
+	if (stream_fade_out) {
 		// Short fadeout ramp
 		buffer_size = MIN(buffer_size, 128);
 	}
@@ -108,10 +109,10 @@ void AudioStreamPlayer3D::_mix_audio() {
 		int buffers = AudioServer::get_singleton()->get_channel_count();
 
 		for (int k = 0; k < buffers; k++) {
-			AudioFrame target_volume = stream_paused_fade_out ? AudioFrame(0.f, 0.f) : current.vol[k];
-			AudioFrame vol_prev = stream_paused_fade_in ? AudioFrame(0.f, 0.f) : prev_outputs[i].vol[k];
+			AudioFrame target_volume = stream_fade_out ? AudioFrame(0.f, 0.f) : current.vol[k];
+			AudioFrame vol_prev = stream_fade_in ? AudioFrame(0.f, 0.f) : prev_outputs[i].vol[k];
 			AudioFrame vol_inc = (target_volume - vol_prev) / float(buffer_size);
-			AudioFrame vol = stream_paused_fade_in ? AudioFrame(0.f, 0.f) : current.vol[k];
+			AudioFrame vol = stream_fade_in ? AudioFrame(0.f, 0.f) : current.vol[k];
 
 			if (!AudioServer::get_singleton()->thread_has_channel_mix_buffer(current.bus_index, k))
 				continue; //may have been deleted, will be updated on process
@@ -197,9 +198,15 @@ void AudioStreamPlayer3D::_mix_audio() {
 		active = false;
 	}
 
+	if (stream_stop) {
+		active = false;
+		set_physics_process_internal(false);
+		setplay = -1;
+	}
+
 	output_ready = false;
-	stream_paused_fade_in = false;
-	stream_paused_fade_out = false;
+	stream_fade_in = false;
+	stream_fade_out = false;
 }
 
 float AudioStreamPlayer3D::_get_attenuation_db(float p_distance) const {
@@ -324,16 +331,25 @@ void AudioStreamPlayer3D::_notification(int p_what) {
 				if (!vp->is_audio_listener())
 					continue;
 
-				Vector3 local_pos = camera->get_global_transform().orthonormalized().affine_inverse().xform(global_pos);
+				bool listener_is_camera = true;
+				Spatial *listener_node = camera;
+
+				Listener *listener = vp->get_listener();
+				if (listener) {
+					listener_node = listener;
+					listener_is_camera = false;
+				}
+
+				Vector3 local_pos = listener_node->get_global_transform().orthonormalized().affine_inverse().xform(global_pos);
 
 				float dist = local_pos.length();
 
 				Vector3 area_sound_pos;
-				Vector3 cam_area_pos;
+				Vector3 listener_area_pos;
 
 				if (area && area->is_using_reverb_bus() && area->get_reverb_uniformity() > 0) {
-					area_sound_pos = space_state->get_closest_point_to_object_volume(area->get_rid(), camera->get_global_transform().origin);
-					cam_area_pos = camera->get_global_transform().affine_inverse().xform(area_sound_pos);
+					area_sound_pos = space_state->get_closest_point_to_object_volume(area->get_rid(), listener_node->get_global_transform().origin);
+					listener_area_pos = listener_node->get_global_transform().affine_inverse().xform(area_sound_pos);
 				}
 
 				if (max_distance > 0) {
@@ -341,10 +357,10 @@ void AudioStreamPlayer3D::_notification(int p_what) {
 					float total_max = max_distance;
 
 					if (area && area->is_using_reverb_bus() && area->get_reverb_uniformity() > 0) {
-						total_max = MAX(total_max, cam_area_pos.length());
+						total_max = MAX(total_max, listener_area_pos.length());
 					}
 					if (total_max > max_distance) {
-						continue; //can't hear this sound in this camera
+						continue; //can't hear this sound in this listener
 					}
 				}
 
@@ -361,8 +377,8 @@ void AudioStreamPlayer3D::_notification(int p_what) {
 				float db_att = (1.0 - MIN(1.0, multiplier)) * attenuation_filter_db;
 
 				if (emission_angle_enabled) {
-					Vector3 camtopos = global_pos - camera->get_global_transform().origin;
-					float c = camtopos.normalized().dot(get_global_transform().basis.get_axis(2).normalized()); //it's z negative
+					Vector3 listenertopos = global_pos - listener_node->get_global_transform().origin;
+					float c = listenertopos.normalized().dot(get_global_transform().basis.get_axis(2).normalized()); //it's z negative
 					float angle = Math::rad2deg(Math::acos(c));
 					if (angle > emission_angle)
 						db_att -= -emission_angle_filter_attenuation_db;
@@ -382,8 +398,8 @@ void AudioStreamPlayer3D::_notification(int p_what) {
 					output.vol[0].l = 1.0 - c;
 					output.vol[0].r = c;
 				} else {
-					Vector3 camtopos = global_pos - camera->get_global_transform().origin;
-					float c = camtopos.normalized().dot(get_global_transform().basis.get_axis(2).normalized()); //it's z negative
+					Vector3 listenertopos = global_pos - listener_node->get_global_transform().origin;
+					float c = listenertopos.normalized().dot(get_global_transform().basis.get_axis(2).normalized()); //it's z negative
 					float angle = Math::rad2deg(Math::acos(c));
 					float av = angle * (flat_pos.x < 0 ? -1 : 1) / 180.0;
 
@@ -449,7 +465,7 @@ void AudioStreamPlayer3D::_notification(int p_what) {
 
 						if (uniformity > 0.0) {
 
-							float distance = cam_area_pos.length();
+							float distance = listener_area_pos.length();
 							float attenuation = Math::db2linear(_get_attenuation_db(distance));
 
 							//float dist_att_db = -20 * Math::log(dist + 0.00001); //logarithmic attenuation, like in real life
@@ -459,7 +475,7 @@ void AudioStreamPlayer3D::_notification(int p_what) {
 
 							if (attenuation < 1.0) {
 								//pan the uniform sound
-								Vector3 rev_pos = cam_area_pos;
+								Vector3 rev_pos = listener_area_pos;
 								rev_pos.y = 0;
 								rev_pos.normalize();
 
@@ -518,9 +534,13 @@ void AudioStreamPlayer3D::_notification(int p_what) {
 
 				if (doppler_tracking != DOPPLER_TRACKING_DISABLED) {
 
-					Vector3 camera_velocity = camera->get_doppler_tracked_velocity();
+					Vector3 listener_velocity;
 
-					Vector3 local_velocity = camera->get_global_transform().orthonormalized().basis.xform_inv(linear_velocity - camera_velocity);
+					if (listener_is_camera) {
+						listener_velocity = camera->get_doppler_tracked_velocity();
+					}
+
+					Vector3 local_velocity = listener_node->get_global_transform().orthonormalized().basis.xform_inv(linear_velocity - listener_velocity);
 
 					if (local_velocity == Vector3()) {
 						output.pitch_scale = 1.0;
@@ -642,6 +662,7 @@ float AudioStreamPlayer3D::get_pitch_scale() const {
 void AudioStreamPlayer3D::play(float p_from_pos) {
 
 	if (stream_playback.is_valid()) {
+		stream_stop = false;
 		active = true;
 		setplay = p_from_pos;
 		output_ready = false;
@@ -659,9 +680,8 @@ void AudioStreamPlayer3D::seek(float p_seconds) {
 void AudioStreamPlayer3D::stop() {
 
 	if (stream_playback.is_valid()) {
-		active = false;
-		set_physics_process_internal(false);
-		setplay = -1;
+		stream_stop = true;
+		stream_fade_out = true;
 	}
 }
 
@@ -855,8 +875,8 @@ void AudioStreamPlayer3D::set_stream_paused(bool p_pause) {
 
 	if (p_pause != stream_paused) {
 		stream_paused = p_pause;
-		stream_paused_fade_in = stream_paused ? false : true;
-		stream_paused_fade_out = stream_paused ? true : false;
+		stream_fade_in = stream_paused ? false : true;
+		stream_fade_out = stream_paused ? true : false;
 	}
 }
 
@@ -994,8 +1014,9 @@ AudioStreamPlayer3D::AudioStreamPlayer3D() {
 	out_of_range_mode = OUT_OF_RANGE_MIX;
 	doppler_tracking = DOPPLER_TRACKING_DISABLED;
 	stream_paused = false;
-	stream_paused_fade_in = false;
-	stream_paused_fade_out = false;
+	stream_fade_in = false;
+	stream_fade_out = false;
+	stream_stop = false;
 
 	velocity_tracker.instance();
 	AudioServer::get_singleton()->connect("bus_layout_changed", this, "_bus_layout_changed");

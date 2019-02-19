@@ -45,6 +45,7 @@ Node2D *Polygon2DEditor::_get_node() const {
 void Polygon2DEditor::_set_node(Node *p_polygon) {
 
 	node = Object::cast_to<Polygon2D>(p_polygon);
+	_update_polygon_editing_state();
 }
 
 Vector2 Polygon2DEditor::_get_offset(int p_idx) const {
@@ -53,6 +54,7 @@ Vector2 Polygon2DEditor::_get_offset(int p_idx) const {
 }
 
 int Polygon2DEditor::_get_polygon_count() const {
+
 	if (node->get_internal_vertex_count() > 0) {
 		return 0; //do not edit if internal vertices exist
 	} else {
@@ -365,6 +367,8 @@ void Polygon2DEditor::_cancel_editing() {
 		node->set_vertex_colors(uv_create_colors_prev);
 		node->call("_set_bones", uv_create_bones_prev);
 		node->set_polygons(polygons_prev);
+
+		_update_polygon_editing_state();
 	} else if (uv_drag) {
 		uv_drag = false;
 		if (uv_edit_mode[0]->is_pressed()) { // Edit UV.
@@ -377,9 +381,20 @@ void Polygon2DEditor::_cancel_editing() {
 	polygon_create.clear();
 }
 
+void Polygon2DEditor::_update_polygon_editing_state() {
+
+	if (!_get_node())
+		return;
+
+	if (node->get_internal_vertex_count() > 0)
+		disable_polygon_editing(true, TTR("Polygon 2D has internal vertices, so it can no longer be edited in the viewport."));
+	else
+		disable_polygon_editing(false, String());
+}
+
 void Polygon2DEditor::_commit_action() {
 
-	// Makes that undo/redoing actions made outside of the UV editor still affects its polygon.
+	// Makes that undo/redoing actions made outside of the UV editor still affect its polygon.
 	undo_redo->add_do_method(uv_edit_draw, "update");
 	undo_redo->add_undo_method(uv_edit_draw, "update");
 	undo_redo->add_do_method(CanvasItemEditor::get_singleton(), "update_viewport");
@@ -480,6 +495,7 @@ void Polygon2DEditor::_uv_input(const Ref<InputEvent> &p_input) {
 						uv_create_colors_prev = node->get_vertex_colors();
 						uv_create_bones_prev = node->call("_get_bones");
 						polygons_prev = node->get_polygons();
+						disable_polygon_editing(false, String());
 						node->set_polygon(points_prev);
 						node->set_uv(points_prev);
 						node->set_internal_vertex_count(0);
@@ -501,6 +517,8 @@ void Polygon2DEditor::_uv_input(const Ref<InputEvent> &p_input) {
 							undo_redo->add_undo_method(node, "set_vertex_colors", uv_create_colors_prev);
 							undo_redo->add_do_method(node, "clear_bones");
 							undo_redo->add_undo_method(node, "_set_bones", uv_create_bones_prev);
+							undo_redo->add_do_method(this, "_update_polygon_editing_state");
+							undo_redo->add_undo_method(this, "_update_polygon_editing_state");
 							undo_redo->add_do_method(uv_edit_draw, "update");
 							undo_redo->add_undo_method(uv_edit_draw, "update");
 							undo_redo->commit_action();
@@ -552,7 +570,8 @@ void Polygon2DEditor::_uv_input(const Ref<InputEvent> &p_input) {
 					}
 					undo_redo->add_do_method(node, "set_internal_vertex_count", internal_vertices + 1);
 					undo_redo->add_undo_method(node, "set_internal_vertex_count", internal_vertices);
-
+					undo_redo->add_do_method(this, "_update_polygon_editing_state");
+					undo_redo->add_undo_method(this, "_update_polygon_editing_state");
 					undo_redo->add_do_method(uv_edit_draw, "update");
 					undo_redo->add_undo_method(uv_edit_draw, "update");
 					undo_redo->commit_action();
@@ -606,7 +625,8 @@ void Polygon2DEditor::_uv_input(const Ref<InputEvent> &p_input) {
 					}
 					undo_redo->add_do_method(node, "set_internal_vertex_count", internal_vertices - 1);
 					undo_redo->add_undo_method(node, "set_internal_vertex_count", internal_vertices);
-
+					undo_redo->add_do_method(this, "_update_polygon_editing_state");
+					undo_redo->add_undo_method(this, "_update_polygon_editing_state");
 					undo_redo->add_do_method(uv_edit_draw, "update");
 					undo_redo->add_undo_method(uv_edit_draw, "update");
 					undo_redo->commit_action();
@@ -1028,6 +1048,9 @@ void Polygon2DEditor::_uv_draw() {
 	Ref<Texture> internal_handle = get_icon("EditorInternalHandle", "EditorIcons");
 
 	Color poly_line_color = Color(0.9, 0.5, 0.5);
+	if (polygons.size() || polygon_create.size()) {
+		poly_line_color.a *= 0.25;
+	}
 	Color polygon_line_color = Color(0.5, 0.5, 0.9);
 	Vector<Color> polygon_fill_color;
 	{
@@ -1040,6 +1063,30 @@ void Polygon2DEditor::_uv_draw() {
 	rect.expand_to(mtx.basis_xform(uv_edit_draw->get_size()));
 
 	int uv_draw_max = uvs.size();
+
+	uv_draw_max -= node->get_internal_vertex_count();
+	if (uv_draw_max < 0) {
+		uv_draw_max = 0;
+	}
+
+	for (int i = 0; i < uvs.size(); i++) {
+
+		int next = uv_draw_max > 0 ? (i + 1) % uv_draw_max : 0;
+
+		if (i < uv_draw_max && uv_drag && uv_move_current == UV_MODE_EDIT_POINT && EDITOR_DEF("editors/poly_editor/show_previous_outline", true)) {
+			uv_edit_draw->draw_line(mtx.xform(points_prev[i]), mtx.xform(points_prev[next]), prev_color, 2 * EDSCALE);
+		}
+
+		Vector2 next_point = uvs[next];
+		if (uv_create && i == uvs.size() - 1) {
+			next_point = uv_create_to;
+		}
+		if (i < uv_draw_max /*&& polygons.size() == 0 &&  polygon_create.size() == 0*/) { //if using or creating polygons, do not show outline (will show polygons instead)
+			uv_edit_draw->draw_line(mtx.xform(uvs[i]), mtx.xform(next_point), poly_line_color, 2 * EDSCALE);
+		}
+
+		rect.expand_to(mtx.basis_xform(uvs[i]));
+	}
 
 	for (int i = 0; i < polygons.size(); i++) {
 
@@ -1063,26 +1110,7 @@ void Polygon2DEditor::_uv_draw() {
 		}
 	}
 
-	uv_draw_max -= node->get_internal_vertex_count();
-	if (uv_draw_max < 0) {
-		uv_draw_max = 0;
-	}
-
 	for (int i = 0; i < uvs.size(); i++) {
-
-		int next = uv_draw_max > 0 ? (i + 1) % uv_draw_max : 0;
-
-		if (i < uv_draw_max && uv_drag && uv_move_current == UV_MODE_EDIT_POINT && EDITOR_DEF("editors/poly_editor/show_previous_outline", true)) {
-			uv_edit_draw->draw_line(mtx.xform(points_prev[i]), mtx.xform(points_prev[next]), prev_color, 2 * EDSCALE);
-		}
-
-		Vector2 next_point = uvs[next];
-		if (uv_create && i == uvs.size() - 1) {
-			next_point = uv_create_to;
-		}
-		if (i < uv_draw_max && polygons.size() == 0 && polygon_create.size() == 0) { //if using or creating polygons, do not show outline (will show polygons instead)
-			uv_edit_draw->draw_line(mtx.xform(uvs[i]), mtx.xform(next_point), poly_line_color, 2 * EDSCALE);
-		}
 
 		if (weight_r.ptr()) {
 			Vector2 draw_pos = mtx.xform(uvs[i]);
@@ -1095,14 +1123,13 @@ void Polygon2DEditor::_uv_draw() {
 				uv_edit_draw->draw_texture(internal_handle, mtx.xform(uvs[i]) - internal_handle->get_size() * 0.5);
 			}
 		}
-		rect.expand_to(mtx.basis_xform(uvs[i]));
 	}
 
 	if (polygon_create.size()) {
 		for (int i = 0; i < polygon_create.size(); i++) {
 			Vector2 from = uvs[polygon_create[i]];
 			Vector2 to = (i + 1) < polygon_create.size() ? uvs[polygon_create[i + 1]] : uv_create_to;
-			uv_edit_draw->draw_line(mtx.xform(from), mtx.xform(to), poly_line_color, 2);
+			uv_edit_draw->draw_line(mtx.xform(from), mtx.xform(to), polygon_line_color, 2);
 		}
 	}
 
@@ -1216,6 +1243,7 @@ void Polygon2DEditor::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_uv_edit_popup_hide"), &Polygon2DEditor::_uv_edit_popup_hide);
 	ClassDB::bind_method(D_METHOD("_sync_bones"), &Polygon2DEditor::_sync_bones);
 	ClassDB::bind_method(D_METHOD("_update_bone_list"), &Polygon2DEditor::_update_bone_list);
+	ClassDB::bind_method(D_METHOD("_update_polygon_editing_state"), &Polygon2DEditor::_update_polygon_editing_state);
 	ClassDB::bind_method(D_METHOD("_bone_paint_selected"), &Polygon2DEditor::_bone_paint_selected);
 }
 

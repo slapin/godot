@@ -63,7 +63,6 @@ class FindReplaceBar : public HBoxContainer {
 
 	GDCLASS(FindReplaceBar, HBoxContainer);
 
-	MarginContainer *container;
 	LineEdit *search_text;
 	ToolButton *find_prev;
 	ToolButton *find_next;
@@ -76,7 +75,6 @@ class FindReplaceBar : public HBoxContainer {
 	Button *replace_all;
 	CheckBox *selection_only;
 
-	HBoxContainer *hbc;
 	VBoxContainer *vbc_lineedit;
 	HBoxContainer *hbc_button_replace;
 	HBoxContainer *hbc_option_replace;
@@ -178,6 +176,7 @@ class CodeTextEditor : public VBoxContainer {
 
 	void _warning_label_gui_input(const Ref<InputEvent> &p_event);
 	void _warning_button_pressed();
+	void _set_show_warnings_panel(bool p_show);
 	void _error_pressed(const Ref<InputEvent> &p_event);
 
 protected:
@@ -191,6 +190,8 @@ protected:
 	void _line_col_changed();
 	void _notification(int);
 	static void _bind_methods();
+
+	bool is_warnings_panel_opened;
 
 public:
 	void trim_trailing_whitespace();

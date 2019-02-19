@@ -316,9 +316,35 @@ FRAGMENT_SHADER_GLOBALS
 
 /* clang-format on */
 
+void light_compute(
+		inout vec4 light,
+		inout vec2 light_vec,
+		inout float light_height,
+		inout vec4 light_color,
+		vec2 light_uv,
+		inout vec4 shadow_color,
+		vec3 normal,
+		vec2 uv,
+#if defined(SCREEN_UV_USED)
+		vec2 screen_uv,
+#endif
+		vec4 color) {
+
+#if defined(USE_LIGHT_SHADER_CODE)
+
+	/* clang-format off */
+
+LIGHT_SHADER_CODE
+
+	/* clang-format on */
+
+#endif
+}
+
 void main() {
 
 	vec4 color = color_interp;
+	vec2 uv = uv_interp;
 
 #if !defined(COLOR_USED)
 	//default behavior, texture by color
@@ -414,7 +440,6 @@ FRAGMENT_SHADER_CODE
 		color *= light;
 
 #ifdef USE_SHADOWS
-		light_vec = light_uv_interp.zw; //for shadows
 		float angle_to_light = -atan(light_vec.x, light_vec.y);
 		float PI = 3.14159265358979323846264;
 		/*int i = int(mod(floor((angle_to_light+7.0*PI/6.0)/(4.0*PI/6.0))+1.0, 3.0)); // +1 pq os indices estao em ordem 2,0,1 nos arrays

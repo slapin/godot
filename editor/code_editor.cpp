@@ -99,9 +99,6 @@ void FindReplaceBar::_notification(int p_what) {
 	} else if (p_what == NOTIFICATION_VISIBILITY_CHANGED) {
 
 		set_process_unhandled_input(is_visible_in_tree());
-		if (is_visible_in_tree()) {
-			_update_size();
-		}
 	} else if (p_what == EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED) {
 
 		find_prev->set_icon(get_icon("MoveUp", "EditorIcons"));
@@ -390,7 +387,6 @@ void FindReplaceBar::_show_search() {
 		search_text->set_cursor_position(search_text->get_text().length());
 		search_current();
 	}
-	call_deferred("_update_size");
 }
 
 void FindReplaceBar::popup_search() {
@@ -483,11 +479,6 @@ void FindReplaceBar::set_text_edit(TextEdit *p_text_edit) {
 	text_edit->connect("text_changed", this, "_editor_text_changed");
 }
 
-void FindReplaceBar::_update_size() {
-
-	container->set_size(Size2(hbc->get_size().width, 1));
-}
-
 void FindReplaceBar::_bind_methods() {
 
 	ClassDB::bind_method("_unhandled_input", &FindReplaceBar::_unhandled_input);
@@ -503,7 +494,6 @@ void FindReplaceBar::_bind_methods() {
 	ClassDB::bind_method("_replace_all_pressed", &FindReplaceBar::_replace_all);
 	ClassDB::bind_method("_search_options_changed", &FindReplaceBar::_search_options_changed);
 	ClassDB::bind_method("_hide_pressed", &FindReplaceBar::_hide_bar);
-	ClassDB::bind_method("_update_size", &FindReplaceBar::_update_size);
 
 	ADD_SIGNAL(MethodInfo("search"));
 	ADD_SIGNAL(MethodInfo("error"));
@@ -511,26 +501,16 @@ void FindReplaceBar::_bind_methods() {
 
 FindReplaceBar::FindReplaceBar() {
 
-	container = memnew(MarginContainer);
-	container->add_constant_override("margin_bottom", 5 * EDSCALE);
-	add_child(container);
-	container->set_clip_contents(true);
-	container->set_h_size_flags(SIZE_EXPAND_FILL);
-
 	replace_all_mode = false;
 	preserve_cursor = false;
 
-	hbc = memnew(HBoxContainer);
-	container->add_child(hbc);
-	hbc->set_anchor_and_margin(MARGIN_RIGHT, 1, 0);
-
 	vbc_lineedit = memnew(VBoxContainer);
-	hbc->add_child(vbc_lineedit);
+	add_child(vbc_lineedit);
 	vbc_lineedit->set_h_size_flags(SIZE_EXPAND_FILL);
 	VBoxContainer *vbc_button = memnew(VBoxContainer);
-	hbc->add_child(vbc_button);
+	add_child(vbc_button);
 	VBoxContainer *vbc_option = memnew(VBoxContainer);
-	hbc->add_child(vbc_option);
+	add_child(vbc_option);
 
 	HBoxContainer *hbc_button_search = memnew(HBoxContainer);
 	vbc_button->add_child(hbc_button_search);
@@ -1062,35 +1042,43 @@ void CodeTextEditor::delete_lines() {
 }
 
 void CodeTextEditor::clone_lines_down() {
+	const int cursor_column = text_editor->cursor_get_column();
 	int from_line = text_editor->cursor_get_line();
 	int to_line = text_editor->cursor_get_line();
-	int column = text_editor->cursor_get_column();
+	int from_column = 0;
+	int to_column = 0;
+	int cursor_new_line = to_line + 1;
+	int cursor_new_column = text_editor->cursor_get_column();
+	String new_text = "\n" + text_editor->get_line(from_line);
+	bool selection_active = false;
 
+	text_editor->cursor_set_column(text_editor->get_line(from_line).length());
 	if (text_editor->is_selection_active()) {
+		from_column = text_editor->get_selection_from_column();
+		to_column = text_editor->get_selection_to_column();
+
 		from_line = text_editor->get_selection_from_line();
 		to_line = text_editor->get_selection_to_line();
-		column = text_editor->cursor_get_column();
-	}
-	int next_line = to_line + 1;
+		cursor_new_line = to_line + text_editor->cursor_get_line() - from_line;
+		cursor_new_column = to_column == cursor_column ? 2 * to_column - from_column : to_column;
+		new_text = text_editor->get_selection_text();
+		selection_active = true;
 
-	bool caret_at_start = text_editor->cursor_get_line() == from_line;
+		text_editor->cursor_set_line(to_line);
+		text_editor->cursor_set_column(to_column);
+	}
+
 	text_editor->begin_complex_operation();
+
 	for (int i = from_line; i <= to_line; i++) {
 		text_editor->unfold_line(i);
-		text_editor->set_line(next_line - 1, text_editor->get_line(next_line - 1) + "\n");
-		text_editor->set_line(next_line, text_editor->get_line(i));
-		next_line++;
 	}
-
-	if (caret_at_start) {
-		text_editor->cursor_set_line(to_line + 1);
-	} else {
-		text_editor->cursor_set_line(next_line - 1);
-	}
-
-	text_editor->cursor_set_column(column);
-	if (text_editor->is_selection_active()) {
-		text_editor->select(to_line + 1, text_editor->get_selection_from_column(), next_line - 1, text_editor->get_selection_to_column());
+	text_editor->deselect();
+	text_editor->insert_text_at_cursor(new_text);
+	text_editor->cursor_set_line(cursor_new_line);
+	text_editor->cursor_set_column(cursor_new_column);
+	if (selection_active) {
+		text_editor->select(to_line, to_column, 2 * to_line - from_line, 2 * to_column - from_column);
 	}
 
 	text_editor->end_complex_operation();
@@ -1197,7 +1185,12 @@ void CodeTextEditor::_warning_label_gui_input(const Ref<InputEvent> &p_event) {
 }
 
 void CodeTextEditor::_warning_button_pressed() {
-	emit_signal("warning_pressed");
+	_set_show_warnings_panel(!is_warnings_panel_opened);
+}
+
+void CodeTextEditor::_set_show_warnings_panel(bool p_show) {
+	is_warnings_panel_opened = p_show;
+	emit_signal("show_warnings_panel", p_show);
 }
 
 void CodeTextEditor::_error_pressed(const Ref<InputEvent> &p_event) {
@@ -1219,6 +1212,7 @@ void CodeTextEditor::_notification(int p_what) {
 		} break;
 		case NOTIFICATION_ENTER_TREE: {
 			warning_button->set_icon(get_icon("NodeWarning", "EditorIcons"));
+			add_constant_override("separation", 4 * EDSCALE);
 		} break;
 		default:
 			break;
@@ -1229,6 +1223,8 @@ void CodeTextEditor::set_warning_nb(int p_warning_nb) {
 	warning_count_label->set_text(itos(p_warning_nb));
 	warning_count_label->set_visible(p_warning_nb > 0);
 	warning_button->set_visible(p_warning_nb > 0);
+	if (!p_warning_nb)
+		_set_show_warnings_panel(false);
 }
 
 void CodeTextEditor::_bind_methods() {
@@ -1247,7 +1243,7 @@ void CodeTextEditor::_bind_methods() {
 
 	ADD_SIGNAL(MethodInfo("validate_script"));
 	ADD_SIGNAL(MethodInfo("load_theme_settings"));
-	ADD_SIGNAL(MethodInfo("warning_pressed"));
+	ADD_SIGNAL(MethodInfo("show_warnings_panel"));
 	ADD_SIGNAL(MethodInfo("error_pressed"));
 }
 
@@ -1267,7 +1263,7 @@ CodeTextEditor::CodeTextEditor() {
 	add_child(text_editor);
 	text_editor->set_v_size_flags(SIZE_EXPAND_FILL);
 
-	// Added second to it opens at the bottom, so it won't shift the entire text editor when opening
+	// Added second so it opens at the bottom, so it won't shift the entire text editor when opening.
 	find_replace_bar = memnew(FindReplaceBar);
 	add_child(find_replace_bar);
 	find_replace_bar->set_h_size_flags(SIZE_EXPAND_FILL);
@@ -1282,6 +1278,7 @@ CodeTextEditor::CodeTextEditor() {
 	status_bar = memnew(HBoxContainer);
 	add_child(status_bar);
 	status_bar->set_h_size_flags(SIZE_EXPAND_FILL);
+	status_bar->set_custom_minimum_size(Size2(0, 24 * EDSCALE)); // Adjust for the height of the warning icon.
 
 	idle = memnew(Timer);
 	add_child(idle);
@@ -1331,6 +1328,7 @@ CodeTextEditor::CodeTextEditor() {
 	warning_count_label->add_font_override("font", EditorNode::get_singleton()->get_gui_base()->get_font("status_source", "EditorFonts"));
 	warning_count_label->connect("gui_input", this, "_warning_label_gui_input");
 
+	is_warnings_panel_opened = false;
 	set_warning_nb(0);
 
 	// Line and column
@@ -1338,7 +1336,7 @@ CodeTextEditor::CodeTextEditor() {
 	status_bar->add_child(line_and_col_txt);
 	line_and_col_txt->set_v_size_flags(SIZE_EXPAND | SIZE_SHRINK_CENTER);
 	line_and_col_txt->add_font_override("font", EditorNode::get_singleton()->get_gui_base()->get_font("status_source", "EditorFonts"));
-	line_and_col_txt->set_tooltip(TTR("Line and column numbers"));
+	line_and_col_txt->set_tooltip(TTR("Line and column numbers."));
 	line_and_col_txt->set_mouse_filter(MOUSE_FILTER_STOP);
 
 	text_editor->connect("gui_input", this, "_text_editor_gui_input");

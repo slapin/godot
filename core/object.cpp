@@ -703,40 +703,38 @@ Variant Object::_call_deferred_bind(const Variant **p_args, int p_argcount, Vari
 }
 
 #ifdef DEBUG_ENABLED
-static bool _test_call_error(const StringName &p_func, const Variant::CallError &error) {
+static void _test_call_error(const StringName &p_func, const Variant::CallError &error) {
 
 	switch (error.error) {
 
 		case Variant::CallError::CALL_OK:
-			return true;
 		case Variant::CallError::CALL_ERROR_INVALID_METHOD:
-			return false;
+			break;
 		case Variant::CallError::CALL_ERROR_INVALID_ARGUMENT: {
 
 			ERR_EXPLAIN("Error Calling Function: " + String(p_func) + " - Invalid type for argument " + itos(error.argument) + ", expected " + Variant::get_type_name(error.expected));
-			ERR_FAIL_V(true);
-		} break;
+			ERR_FAIL();
+			break;
+		}
 		case Variant::CallError::CALL_ERROR_TOO_MANY_ARGUMENTS: {
 
 			ERR_EXPLAIN("Error Calling Function: " + String(p_func) + " - Too many arguments, expected " + itos(error.argument));
-			ERR_FAIL_V(true);
-
-		} break;
+			ERR_FAIL();
+			break;
+		}
 		case Variant::CallError::CALL_ERROR_TOO_FEW_ARGUMENTS: {
 
 			ERR_EXPLAIN("Error Calling Function: " + String(p_func) + " - Too few arguments, expected " + itos(error.argument));
-			ERR_FAIL_V(true);
-
-		} break;
-		case Variant::CallError::CALL_ERROR_INSTANCE_IS_NULL: {
-		} //?
+			ERR_FAIL();
+			break;
+		}
+		case Variant::CallError::CALL_ERROR_INSTANCE_IS_NULL:
+			break;
 	}
-
-	return true;
 }
 #else
 
-#define _test_call_error(m_str, m_err) ((m_err.error == Variant::CallError::CALL_ERROR_INVALID_METHOD) ? false : true)
+#define _test_call_error(m_str, m_err)
 
 #endif
 
@@ -1247,7 +1245,7 @@ Error Object::emit_signal(const StringName &p_name, const Variant **p_args, int 
 		bool disconnect = c.flags & CONNECT_ONESHOT;
 #ifdef TOOLS_ENABLED
 		if (disconnect && (c.flags & CONNECT_PERSIST) && Engine::get_singleton()->is_editor_hint()) {
-			//this signal was connected from the editor, and is being edited. just dont disconnect for now
+			//this signal was connected from the editor, and is being edited. just don't disconnect for now
 			disconnect = false;
 		}
 #endif
@@ -1929,6 +1927,13 @@ bool Object::has_script_instance_binding(int p_script_language_index) {
 	return _script_instance_bindings[p_script_language_index] != NULL;
 }
 
+void Object::set_script_instance_binding(int p_script_language_index, void *p_data) {
+#ifdef DEBUG_ENABLED
+	CRASH_COND(_script_instance_bindings[p_script_language_index] != NULL);
+#endif
+	_script_instance_bindings[p_script_language_index] = p_data;
+}
+
 Object::Object() {
 
 	_class_ptr = NULL;
@@ -1992,9 +1997,11 @@ Object::~Object() {
 	_instance_ID = 0;
 	_predelete_ok = 2;
 
-	for (int i = 0; i < MAX_SCRIPT_INSTANCE_BINDINGS; i++) {
-		if (_script_instance_bindings[i]) {
-			ScriptServer::get_language(i)->free_instance_binding_data(_script_instance_bindings[i]);
+	if (!ScriptServer::are_languages_finished()) {
+		for (int i = 0; i < MAX_SCRIPT_INSTANCE_BINDINGS; i++) {
+			if (_script_instance_bindings[i]) {
+				ScriptServer::get_language(i)->free_instance_binding_data(_script_instance_bindings[i]);
+			}
 		}
 	}
 }

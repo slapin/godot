@@ -42,7 +42,7 @@
 #include "editor/plugins/script_editor_plugin.h"
 #include "editor_node.h"
 #include "editor_settings.h"
-#include "scene/resources/scene_format_text.h"
+#include "scene/resources/resource_format_text.h"
 #include "thirdparty/misc/md5.h"
 
 static int _get_pad(int p_alignment, int p_n) {
@@ -858,7 +858,7 @@ Error EditorExportPlatform::export_project_files(const Ref<EditorExportPreset> &
 		Vector<uint8_t> array = FileAccess::get_file_as_array(icon);
 		p_func(p_udata, icon, array, idx, total);
 	}
-	if (splash != String() && FileAccess::exists(splash)) {
+	if (splash != String() && FileAccess::exists(splash) && icon != splash) {
 		Vector<uint8_t> array = FileAccess::get_file_as_array(splash);
 		p_func(p_udata, splash, array, idx, total);
 	}

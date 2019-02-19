@@ -157,7 +157,17 @@ void GDMono::add_mono_shared_libs_dir_to_path() {
 	path_value += ';';
 
 	String bundled_bin_dir = GodotSharpDirs::get_data_mono_bin_dir();
-	path_value += DirAccess::exists(bundled_bin_dir) ? bundled_bin_dir : mono_reg_info.bin_dir;
+#ifdef TOOLS_ENABLED
+	if (DirAccess::exists(bundled_bin_dir)) {
+		path_value += bundled_bin_dir;
+	} else {
+		path_value += mono_reg_info.bin_dir;
+	}
+#else
+	if (DirAccess::exists(bundled_bin_dir))
+		path_value += bundled_bin_dir;
+#endif // TOOLS_ENABLED
+
 #else
 	path_value += ':';
 
@@ -167,10 +177,10 @@ void GDMono::add_mono_shared_libs_dir_to_path() {
 	} else {
 		// TODO: Do we need to add the lib dir when using the system installed Mono on Unix platforms?
 	}
-#endif
+#endif // WINDOWS_ENABLED
 
 	OS::get_singleton()->set_environment(path_var, path_value);
-#endif
+#endif // WINDOWS_ENABLED || UNIX_ENABLED
 }
 
 void GDMono::initialize() {
@@ -231,11 +241,21 @@ void GDMono::initialize() {
 		assembly_rootdir = bundled_assembly_rootdir;
 		config_dir = bundled_config_dir;
 	}
+
+#ifdef WINDOWS_ENABLED
+	if (assembly_rootdir.empty() || config_dir.empty()) {
+		// Assertion: if they are not set, then they weren't found in the registry
+		CRASH_COND(mono_reg_info.assembly_dir.length() > 0 || mono_reg_info.config_dir.length() > 0);
+
+		ERR_PRINT("Cannot find Mono in the registry");
+	}
+#endif // WINDOWS_ENABLED
+
 #else
 	// These are always the directories in export templates
 	assembly_rootdir = bundled_assembly_rootdir;
 	config_dir = bundled_config_dir;
-#endif
+#endif // TOOLS_ENABLED
 
 	// Leak if we call mono_set_dirs more than once
 	mono_set_dirs(assembly_rootdir.length() ? assembly_rootdir.utf8().get_data() : NULL,
@@ -252,6 +272,29 @@ void GDMono::initialize() {
 	mono_config_parse(NULL);
 
 	mono_install_unhandled_exception_hook(&unhandled_exception_hook, NULL);
+
+#ifdef TOOLS_ENABLED
+	if (!DirAccess::exists("res://.mono")) {
+		// 'res://.mono/' is missing so there is nothing to load. We don't need to initialize mono, but
+		// we still do so unless mscorlib is missing (which is the case for projects that don't use C#).
+
+		String mscorlib_fname("mscorlib.dll");
+
+		Vector<String> search_dirs;
+		GDMonoAssembly::fill_search_dirs(search_dirs);
+
+		bool found = false;
+		for (int i = 0; i < search_dirs.size(); i++) {
+			if (FileAccess::exists(search_dirs[i].plus_file(mscorlib_fname))) {
+				found = true;
+				break;
+			}
+		}
+
+		if (!found)
+			return; // mscorlib is missing, do not initialize mono
+	}
+#endif
 
 	root_domain = mono_jit_init_version("GodotEngine.RootDomain", "v4.0.30319");
 
