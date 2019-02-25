@@ -880,9 +880,9 @@ bool EditorNode::_find_and_save_edited_subresources(Object *obj, Map<RES, bool> 
 				Dictionary d = obj->get(E->get().name);
 				List<Variant> keys;
 				d.get_key_list(&keys);
-				for (List<Variant>::Element *E = keys.front(); E; E = E->next()) {
+				for (List<Variant>::Element *F = keys.front(); F; F = F->next()) {
 
-					Variant v = d[E->get()];
+					Variant v = d[F->get()];
 					RES res = v;
 					if (_find_and_save_resource(res, processed, flags))
 						ret_changed = true;
@@ -1370,6 +1370,9 @@ bool EditorNode::item_has_editor(Object *p_object) {
 	return editor_data.get_subeditors(p_object).size() > 0;
 }
 
+void EditorNode::edit_item_resource(RES p_resource) {
+	edit_item(p_resource.ptr());
+}
 void EditorNode::edit_item(Object *p_object) {
 
 	Vector<EditorPlugin *> sub_plugins;
@@ -2539,6 +2542,7 @@ void EditorNode::remove_editor_plugin(EditorPlugin *p_editor, bool p_config_chan
 	singleton->editor_plugins_over->get_plugins_list().erase(p_editor);
 	singleton->remove_child(p_editor);
 	singleton->editor_data.remove_editor_plugin(p_editor);
+	singleton->get_editor_plugins_force_input_forwarding()->remove_plugin(p_editor);
 }
 
 void EditorNode::_update_addon_config() {
@@ -4419,7 +4423,7 @@ void EditorNode::remove_tool_menu_item(const String &p_name) {
 
 void EditorNode::_dropped_files(const Vector<String> &p_files, int p_screen) {
 
-	String to_path = ProjectSettings::get_singleton()->globalize_path(get_filesystem_dock()->get_current_path());
+	String to_path = ProjectSettings::get_singleton()->globalize_path(get_filesystem_dock()->get_selected_path());
 	DirAccessRef dir = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 
 	Vector<String> just_copy = String("ttf,otf").split(",");
@@ -4730,6 +4734,7 @@ void EditorNode::_bind_methods() {
 	ClassDB::bind_method("_clear_undo_history", &EditorNode::_clear_undo_history);
 	ClassDB::bind_method("_dropped_files", &EditorNode::_dropped_files);
 	ClassDB::bind_method("_toggle_distraction_free_mode", &EditorNode::_toggle_distraction_free_mode);
+	ClassDB::bind_method("edit_item_resource", &EditorNode::edit_item_resource);
 
 	ClassDB::bind_method(D_METHOD("get_gui_base"), &EditorNode::get_gui_base);
 	ClassDB::bind_method(D_METHOD("_bottom_panel_switch"), &EditorNode::_bottom_panel_switch);
@@ -4780,8 +4785,6 @@ EditorNode::EditorNode() {
 	SceneState::set_disable_placeholders(true);
 	ResourceLoader::clear_translation_remaps(); //no remaps using during editor
 	ResourceLoader::clear_path_remaps();
-
-	ImageTexture::set_keep_images_cached(true);
 
 	InputDefault *id = Object::cast_to<InputDefault>(Input::get_singleton());
 
@@ -4900,9 +4903,9 @@ EditorNode::EditorNode() {
 			import_collada.instance();
 			import_scene->add_importer(import_collada);
 
-			Ref<EditorOBJImporter> import_obj;
-			import_obj.instance();
-			import_scene->add_importer(import_obj);
+			Ref<EditorOBJImporter> import_obj2;
+			import_obj2.instance();
+			import_scene->add_importer(import_obj2);
 
 			Ref<EditorSceneImporterGLTF> import_gltf;
 			import_gltf.instance();
@@ -5004,6 +5007,7 @@ EditorNode::EditorNode() {
 	main_vbox = memnew(VBoxContainer);
 	gui_base->add_child(main_vbox);
 	main_vbox->set_anchors_and_margins_preset(Control::PRESET_WIDE, Control::PRESET_MODE_MINSIZE, 8);
+	main_vbox->add_constant_override("separation", 8 * EDSCALE);
 
 	menu_hb = memnew(HBoxContainer);
 	main_vbox->add_child(menu_hb);
@@ -6054,6 +6058,10 @@ void EditorPluginList::forward_spatial_force_draw_over_viewport(Control *p_overl
 
 void EditorPluginList::add_plugin(EditorPlugin *p_plugin) {
 	plugins_list.push_back(p_plugin);
+}
+
+void EditorPluginList::remove_plugin(EditorPlugin *p_plugin) {
+	plugins_list.erase(p_plugin);
 }
 
 bool EditorPluginList::empty() {

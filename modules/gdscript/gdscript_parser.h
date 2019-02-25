@@ -221,6 +221,7 @@ public:
 
 		virtual DataType get_datatype() const { return return_type; }
 		virtual void set_datatype(const DataType &p_datatype) { return_type = p_datatype; }
+		int get_required_argument_count() { return arguments.size() - default_values.size(); }
 
 		FunctionNode() {
 			type = TYPE_FUNCTION;
@@ -445,7 +446,6 @@ public:
 			CF_IF,
 			CF_FOR,
 			CF_WHILE,
-			CF_SWITCH,
 			CF_BREAK,
 			CF_CONTINUE,
 			CF_RETURN,

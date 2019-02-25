@@ -2262,7 +2262,7 @@ void SpatialEditorViewport::_notification(int p_what) {
 		if (show_fps) {
 			String text;
 			const float temp_fps = Engine::get_singleton()->get_frames_per_second();
-			text += TTR("FPS") + ": " + itos(temp_fps) + " (" + String::num(1000.0f / temp_fps, 2) + " ms)";
+			text += TTR(vformat("FPS: %d (%s ms)", temp_fps, String::num(1000.0f / temp_fps, 2)));
 			fps_label->set_text(text);
 		}
 
@@ -2546,7 +2546,7 @@ void SpatialEditorViewport::_menu_option(int p_option) {
 
 			List<Node *> &selection = editor_selection->get_selected_node_list();
 
-			undo_redo->create_action(TTR("Align with view"));
+			undo_redo->create_action(TTR("Align with View"));
 			for (List<Node *>::Element *E = selection.front(); E; E = E->next()) {
 
 				Spatial *sp = Object::cast_to<Spatial>(E->get());
@@ -3554,6 +3554,8 @@ SpatialEditorViewport::SpatialEditorViewport(SpatialEditor *p_spatial_editor, Ed
 	fps_label->set_anchor_and_margin(MARGIN_TOP, ANCHOR_BEGIN, 10 * EDSCALE);
 	fps_label->set_anchor_and_margin(MARGIN_RIGHT, ANCHOR_END, -10 * EDSCALE);
 	fps_label->set_h_grow_direction(GROW_DIRECTION_BEGIN);
+	fps_label->set_tooltip(TTR("Note: The FPS value displayed is the editor's framerate.\nIt cannot be used as a reliable indication of in-game performance."));
+	fps_label->set_mouse_filter(MOUSE_FILTER_PASS); // Otherwise tooltip doesn't show.
 	surface->add_child(fps_label);
 	fps_label->hide();
 
@@ -4693,10 +4695,10 @@ void SpatialEditor::_init_indicators() {
 				plane_mat->set_on_top_of_alpha();
 				plane_mat->set_feature(SpatialMaterial::FEATURE_TRANSPARENT, true);
 				plane_mat->set_cull_mode(SpatialMaterial::CULL_DISABLED);
-				Color col;
-				col[i] = 1.0;
-				col.a = gizmo_alph;
-				plane_mat->set_albedo(col);
+				Color col2;
+				col2[i] = 1.0;
+				col2.a = gizmo_alph;
+				plane_mat->set_albedo(col2);
 				plane_gizmo_color[i] = plane_mat; // needed, so we can draw planes from both sides
 				surftool->set_material(plane_mat);
 				surftool->commit(move_plane_gizmo[i]);
@@ -4822,10 +4824,10 @@ void SpatialEditor::_init_indicators() {
 				plane_mat->set_on_top_of_alpha();
 				plane_mat->set_feature(SpatialMaterial::FEATURE_TRANSPARENT, true);
 				plane_mat->set_cull_mode(SpatialMaterial::CULL_DISABLED);
-				Color col;
-				col[i] = 1.0;
-				col.a = gizmo_alph;
-				plane_mat->set_albedo(col);
+				Color col2;
+				col2[i] = 1.0;
+				col2.a = gizmo_alph;
+				plane_mat->set_albedo(col2);
 				plane_gizmo_color[i] = plane_mat; // needed, so we can draw planes from both sides
 				surftool->set_material(plane_mat);
 				surftool->commit(scale_plane_gizmo[i]);
@@ -5053,7 +5055,7 @@ void SpatialEditor::snap_selected_nodes_to_floor() {
 	Array keys = snap_data.keys();
 
 	if (keys.size()) {
-		undo_redo->create_action("Snap Nodes To Floor");
+		undo_redo->create_action(TTR("Snap Nodes To Floor"));
 
 		for (int i = 0; i < keys.size(); i++) {
 			Node *node = keys[i];

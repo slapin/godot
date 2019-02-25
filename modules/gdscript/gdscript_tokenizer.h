@@ -86,10 +86,7 @@ public:
 		TK_CF_ELIF,
 		TK_CF_ELSE,
 		TK_CF_FOR,
-		TK_CF_DO,
 		TK_CF_WHILE,
-		TK_CF_SWITCH,
-		TK_CF_CASE,
 		TK_CF_BREAK,
 		TK_CF_CONTINUE,
 		TK_CF_PASS,
@@ -118,7 +115,7 @@ public:
 		TK_PR_REMOTE,
 		TK_PR_SYNC,
 		TK_PR_MASTER,
-		TK_PR_SLAVE,
+		TK_PR_SLAVE, // Deprecated by TK_PR_PUPPET, to remove in 4.0
 		TK_PR_PUPPET,
 		TK_PR_REMOTESYNC,
 		TK_PR_MASTERSYNC,
@@ -176,7 +173,7 @@ public:
 #ifdef DEBUG_ENABLED
 	virtual const Vector<Pair<int, String> > &get_warning_skips() const = 0;
 	virtual const Set<String> &get_warning_global_skips() const = 0;
-	virtual const bool is_ignoring_warnings() const = 0;
+	virtual bool is_ignoring_warnings() const = 0;
 #endif // DEBUG_ENABLED
 
 	virtual ~GDScriptTokenizer(){};
@@ -248,7 +245,7 @@ public:
 #ifdef DEBUG_ENABLED
 	virtual const Vector<Pair<int, String> > &get_warning_skips() const { return warning_skips; }
 	virtual const Set<String> &get_warning_global_skips() const { return warning_global_skips; }
-	virtual const bool is_ignoring_warnings() const { return ignore_warnings; }
+	virtual bool is_ignoring_warnings() const { return ignore_warnings; }
 #endif // DEBUG_ENABLED
 };
 
@@ -292,7 +289,7 @@ public:
 		static Set<String> s;
 		return s;
 	}
-	virtual const bool is_ignoring_warnings() const { return true; }
+	virtual bool is_ignoring_warnings() const { return true; }
 #endif // DEBUG_ENABLED
 	GDScriptTokenizerBuffer();
 };

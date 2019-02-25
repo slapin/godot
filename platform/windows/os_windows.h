@@ -36,7 +36,6 @@
 #include "core/os/os.h"
 #include "core/project_settings.h"
 #include "crash_handler_windows.h"
-#include "drivers/rtaudio/audio_driver_rtaudio.h"
 #include "drivers/unix/ip_unix.h"
 #include "drivers/wasapi/audio_driver_wasapi.h"
 #include "drivers/winmidi/midi_driver_winmidi.h"
@@ -142,9 +141,6 @@ class OS_Windows : public OS {
 #ifdef WASAPI_ENABLED
 	AudioDriverWASAPI driver_wasapi;
 #endif
-#ifdef RTAUDIO_ENABLED
-	AudioDriverRtAudio driver_rtaudio;
-#endif
 #ifdef XAUDIO2_ENABLED
 	AudioDriverXAudio2 driver_xaudio2;
 #endif
@@ -201,6 +197,7 @@ public:
 
 	virtual void warp_mouse_position(const Point2 &p_to);
 	virtual Point2 get_mouse_position() const;
+	void update_real_mouse_position();
 	virtual int get_mouse_button_state() const;
 	virtual void set_window_title(const String &p_title);
 

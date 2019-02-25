@@ -52,6 +52,7 @@
 #include "windows_terminal_logger.h"
 
 #include <avrt.h>
+#include <direct.h>
 #include <process.h>
 #include <regstr.h>
 #include <shlobj.h>
@@ -1394,6 +1395,8 @@ Error OS_Windows::initialize(const VideoMode &p_desired, int p_video_driver, int
 		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
 	}
 
+	update_real_mouse_position();
+
 	return OK;
 }
 
@@ -1595,6 +1598,19 @@ Point2 OS_Windows::get_mouse_position() const {
 	return Point2(old_x, old_y);
 }
 
+void OS_Windows::update_real_mouse_position() {
+
+	POINT mouse_pos;
+	if (GetCursorPos(&mouse_pos) && ScreenToClient(hWnd, &mouse_pos)) {
+		if (mouse_pos.x > 0 && mouse_pos.y > 0 && mouse_pos.x <= video_mode.width && mouse_pos.y <= video_mode.height) {
+			old_x = mouse_pos.x;
+			old_y = mouse_pos.y;
+			old_invalid = false;
+			input->set_mouse_position(Point2i(mouse_pos.x, mouse_pos.y));
+		}
+	}
+}
+
 int OS_Windows::get_mouse_button_state() const {
 
 	return last_button_state;
@@ -1737,6 +1753,7 @@ void OS_Windows::set_window_position(const Point2 &p_position) {
 	}
 
 	last_pos = p_position;
+	update_real_mouse_position();
 }
 Size2 OS_Windows::get_window_size() const {
 
@@ -3020,9 +3037,6 @@ OS_Windows::OS_Windows(HINSTANCE _hInstance) {
 
 #ifdef WASAPI_ENABLED
 	AudioDriverManager::add_driver(&driver_wasapi);
-#endif
-#ifdef RTAUDIO_ENABLED
-	AudioDriverManager::add_driver(&driver_rtaudio);
 #endif
 #ifdef XAUDIO2_ENABLED
 	AudioDriverManager::add_driver(&driver_xaudio2);

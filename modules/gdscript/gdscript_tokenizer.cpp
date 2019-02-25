@@ -80,10 +80,7 @@ const char *GDScriptTokenizer::token_names[TK_MAX] = {
 	"elif",
 	"else",
 	"for",
-	"do",
 	"while",
-	"switch (reserved)",
-	"case (reserved)",
 	"break",
 	"continue",
 	"pass",
@@ -224,9 +221,6 @@ static const _kws _keyword_list[] = {
 	{ GDScriptTokenizer::TK_CF_ELSE, "else" },
 	{ GDScriptTokenizer::TK_CF_FOR, "for" },
 	{ GDScriptTokenizer::TK_CF_WHILE, "while" },
-	{ GDScriptTokenizer::TK_CF_DO, "do" },
-	{ GDScriptTokenizer::TK_CF_SWITCH, "switch" },
-	{ GDScriptTokenizer::TK_CF_CASE, "case" },
 	{ GDScriptTokenizer::TK_CF_BREAK, "break" },
 	{ GDScriptTokenizer::TK_CF_CONTINUE, "continue" },
 	{ GDScriptTokenizer::TK_CF_RETURN, "return" },
@@ -291,9 +285,6 @@ bool GDScriptTokenizer::is_token_literal(int p_offset, bool variable_safe) const
 		case TK_CF_ELSE:
 		case TK_CF_FOR:
 		case TK_CF_WHILE:
-		case TK_CF_DO:
-		case TK_CF_SWITCH:
-		case TK_CF_CASE:
 		case TK_CF_BREAK:
 		case TK_CF_CONTINUE:
 		case TK_CF_RETURN:
@@ -998,11 +989,11 @@ void GDScriptTokenizerText::_advance() {
 
 							//built in func?
 
-							for (int i = 0; i < GDScriptFunctions::FUNC_MAX; i++) {
+							for (int j = 0; j < GDScriptFunctions::FUNC_MAX; j++) {
 
-								if (str == GDScriptFunctions::get_func_name(GDScriptFunctions::Function(i))) {
+								if (str == GDScriptFunctions::get_func_name(GDScriptFunctions::Function(j))) {
 
-									_make_built_in_func(GDScriptFunctions::Function(i));
+									_make_built_in_func(GDScriptFunctions::Function(j));
 									found = true;
 									break;
 								}
@@ -1426,7 +1417,7 @@ StringName GDScriptTokenizerBuffer::get_token_identifier(int p_offset) const {
 
 	ERR_FAIL_INDEX_V(offset, tokens.size(), StringName());
 	uint32_t identifier = tokens[offset] >> TOKEN_BITS;
-	ERR_FAIL_INDEX_V(identifier, (uint32_t)identifiers.size(), StringName());
+	ERR_FAIL_UNSIGNED_INDEX_V(identifier, identifiers.size(), StringName());
 
 	return identifiers[identifier];
 }
@@ -1482,7 +1473,7 @@ const Variant &GDScriptTokenizerBuffer::get_token_constant(int p_offset) const {
 	int offset = token + p_offset;
 	ERR_FAIL_INDEX_V(offset, tokens.size(), nil);
 	uint32_t constant = tokens[offset] >> TOKEN_BITS;
-	ERR_FAIL_INDEX_V(constant, (uint32_t)constants.size(), nil);
+	ERR_FAIL_UNSIGNED_INDEX_V(constant, constants.size(), nil);
 	return constants[constant];
 }
 String GDScriptTokenizerBuffer::get_token_error(int p_offset) const {

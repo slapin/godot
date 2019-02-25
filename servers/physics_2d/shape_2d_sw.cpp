@@ -369,8 +369,11 @@ void RectangleShape2DSW::get_supports(const Vector2 &p_normal, Vector2 *r_suppor
 }
 
 bool RectangleShape2DSW::contains_point(const Vector2 &p_point) const {
-
-	return Math::abs(p_point.x) < half_extents.x && Math::abs(p_point.y) < half_extents.y;
+	float x = p_point.x;
+	float y = p_point.y;
+	float edge_x = half_extents.x;
+	float edge_y = half_extents.y;
+	return (x >= -edge_x) && (x < edge_x) && (y >= -edge_y) && (y < edge_y);
 }
 
 bool RectangleShape2DSW::intersect_segment(const Vector2 &p_begin, const Vector2 &p_end, Vector2 &r_point, Vector2 &r_normal) const {
@@ -775,22 +778,22 @@ bool ConcavePolygonShape2DSW::intersect_segment(const Vector2 &p_begin, const Ve
 	while (true) {
 
 		uint32_t node = stack[level] & NODE_IDX_MASK;
-		const BVH &b = bvhptr[node];
+		const BVH &bvh = bvhptr[node];
 		bool done = false;
 
 		switch (stack[level] >> VISITED_BIT_SHIFT) {
 			case TEST_AABB_BIT: {
 
-				bool valid = b.aabb.intersects_segment(p_begin, p_end);
+				bool valid = bvh.aabb.intersects_segment(p_begin, p_end);
 				if (!valid) {
 
 					stack[level] = (VISIT_DONE_BIT << VISITED_BIT_SHIFT) | node;
 
 				} else {
 
-					if (b.left < 0) {
+					if (bvh.left < 0) {
 
-						const Segment &s = segmentptr[b.right];
+						const Segment &s = segmentptr[bvh.right];
 						Vector2 a = pointptr[s.points[0]];
 						Vector2 b = pointptr[s.points[1]];
 
@@ -820,14 +823,14 @@ bool ConcavePolygonShape2DSW::intersect_segment(const Vector2 &p_begin, const Ve
 			case VISIT_LEFT_BIT: {
 
 				stack[level] = (VISIT_RIGHT_BIT << VISITED_BIT_SHIFT) | node;
-				stack[level + 1] = b.left | TEST_AABB_BIT;
+				stack[level + 1] = bvh.left | TEST_AABB_BIT;
 				level++;
 			}
 				continue;
 			case VISIT_RIGHT_BIT: {
 
 				stack[level] = (VISIT_DONE_BIT << VISITED_BIT_SHIFT) | node;
-				stack[level + 1] = b.right | TEST_AABB_BIT;
+				stack[level + 1] = bvh.right | TEST_AABB_BIT;
 				level++;
 			}
 				continue;
@@ -1025,21 +1028,21 @@ void ConcavePolygonShape2DSW::cull(const Rect2 &p_local_aabb, Callback p_callbac
 	while (true) {
 
 		uint32_t node = stack[level] & NODE_IDX_MASK;
-		const BVH &b = bvhptr[node];
+		const BVH &bvh = bvhptr[node];
 
 		switch (stack[level] >> VISITED_BIT_SHIFT) {
 			case TEST_AABB_BIT: {
 
-				bool valid = p_local_aabb.intersects(b.aabb);
+				bool valid = p_local_aabb.intersects(bvh.aabb);
 				if (!valid) {
 
 					stack[level] = (VISIT_DONE_BIT << VISITED_BIT_SHIFT) | node;
 
 				} else {
 
-					if (b.left < 0) {
+					if (bvh.left < 0) {
 
-						const Segment &s = segmentptr[b.right];
+						const Segment &s = segmentptr[bvh.right];
 						Vector2 a = pointptr[s.points[0]];
 						Vector2 b = pointptr[s.points[1]];
 
@@ -1058,14 +1061,14 @@ void ConcavePolygonShape2DSW::cull(const Rect2 &p_local_aabb, Callback p_callbac
 			case VISIT_LEFT_BIT: {
 
 				stack[level] = (VISIT_RIGHT_BIT << VISITED_BIT_SHIFT) | node;
-				stack[level + 1] = b.left | TEST_AABB_BIT;
+				stack[level + 1] = bvh.left | TEST_AABB_BIT;
 				level++;
 			}
 				continue;
 			case VISIT_RIGHT_BIT: {
 
 				stack[level] = (VISIT_DONE_BIT << VISITED_BIT_SHIFT) | node;
-				stack[level + 1] = b.right | TEST_AABB_BIT;
+				stack[level + 1] = bvh.right | TEST_AABB_BIT;
 				level++;
 			}
 				continue;

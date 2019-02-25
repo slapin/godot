@@ -2349,7 +2349,7 @@ void RasterizerSceneGLES3::_add_geometry_with_material(RasterizerStorageGLES3::G
 
 	if (p_depth_pass) {
 
-		if (has_blend_alpha || p_material->shader->spatial.uses_depth_texture || (has_base_alpha && p_material->shader->spatial.depth_draw_mode != RasterizerStorageGLES3::Shader::Spatial::DEPTH_DRAW_ALPHA_PREPASS))
+		if (has_blend_alpha || p_material->shader->spatial.uses_depth_texture || (has_base_alpha && p_material->shader->spatial.depth_draw_mode != RasterizerStorageGLES3::Shader::Spatial::DEPTH_DRAW_ALPHA_PREPASS) || p_material->shader->spatial.depth_draw_mode == RasterizerStorageGLES3::Shader::Spatial::DEPTH_DRAW_NEVER || p_material->shader->spatial.no_depth_test)
 			return; //bye
 
 		if (!p_material->shader->spatial.uses_alpha_scissor && !p_material->shader->spatial.writes_modelview_or_projection && !p_material->shader->spatial.uses_vertex && !p_material->shader->spatial.uses_discard && p_material->shader->spatial.depth_draw_mode != RasterizerStorageGLES3::Shader::Spatial::DEPTH_DRAW_ALPHA_PREPASS) {
@@ -3178,10 +3178,10 @@ void RasterizerSceneGLES3::_fill_render_list(InstanceBase **p_cull_result, int p
 
 				int ssize = mesh->surfaces.size();
 
-				for (int i = 0; i < ssize; i++) {
+				for (int j = 0; j < ssize; j++) {
 
-					int mat_idx = inst->materials[i].is_valid() ? i : -1;
-					RasterizerStorageGLES3::Surface *s = mesh->surfaces[i];
+					int mat_idx = inst->materials[j].is_valid() ? j : -1;
+					RasterizerStorageGLES3::Surface *s = mesh->surfaces[j];
 					_add_geometry(s, inst, NULL, mat_idx, p_depth_pass, p_shadow_pass);
 				}
 
@@ -3202,9 +3202,9 @@ void RasterizerSceneGLES3::_fill_render_list(InstanceBase **p_cull_result, int p
 
 				int ssize = mesh->surfaces.size();
 
-				for (int i = 0; i < ssize; i++) {
+				for (int j = 0; j < ssize; j++) {
 
-					RasterizerStorageGLES3::Surface *s = mesh->surfaces[i];
+					RasterizerStorageGLES3::Surface *s = mesh->surfaces[j];
 					_add_geometry(s, inst, multi_mesh, -1, p_depth_pass, p_shadow_pass);
 				}
 
@@ -3222,9 +3222,9 @@ void RasterizerSceneGLES3::_fill_render_list(InstanceBase **p_cull_result, int p
 				RasterizerStorageGLES3::Particles *particles = storage->particles_owner.getptr(inst->base);
 				ERR_CONTINUE(!particles);
 
-				for (int i = 0; i < particles->draw_passes.size(); i++) {
+				for (int j = 0; j < particles->draw_passes.size(); j++) {
 
-					RID pmesh = particles->draw_passes[i];
+					RID pmesh = particles->draw_passes[j];
 					if (!pmesh.is_valid())
 						continue;
 					RasterizerStorageGLES3::Mesh *mesh = storage->mesh_owner.get(pmesh);
@@ -3233,9 +3233,9 @@ void RasterizerSceneGLES3::_fill_render_list(InstanceBase **p_cull_result, int p
 
 					int ssize = mesh->surfaces.size();
 
-					for (int j = 0; j < ssize; j++) {
+					for (int k = 0; k < ssize; k++) {
 
-						RasterizerStorageGLES3::Surface *s = mesh->surfaces[j];
+						RasterizerStorageGLES3::Surface *s = mesh->surfaces[k];
 						_add_geometry(s, inst, particles, -1, p_depth_pass, p_shadow_pass);
 					}
 				}
@@ -3285,6 +3285,16 @@ void RasterizerSceneGLES3::_render_mrts(Environment *env, const CameraMatrix &p_
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_BLEND);
+
+	if (!state.used_depth_prepass_and_resolved) {
+		//resolve depth buffer
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, storage->frame.current_rt->buffers.fbo);
+		glReadBuffer(GL_COLOR_ATTACHMENT0);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, storage->frame.current_rt->fbo);
+		glBlitFramebuffer(0, 0, storage->frame.current_rt->width, storage->frame.current_rt->height, 0, 0, storage->frame.current_rt->width, storage->frame.current_rt->height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	}
 
 	if (env->ssao_enabled || env->ssr_enabled) {
 
@@ -4138,6 +4148,7 @@ void RasterizerSceneGLES3::render_scene(const Transform &p_cam_transform, const 
 	glDepthFunc(GL_LEQUAL);
 
 	state.used_contact_shadows = false;
+	state.used_depth_prepass_and_resolved = false;
 
 	for (int i = 0; i < p_light_cull_count; i++) {
 
@@ -4185,13 +4196,14 @@ void RasterizerSceneGLES3::render_scene(const Transform &p_cam_transform, const 
 			//bind depth for read
 			glActiveTexture(GL_TEXTURE0 + storage->config.max_texture_image_units - 8);
 			glBindTexture(GL_TEXTURE_2D, storage->frame.current_rt->depth);
+			state.used_depth_prepass_and_resolved = true;
 		}
 
 		fb_cleared = true;
 		render_pass++;
-		state.using_contact_shadows = true;
+		state.used_depth_prepass = true;
 	} else {
-		state.using_contact_shadows = false;
+		state.used_depth_prepass = false;
 	}
 
 	_setup_lights(p_light_cull_result, p_light_cull_count, p_cam_transform.affine_inverse(), p_cam_projection, p_shadow_atlas);
@@ -4288,7 +4300,8 @@ void RasterizerSceneGLES3::render_scene(const Transform &p_cam_transform, const 
 	}
 
 	if (!fb_cleared) {
-		glClearBufferfi(GL_DEPTH, 0, 1.0, 0);
+		glClearDepth(1.0f);
+		glClear(GL_DEPTH_BUFFER_BIT);
 	}
 
 	Color clear_color(0, 0, 0, 0);
@@ -4438,6 +4451,7 @@ void RasterizerSceneGLES3::render_scene(const Transform &p_cam_transform, const 
 	//state.scene_shader.set_conditional( SceneShaderGLES3::USE_FOG,false);
 
 	if (use_mrt) {
+
 		_render_mrts(env, p_cam_projection);
 	} else {
 		//FIXME: check that this is possible to use
@@ -4562,7 +4576,7 @@ void RasterizerSceneGLES3::render_shadow(RID p_light, RID p_shadow_atlas, int p_
 	float bias = 0;
 	float normal_bias = 0;
 
-	state.using_contact_shadows = false;
+	state.used_depth_prepass = false;
 
 	CameraMatrix light_projection;
 	Transform light_transform;
@@ -5059,7 +5073,7 @@ void RasterizerSceneGLES3::initialize() {
 	{ //reflection cubemaps
 		int max_reflection_cubemap_sampler_size = 512;
 
-		int cube_size = max_reflection_cubemap_sampler_size;
+		int rcube_size = max_reflection_cubemap_sampler_size;
 
 		glActiveTexture(GL_TEXTURE0);
 
@@ -5069,10 +5083,10 @@ void RasterizerSceneGLES3::initialize() {
 		GLenum format = GL_RGBA;
 		GLenum type = use_float ? GL_HALF_FLOAT : GL_UNSIGNED_INT_2_10_10_10_REV;
 
-		while (cube_size >= 32) {
+		while (rcube_size >= 32) {
 
 			ReflectionCubeMap cube;
-			cube.size = cube_size;
+			cube.size = rcube_size;
 
 			glGenTextures(1, &cube.depth);
 			glBindTexture(GL_TEXTURE_2D, cube.depth);
@@ -5111,7 +5125,7 @@ void RasterizerSceneGLES3::initialize() {
 
 			reflection_cubemaps.push_back(cube);
 
-			cube_size >>= 1;
+			rcube_size >>= 1;
 		}
 	}
 

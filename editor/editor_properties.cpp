@@ -483,16 +483,16 @@ EditorPropertyCheck::EditorPropertyCheck() {
 
 void EditorPropertyEnum::_option_selected(int p_which) {
 
-	int val = options->get_item_metadata(p_which);
+	int64_t val = options->get_item_metadata(p_which);
 	emit_changed(get_edited_property(), val);
 }
 
 void EditorPropertyEnum::update_property() {
 
-	int which = get_edited_object()->get(get_edited_property());
+	int64_t which = get_edited_object()->get(get_edited_property());
 
 	for (int i = 0; i < options->get_item_count(); i++) {
-		if (which == (int)options->get_item_metadata(i)) {
+		if (which == (int64_t)options->get_item_metadata(i)) {
 			options->select(i);
 			return;
 		}
@@ -501,11 +501,11 @@ void EditorPropertyEnum::update_property() {
 
 void EditorPropertyEnum::setup(const Vector<String> &p_options) {
 
-	int current_val = 0;
+	int64_t current_val = 0;
 	for (int i = 0; i < p_options.size(); i++) {
 		Vector<String> text_split = p_options[i].split(":");
 		if (text_split.size() != 1)
-			current_val = text_split[1].to_int();
+			current_val = text_split[1].to_int64();
 		options->add_item(text_split[0]);
 		options->set_item_metadata(i, current_val);
 		current_val += 1;
@@ -665,10 +665,10 @@ public:
 
 					uint32_t idx = i * 10 + j;
 					bool on = value & (1 << idx);
-					Rect2 rect = Rect2(o, Size2(bsize, bsize));
+					Rect2 rect2 = Rect2(o, Size2(bsize, bsize));
 					color.a = on ? 0.6 : 0.2;
-					draw_rect(rect, color);
-					flag_rects.push_back(rect);
+					draw_rect(rect2, color);
+					flag_rects.push_back(rect2);
 				}
 			}
 		}
@@ -801,11 +801,11 @@ EditorPropertyLayers::EditorPropertyLayers() {
 void EditorPropertyInteger::_value_changed(double val) {
 	if (setting)
 		return;
-	emit_changed(get_edited_property(), int(val));
+	emit_changed(get_edited_property(), (int64_t)val);
 }
 
 void EditorPropertyInteger::update_property() {
-	int val = get_edited_object()->get(get_edited_property());
+	int64_t val = get_edited_object()->get(get_edited_property());
 	setting = true;
 	spin->set_value(val);
 	setting = false;
@@ -2277,8 +2277,8 @@ void EditorPropertyResource::_update_menu_items() {
 			List<StringName> inheritors;
 			ClassDB::get_inheriters_from_class(base.strip_edges(), &inheritors);
 
-			for (int i = 0; i < custom_resources.size(); i++) {
-				inheritors.push_back(custom_resources[i].name);
+			for (int j = 0; j < custom_resources.size(); j++) {
+				inheritors.push_back(custom_resources[j].name);
 			}
 
 			List<StringName>::Element *E = inheritors.front();
@@ -2287,17 +2287,17 @@ void EditorPropertyResource::_update_menu_items() {
 				E = E->next();
 			}
 
-			for (Set<String>::Element *E = valid_inheritors.front(); E; E = E->next()) {
-				String t = E->get();
+			for (Set<String>::Element *F = valid_inheritors.front(); F; F = F->next()) {
+				String t = F->get();
 
 				bool is_custom_resource = false;
 				Ref<Texture> icon;
 				if (!custom_resources.empty()) {
-					for (int i = 0; i < custom_resources.size(); i++) {
-						if (custom_resources[i].name == t) {
+					for (int j = 0; j < custom_resources.size(); j++) {
+						if (custom_resources[j].name == t) {
 							is_custom_resource = true;
-							if (custom_resources[i].icon.is_valid())
-								icon = custom_resources[i].icon;
+							if (custom_resources[j].icon.is_valid())
+								icon = custom_resources[j].icon;
 							break;
 						}
 					}
@@ -2439,7 +2439,7 @@ void EditorPropertyResource::_button_input(const Ref<InputEvent> &p_event) {
 void EditorPropertyResource::_open_editor_pressed() {
 	RES res = get_edited_object()->get(get_edited_property());
 	if (res.is_valid()) {
-		EditorNode::get_singleton()->edit_item(res.ptr());
+		EditorNode::get_singleton()->call_deferred("edit_item_resource", res); //may clear the editor so do it deferred
 	}
 }
 

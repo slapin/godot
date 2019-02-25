@@ -232,6 +232,7 @@ void TileSetEditor::_notification(int p_what) {
 			tools[BITMASK_PASTE]->set_icon(get_icon("Override", "EditorIcons"));
 			tools[BITMASK_CLEAR]->set_icon(get_icon("Clear", "EditorIcons"));
 			tools[SHAPE_NEW_POLYGON]->set_icon(get_icon("CollisionPolygon2D", "EditorIcons"));
+			tools[SHAPE_NEW_RECTANGLE]->set_icon(get_icon("CollisionShape2D", "EditorIcons"));
 			tools[SHAPE_DELETE]->set_icon(get_icon("Remove", "EditorIcons"));
 			tools[SHAPE_KEEP_INSIDE_TILE]->set_icon(get_icon("Snap", "EditorIcons"));
 			tools[TOOL_GRID_SNAP]->set_icon(get_icon("SnapGrid", "EditorIcons"));
@@ -376,6 +377,12 @@ TileSetEditor::TileSetEditor(EditorNode *p_editor) {
 	tools[BITMASK_CLEAR]->set_tooltip(TTR("Erase bitmask."));
 	tools[BITMASK_CLEAR]->connect("pressed", this, "_on_tool_clicked", varray(BITMASK_CLEAR));
 	toolbar->add_child(tools[BITMASK_CLEAR]);
+
+	tools[SHAPE_NEW_RECTANGLE] = memnew(ToolButton);
+	toolbar->add_child(tools[SHAPE_NEW_RECTANGLE]);
+	tools[SHAPE_NEW_RECTANGLE]->set_toggle_mode(true);
+	tools[SHAPE_NEW_RECTANGLE]->set_button_group(tg);
+	tools[SHAPE_NEW_RECTANGLE]->set_tooltip(TTR("Create a new rectangle."));
 
 	tools[SHAPE_NEW_POLYGON] = memnew(ToolButton);
 	toolbar->add_child(tools[SHAPE_NEW_POLYGON]);
@@ -637,6 +644,7 @@ void TileSetEditor::_on_edit_mode_changed(int p_edit_mode) {
 			tools[BITMASK_PASTE]->hide();
 			tools[BITMASK_CLEAR]->hide();
 			tools[SHAPE_NEW_POLYGON]->hide();
+			tools[SHAPE_NEW_RECTANGLE]->hide();
 
 			if (workspace_mode == WORKSPACE_EDIT) {
 				separator_delete->show();
@@ -666,6 +674,7 @@ void TileSetEditor::_on_edit_mode_changed(int p_edit_mode) {
 			tools[BITMASK_PASTE]->hide();
 			tools[BITMASK_CLEAR]->hide();
 			tools[SHAPE_NEW_POLYGON]->show();
+			tools[SHAPE_NEW_RECTANGLE]->show();
 
 			separator_delete->show();
 			tools[SHAPE_DELETE]->show();
@@ -689,6 +698,7 @@ void TileSetEditor::_on_edit_mode_changed(int p_edit_mode) {
 			tools[BITMASK_PASTE]->show();
 			tools[BITMASK_CLEAR]->show();
 			tools[SHAPE_NEW_POLYGON]->hide();
+			tools[SHAPE_NEW_RECTANGLE]->hide();
 
 			separator_delete->hide();
 			tools[SHAPE_DELETE]->hide();
@@ -709,6 +719,7 @@ void TileSetEditor::_on_edit_mode_changed(int p_edit_mode) {
 			tools[BITMASK_PASTE]->hide();
 			tools[BITMASK_CLEAR]->hide();
 			tools[SHAPE_NEW_POLYGON]->hide();
+			tools[SHAPE_NEW_RECTANGLE]->hide();
 
 			separator_delete->hide();
 			tools[SHAPE_DELETE]->hide();
@@ -1427,6 +1438,20 @@ void TileSetEditor::_on_workspace_input(const Ref<InputEvent> &p_ie) {
 							}
 						} else if (mm.is_valid()) {
 							if (creating_shape) {
+								workspace->update();
+							}
+						}
+					} else if (tools[SHAPE_NEW_RECTANGLE]->is_pressed()) {
+						if (mb.is_valid()) {
+							if (mb->is_pressed() && mb->get_button_index() == BUTTON_LEFT) {
+								current_shape.resize(0);
+								current_shape.push_back(snap_point(shape_anchor));
+								current_shape.push_back(snap_point(shape_anchor + Vector2(current_tile_region.size.x, 0)));
+								current_shape.push_back(snap_point(shape_anchor + current_tile_region.size));
+								current_shape.push_back(snap_point(shape_anchor + Vector2(0, current_tile_region.size.y)));
+								close_shape(shape_anchor);
+								workspace->update();
+							} else if (mb->is_pressed() && mb->get_button_index() == BUTTON_RIGHT) {
 								workspace->update();
 							}
 						}
@@ -2511,6 +2536,11 @@ void TileSetEditor::set_current_tile(int p_id) {
 		helper->_change_notify("");
 		select_coord(Vector2(0, 0));
 		update_workspace_tile_mode();
+		if (p_id == -1) {
+			editor->get_inspector()->edit(tileset.ptr());
+		} else {
+			editor->get_inspector()->edit(helper);
+		}
 	}
 }
 
@@ -2548,20 +2578,20 @@ bool TilesetEditorContext::_set(const StringName &p_name, const Variant &p_value
 		tileset_editor->_set_snap_sep(snap);
 		return true;
 	} else if (p_name.operator String().left(5) == "tile_") {
-		String name = p_name.operator String().right(5);
+		String name2 = p_name.operator String().right(5);
 		bool v = false;
 
 		if (tileset_editor->get_current_tile() < 0 || tileset.is_null())
 			return false;
 
-		if (name == "autotile_bitmask_mode") {
+		if (name2 == "autotile_bitmask_mode") {
 			tileset->set(String::num(tileset_editor->get_current_tile(), 0) + "/autotile/bitmask_mode", p_value, &v);
-		} else if (name == "subtile_size") {
+		} else if (name2 == "subtile_size") {
 			tileset->set(String::num(tileset_editor->get_current_tile(), 0) + "/autotile/tile_size", p_value, &v);
-		} else if (name == "subtile_spacing") {
+		} else if (name2 == "subtile_spacing") {
 			tileset->set(String::num(tileset_editor->get_current_tile(), 0) + "/autotile/spacing", p_value, &v);
 		} else {
-			tileset->set(String::num(tileset_editor->get_current_tile(), 0) + "/" + name, p_value, &v);
+			tileset->set(String::num(tileset_editor->get_current_tile(), 0) + "/" + name2, p_value, &v);
 		}
 		if (v) {
 			tileset->_change_notify("");
@@ -2680,13 +2710,13 @@ void TilesetEditorContext::_bind_methods() {
 TilesetEditorContext::TilesetEditorContext(TileSetEditor *p_tileset_editor) {
 
 	tileset_editor = p_tileset_editor;
+	snap_options_visible = false;
 }
 
 void TileSetEditorPlugin::edit(Object *p_node) {
 
 	if (Object::cast_to<TileSet>(p_node)) {
 		tileset_editor->edit(Object::cast_to<TileSet>(p_node));
-		editor->get_inspector()->edit(tileset_editor->helper);
 	}
 }
 
@@ -2715,6 +2745,7 @@ Dictionary TileSetEditorPlugin::get_state() const {
 	state["snap_separation"] = tileset_editor->snap_separation;
 	state["snap_enabled"] = tileset_editor->tools[TileSetEditor::TOOL_GRID_SNAP]->is_pressed();
 	state["keep_inside_tile"] = tileset_editor->tools[TileSetEditor::SHAPE_KEEP_INSIDE_TILE]->is_pressed();
+	state["show_information"] = tileset_editor->tools[TileSetEditor::VISIBLE_INFO]->is_pressed();
 	return state;
 }
 
@@ -2735,10 +2766,17 @@ void TileSetEditorPlugin::set_state(const Dictionary &p_state) {
 
 	if (state.has("snap_enabled")) {
 		tileset_editor->tools[TileSetEditor::TOOL_GRID_SNAP]->set_pressed(state["snap_enabled"]);
+		if (tileset_editor->helper) {
+			tileset_editor->_on_grid_snap_toggled(state["snap_enabled"]);
+		}
 	}
 
 	if (state.has("keep_inside_tile")) {
 		tileset_editor->tools[TileSetEditor::SHAPE_KEEP_INSIDE_TILE]->set_pressed(state["keep_inside_tile"]);
+	}
+
+	if (state.has("show_information")) {
+		tileset_editor->tools[TileSetEditor::VISIBLE_INFO]->set_pressed(state["show_information"]);
 	}
 }
 

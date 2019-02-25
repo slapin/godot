@@ -673,6 +673,7 @@ public:
 
 	void push_item(Object *p_object, const String &p_property = "", bool p_inspector_only = false);
 	void edit_item(Object *p_object);
+	void edit_item_resource(RES p_resource);
 	bool item_has_editor(Object *p_object);
 
 	void open_request(const String &p_path);
@@ -836,6 +837,7 @@ public:
 	void forward_spatial_draw_over_viewport(Control *p_overlay);
 	void forward_spatial_force_draw_over_viewport(Control *p_overlay);
 	void add_plugin(EditorPlugin *p_plugin);
+	void remove_plugin(EditorPlugin *p_plugin);
 	void clear();
 	bool empty();
 

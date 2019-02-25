@@ -724,6 +724,9 @@ uniform vec2 screen_pixel_size;
 #if defined(SCREEN_TEXTURE_USED)
 uniform highp sampler2D screen_texture; //texunit:-4
 #endif
+#if defined(DEPTH_TEXTURE_USED)
+uniform highp sampler2D depth_texture; //texunit:-4
+#endif
 
 #ifdef USE_REFLECTION_PROBE1
 
@@ -901,6 +904,8 @@ uniform float ambient_energy;
 
 #ifdef USE_LIGHTING
 
+uniform highp vec4 shadow_color;
+
 #ifdef USE_VERTEX_LIGHTING
 
 //get from vertex
@@ -913,7 +918,7 @@ uniform highp vec3 light_direction; //may be used by fog, so leave here
 //done in fragment
 // general for all lights
 uniform highp vec4 light_color;
-uniform highp vec4 shadow_color;
+
 uniform highp float light_specular;
 
 // directional
@@ -1593,14 +1598,14 @@ FRAGMENT_SHADER_CODE
 #ifdef USE_LIGHTMAP_CAPTURE
 	{
 		vec3 cone_dirs[12] = vec3[](
-				vec3(0, 0, 1),
-				vec3(0.866025, 0, 0.5),
+				vec3(0.0, 0.0, 1.0),
+				vec3(0.866025, 0.0, 0.5),
 				vec3(0.267617, 0.823639, 0.5),
 				vec3(-0.700629, 0.509037, 0.5),
 				vec3(-0.700629, -0.509037, 0.5),
 				vec3(0.267617, -0.823639, 0.5),
-				vec3(0, 0, -1),
-				vec3(0.866025, 0, -0.5),
+				vec3(0.0, 0.0, -1.0),
+				vec3(0.866025, 0.0, -0.5),
 				vec3(0.267617, 0.823639, -0.5),
 				vec3(-0.700629, 0.509037, -0.5),
 				vec3(-0.700629, -0.509037, -0.5),
@@ -2056,7 +2061,6 @@ FRAGMENT_SHADER_CODE
 #else
 	gl_FragColor.rgb *= (1.0 - fog_interp.a);
 #endif // BASE_PASS
-
 
 #else //pixel based fog
 	float fog_amount = 0.0;

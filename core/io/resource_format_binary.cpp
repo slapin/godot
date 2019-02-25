@@ -296,9 +296,9 @@ Error ResourceInteractiveLoaderBinary::parse_variant(Variant &r_v) {
 		} break;
 		case VARIANT_OBJECT: {
 
-			uint32_t type = f->get_32();
+			uint32_t objtype = f->get_32();
 
-			switch (type) {
+			switch (objtype) {
 
 				case OBJECT_EMPTY: {
 					//do none
@@ -317,7 +317,7 @@ Error ResourceInteractiveLoaderBinary::parse_variant(Variant &r_v) {
 				case OBJECT_EXTERNAL_RESOURCE: {
 					//old file format, still around for compatibility
 
-					String type = get_unicode_string();
+					String exttype = get_unicode_string();
 					String path = get_unicode_string();
 
 					if (path.find("://") == -1 && path.is_rel_path()) {
@@ -329,7 +329,7 @@ Error ResourceInteractiveLoaderBinary::parse_variant(Variant &r_v) {
 						path = remaps[path];
 					}
 
-					RES res = ResourceLoader::load(path, type);
+					RES res = ResourceLoader::load(path, exttype);
 
 					if (res.is_null()) {
 						WARN_PRINT(String("Couldn't load resource: " + path).utf8().get_data());
@@ -346,7 +346,7 @@ Error ResourceInteractiveLoaderBinary::parse_variant(Variant &r_v) {
 						r_v = Variant();
 					} else {
 
-						String type = external_resources[erindex].type;
+						String exttype = external_resources[erindex].type;
 						String path = external_resources[erindex].path;
 
 						if (path.find("://") == -1 && path.is_rel_path()) {
@@ -354,7 +354,7 @@ Error ResourceInteractiveLoaderBinary::parse_variant(Variant &r_v) {
 							path = ProjectSettings::get_singleton()->localize_path(res_path.get_base_dir().plus_file(path));
 						}
 
-						RES res = ResourceLoader::load(path, type);
+						RES res = ResourceLoader::load(path, exttype);
 
 						if (res.is_null()) {
 							WARN_PRINT(String("Couldn't load resource: " + path).utf8().get_data());
@@ -1314,8 +1314,7 @@ void ResourceFormatSaverBinaryInstance::write_variant(FileAccess *f, const Varia
 
 			} else {
 				f->store_32(VARIANT_INT);
-				int val = p_property;
-				f->store_32(int32_t(val));
+				f->store_32(int32_t(p_property));
 			}
 
 		} break;
@@ -1502,7 +1501,7 @@ void ResourceFormatSaverBinaryInstance::write_variant(FileAccess *f, const Varia
 
 				if (!resource_set.has(res)) {
 					f->store_32(OBJECT_EMPTY);
-					ERR_EXPLAIN("Resource was not pre cached for the resource section, bug?");
+					ERR_EXPLAIN("Resource was not pre cached for the resource section, most likely due to circular refedence.");
 					ERR_FAIL();
 				}
 
@@ -1651,6 +1650,10 @@ void ResourceFormatSaverBinaryInstance::_find_resources(const Variant &p_variant
 				return;
 
 			if (!p_main && (!bundle_resources) && res->get_path().length() && res->get_path().find("::") == -1) {
+				if (res->get_path() == path) {
+					ERR_PRINTS("Circular reference to resource being saved found: '" + local_path + "' will be null next time it's loaded.");
+					return;
+				}
 				int idx = external_resources.size();
 				external_resources[res] = idx;
 				return;
@@ -1667,7 +1670,20 @@ void ResourceFormatSaverBinaryInstance::_find_resources(const Variant &p_variant
 
 				if (E->get().usage & PROPERTY_USAGE_STORAGE) {
 
-					_find_resources(res->get(E->get().name));
+					Variant value = res->get(E->get().name);
+					if (E->get().usage & PROPERTY_USAGE_RESOURCE_NOT_PERSISTENT) {
+						RES sres = value;
+						if (sres.is_valid()) {
+							NonPersistentKey npk;
+							npk.base = res;
+							npk.property = E->get().name;
+							non_persistent_map[npk] = sres;
+							resource_set.insert(sres);
+							saved_resources.push_back(sres);
+						}
+					} else {
+						_find_resources(value);
+					}
 				}
 			}
 
@@ -1762,6 +1778,7 @@ Error ResourceFormatSaverBinaryInstance::save(const String &p_path, const RES &p
 		takeover_paths = false;
 
 	local_path = p_path.get_base_dir();
+	path = ProjectSettings::get_singleton()->localize_path(p_path);
 
 	_find_resources(p_resource, true);
 
@@ -1811,7 +1828,17 @@ Error ResourceFormatSaverBinaryInstance::save(const String &p_path, const RES &p
 				if ((F->get().usage & PROPERTY_USAGE_STORAGE)) {
 					Property p;
 					p.name_idx = get_string_index(F->get().name);
-					p.value = E->get()->get(F->get().name);
+
+					if (F->get().usage & PROPERTY_USAGE_RESOURCE_NOT_PERSISTENT) {
+						NonPersistentKey npk;
+						npk.base = E->get();
+						npk.property = F->get().name;
+						if (non_persistent_map.has(npk)) {
+							p.value = non_persistent_map[npk];
+						}
+					} else {
+						p.value = E->get()->get(F->get().name);
+					}
 
 					Variant default_value = ClassDB::class_get_default_property_value(E->get()->get_class(), F->get().name);
 
