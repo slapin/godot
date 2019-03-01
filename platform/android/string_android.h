@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  packet_buffer.h                                                      */
+/*  string_android.h                                                     */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,95 +28,31 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef PACKET_BUFFER_H
-#define PACKET_BUFFER_H
+#ifndef STRING_ANDROID_H
+#define STRING_ANDROID_H
+#include "core/ustring.h"
+#include "thread_jandroid.h"
+#include <jni.h>
 
-#include "core/os/copymem.h"
-#include "core/ring_buffer.h"
-
-template <class T>
-class PacketBuffer {
-
-private:
-	typedef struct {
-		uint32_t size;
-		T info;
-	} _Packet;
-
-	RingBuffer<_Packet> _packets;
-	RingBuffer<uint8_t> _payload;
-
-public:
-	Error write_packet(const uint8_t *p_payload, uint32_t p_size, const T *p_info) {
-#ifdef TOOLS_ENABLED
-		// Verbose buffer warnings
-		if (p_payload && _payload.space_left() < (int32_t)p_size) {
-			ERR_PRINT("Buffer payload full! Dropping data.");
-			ERR_FAIL_V(ERR_OUT_OF_MEMORY);
+/**
+ * Converts JNI jstring to Godot String.
+ * @param source Source JNI string. If null an empty string is returned.
+ * @param env JNI environment instance. If null obtained by ThreadAndroid::get_env().
+ * @return Godot string instance.
+ */
+static inline String jstring_to_string(jstring source, JNIEnv *env = NULL) {
+	String result;
+	if (source) {
+		if (!env) {
+			env = ThreadAndroid::get_env();
 		}
-		if (p_info && _packets.space_left() < 1) {
-			ERR_PRINT("Too many packets in queue! Dropping data.");
-			ERR_FAIL_V(ERR_OUT_OF_MEMORY);
+		const char *const source_utf8 = env->GetStringUTFChars(source, NULL);
+		if (source_utf8) {
+			result.parse_utf8(source_utf8);
+			env->ReleaseStringUTFChars(source, source_utf8);
 		}
-#else
-		ERR_FAIL_COND_V(p_payload && _payload.space_left() < p_size, ERR_OUT_OF_MEMORY);
-		ERR_FAIL_COND_V(p_info && _packets.space_left() < 1, ERR_OUT_OF_MEMORY);
-#endif
-
-		// If p_info is NULL, only the payload is written
-		if (p_info) {
-			_Packet p;
-			p.size = p_size;
-			copymem(&p.info, p_info, sizeof(T));
-			_packets.write(p);
-		}
-
-		// If p_payload is NULL, only the packet information is written.
-		if (p_payload) {
-			_payload.write((const uint8_t *)p_payload, p_size);
-		}
-
-		return OK;
 	}
+	return result;
+}
 
-	Error read_packet(uint8_t *r_payload, int p_bytes, T *r_info, int &r_read) {
-		ERR_FAIL_COND_V(_packets.data_left() < 1, ERR_UNAVAILABLE);
-		_Packet p;
-		_packets.read(&p, 1);
-		ERR_FAIL_COND_V(_payload.data_left() < (int)p.size, ERR_BUG);
-		ERR_FAIL_COND_V(p_bytes < (int)p.size, ERR_OUT_OF_MEMORY);
-
-		r_read = p.size;
-		copymem(r_info, &p.info, sizeof(T));
-		_payload.read(r_payload, p.size);
-		return OK;
-	}
-
-	void discard_payload(int p_size) {
-		_packets.decrease_write(p_size);
-	}
-
-	void resize(int p_pkt_shift, int p_buf_shift) {
-		_packets.resize(p_pkt_shift);
-		_payload.resize(p_buf_shift);
-	}
-
-	int packets_left() const {
-		return _packets.data_left();
-	}
-
-	void clear() {
-		_payload.resize(0);
-		_packets.resize(0);
-	}
-
-	PacketBuffer() {
-		clear();
-	}
-
-	~PacketBuffer() {
-		clear();
-	}
-};
-
-#endif // PACKET_BUFFER_H
+#endif // STRING_ANDROID_H
