@@ -73,6 +73,8 @@ public:
 		bool s3tc_supported;
 		bool etc1_supported;
 		bool pvrtc_supported;
+		bool rgtc_supported;
+		bool bptc_supported;
 
 		bool keep_original_textures;
 
@@ -85,6 +87,10 @@ public:
 		bool support_write_depth;
 		bool support_half_float_vertices;
 		bool support_npot_repeat_mipmap;
+		bool support_depth_texture;
+		bool support_depth_cubemaps;
+
+		bool support_shadow_cubemaps;
 
 		GLuint depth_internalformat;
 		GLuint depth_type;
@@ -631,6 +637,7 @@ public:
 
 		PoolVector<uint8_t> data;
 		PoolVector<uint8_t> index_data;
+		Vector<PoolVector<uint8_t> > blend_shape_data;
 
 		int total_data_size;
 
