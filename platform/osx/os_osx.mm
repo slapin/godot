@@ -2529,6 +2529,8 @@ void OS_OSX::process_events() {
 
 	[autoreleasePool drain];
 	autoreleasePool = [[NSAutoreleasePool alloc] init];
+
+	input->flush_accumulated_events();
 }
 
 void OS_OSX::process_key_events() {
@@ -2571,7 +2573,7 @@ void OS_OSX::process_key_events() {
 void OS_OSX::push_input(const Ref<InputEvent> &p_event) {
 
 	Ref<InputEvent> ev = p_event;
-	input->parse_input_event(ev);
+	input->accumulate_input_event(ev);
 }
 
 void OS_OSX::force_process_input() {

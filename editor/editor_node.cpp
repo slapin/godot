@@ -619,7 +619,11 @@ void EditorNode::save_resource_in_path(const Ref<Resource> &p_resource, const St
 	Error err = ResourceSaver::save(path, p_resource, flg | ResourceSaver::FLAG_REPLACE_SUBRESOURCE_PATHS);
 
 	if (err != OK) {
-		show_accept(TTR("Error saving resource!"), TTR("OK"));
+		if (ResourceLoader::is_imported(p_resource->get_path())) {
+			show_accept(TTR("Imported resources can't be saved."), TTR("OK"));
+		} else {
+			show_accept(TTR("Error saving resource!"), TTR("OK"));
+		}
 		return;
 	}
 
@@ -638,6 +642,18 @@ void EditorNode::save_resource(const Ref<Resource> &p_resource) {
 }
 
 void EditorNode::save_resource_as(const Ref<Resource> &p_resource, const String &p_at_path) {
+
+	{
+		String path = p_resource->get_path();
+		int srpos = path.find("::");
+		if (srpos != -1) {
+			String base = path.substr(0, srpos);
+			if (!get_edited_scene() || get_edited_scene()->get_filename() != base) {
+				show_warning(TTR("This resource can't be saved because it does not belong to the edited scene. Make it unique first."));
+				return;
+			}
+		}
+	}
 
 	file->set_mode(EditorFileDialog::MODE_SAVE_FILE);
 	saving_resource = p_resource;
@@ -4850,6 +4866,7 @@ void EditorNode::_print_handler(void *p_this, const String &p_string, bool p_err
 
 EditorNode::EditorNode() {
 
+	Input::get_singleton()->set_use_accumulated_input(true);
 	Resource::_get_local_scene_func = _resource_get_edited_scene;
 
 	VisualServer::get_singleton()->textures_keep_original(true);
@@ -5659,7 +5676,6 @@ EditorNode::EditorNode() {
 
 	filesystem_dock = memnew(FileSystemDock(this));
 	filesystem_dock->connect("open", this, "open_request");
-	filesystem_dock->set_file_list_display_mode(FileSystemDock::FILE_LIST_DISPLAY_LIST);
 	filesystem_dock->connect("instance", this, "_instance_request");
 	filesystem_dock->connect("display_mode_changed", this, "_save_docks");
 
