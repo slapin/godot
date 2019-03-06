@@ -211,6 +211,10 @@ Error EditorExportPlatformJavaScript::export_project(const Ref<EditorExportPrese
 			template_path = find_export_template(EXPORT_TEMPLATE_WEBASSEMBLY_RELEASE);
 	}
 
+	if (!FileAccess::exists(p_path.get_base_dir())) {
+		return ERR_FILE_BAD_PATH;
+	}
+
 	if (template_path != String() && !FileAccess::exists(template_path)) {
 		EditorNode::get_singleton()->show_warning(TTR("Template file not found:") + "\n" + template_path);
 		return ERR_FILE_NOT_FOUND;
@@ -360,7 +364,7 @@ Error EditorExportPlatformJavaScript::run(const Ref<EditorExportPreset> &p_prese
 	if (err) {
 		return err;
 	}
-	OS::get_singleton()->shell_open(path);
+	OS::get_singleton()->shell_open(String("file://") + path);
 	return OK;
 }
 
