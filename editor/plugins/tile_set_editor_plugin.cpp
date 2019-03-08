@@ -337,13 +337,13 @@ TileSetEditor::TileSetEditor(EditorNode *p_editor) {
 	tools[SELECT_NEXT] = memnew(ToolButton);
 	tool_hb->add_child(tools[SELECT_NEXT]);
 	tool_hb->move_child(tools[SELECT_NEXT], WORKSPACE_CREATE_SINGLE);
-	tools[SELECT_NEXT]->set_shortcut(ED_SHORTCUT("tileset_editor/next_shape", TTR("Select next coordinate"), KEY_PAGEDOWN));
+	tools[SELECT_NEXT]->set_shortcut(ED_SHORTCUT("tileset_editor/next_shape", TTR("Next Coordinate"), KEY_PAGEDOWN));
 	tools[SELECT_NEXT]->connect("pressed", this, "_on_tool_clicked", varray(SELECT_NEXT));
 	tools[SELECT_NEXT]->set_tooltip(TTR("Select the next shape, subtile, or Tile."));
 	tools[SELECT_PREVIOUS] = memnew(ToolButton);
 	tool_hb->add_child(tools[SELECT_PREVIOUS]);
 	tool_hb->move_child(tools[SELECT_PREVIOUS], WORKSPACE_CREATE_SINGLE);
-	tools[SELECT_PREVIOUS]->set_shortcut(ED_SHORTCUT("tileset_editor/previous_shape", TTR("Select previous coordinate"), KEY_PAGEUP));
+	tools[SELECT_PREVIOUS]->set_shortcut(ED_SHORTCUT("tileset_editor/previous_shape", TTR("Previous Coordinate"), KEY_PAGEUP));
 	tools[SELECT_PREVIOUS]->set_tooltip(TTR("Select the previous shape, subtile, or Tile."));
 	tools[SELECT_PREVIOUS]->connect("pressed", this, "_on_tool_clicked", varray(SELECT_PREVIOUS));
 
@@ -2460,10 +2460,12 @@ void TileSetEditor::draw_polygon_shapes() {
 					workspace->draw_polygon(polygon, colors);
 
 					if (!creating_shape) {
-						for (int j = 0; j < polygon.size() - 1; j++) {
-							workspace->draw_line(polygon[j], polygon[j + 1], c_border, 1, true);
+						if (polygon.size() > 1) {
+							for (int j = 0; j < polygon.size() - 1; j++) {
+								workspace->draw_line(polygon[j], polygon[j + 1], c_border, 1, true);
+							}
+							workspace->draw_line(polygon[polygon.size() - 1], polygon[0], c_border, 1, true);
 						}
-						workspace->draw_line(polygon[polygon.size() - 1], polygon[0], c_border, 1, true);
 					}
 					if (shape == edited_occlusion_shape) {
 						draw_handles = true;
@@ -2918,7 +2920,8 @@ void TileSetEditor::update_texture_list_icon() {
 	for (int current_idx = 0; current_idx < texture_list->get_item_count(); current_idx++) {
 		RID rid = texture_list->get_item_metadata(current_idx);
 		texture_list->set_item_icon(current_idx, texture_map[rid]);
-		texture_list->set_item_icon_region(current_idx, Rect2(0, 0, 150, 100));
+		Size2 texture_size = texture_map[rid]->get_size();
+		texture_list->set_item_icon_region(current_idx, Rect2(0, 0, MIN(texture_size.x, 150), MIN(texture_size.y, 100)));
 	}
 	texture_list->update();
 }
@@ -2931,10 +2934,14 @@ void TileSetEditor::update_workspace_tile_mode() {
 		for (int i = 1; i < WORKSPACE_MODE_MAX; i++) {
 			tool_workspacemode[i]->set_disabled(true);
 		}
+		tools[SELECT_NEXT]->set_disabled(true);
+		tools[SELECT_PREVIOUS]->set_disabled(true);
 	} else {
 		for (int i = 1; i < WORKSPACE_MODE_MAX; i++) {
 			tool_workspacemode[i]->set_disabled(false);
 		}
+		tools[SELECT_NEXT]->set_disabled(false);
+		tools[SELECT_PREVIOUS]->set_disabled(false);
 	}
 
 	if (workspace_mode != WORKSPACE_EDIT) {
@@ -3118,6 +3125,24 @@ bool TilesetEditorContext::_set(const StringName &p_name, const Variant &p_value
 	} else if (name == "tileset_script") {
 		tileset->set_script(p_value);
 		return true;
+	} else if (name == "selected_collision_one_way") {
+		Vector<TileSet::ShapeData> sd = tileset->tile_get_shapes(tileset_editor->get_current_tile());
+		for (int index = 0; index < sd.size(); index++) {
+			if (sd[index].shape == tileset_editor->edited_collision_shape) {
+				tileset->tile_set_shape_one_way(tileset_editor->get_current_tile(), index, p_value);
+				return true;
+			}
+		}
+		return false;
+	} else if (name == "selected_collision_one_way_margin") {
+		Vector<TileSet::ShapeData> sd = tileset->tile_get_shapes(tileset_editor->get_current_tile());
+		for (int index = 0; index < sd.size(); index++) {
+			if (sd[index].shape == tileset_editor->edited_collision_shape) {
+				tileset->tile_set_shape_one_way_margin(tileset_editor->get_current_tile(), index, p_value);
+				return true;
+			}
+		}
+		return false;
 	}
 
 	tileset_editor->err_dialog->set_text(TTR("This property can't be changed."));
@@ -3160,6 +3185,24 @@ bool TilesetEditorContext::_get(const StringName &p_name, Variant &r_ret) const 
 	} else if (name == "selected_collision") {
 		r_ret = tileset_editor->edited_collision_shape;
 		v = true;
+	} else if (name == "selected_collision_one_way") {
+		Vector<TileSet::ShapeData> sd = tileset->tile_get_shapes(tileset_editor->get_current_tile());
+		for (int index = 0; index < sd.size(); index++) {
+			if (sd[index].shape == tileset_editor->edited_collision_shape) {
+				r_ret = sd[index].one_way_collision;
+				v = true;
+				break;
+			}
+		}
+	} else if (name == "selected_collision_one_way_margin") {
+		Vector<TileSet::ShapeData> sd = tileset->tile_get_shapes(tileset_editor->get_current_tile());
+		for (int index = 0; index < sd.size(); index++) {
+			if (sd[index].shape == tileset_editor->edited_collision_shape) {
+				r_ret = sd[index].one_way_collision_margin;
+				v = true;
+				break;
+			}
+		}
 	} else if (name == "selected_navigation") {
 		r_ret = tileset_editor->edited_navigation_shape;
 		v = true;
@@ -3206,6 +3249,10 @@ void TilesetEditorContext::_get_property_list(List<PropertyInfo> *p_list) const 
 	}
 	if (tileset_editor->edit_mode == TileSetEditor::EDITMODE_COLLISION && tileset_editor->edited_collision_shape.is_valid()) {
 		p_list->push_back(PropertyInfo(Variant::OBJECT, "selected_collision", PROPERTY_HINT_RESOURCE_TYPE, tileset_editor->edited_collision_shape->get_class()));
+		if (tileset_editor->edited_collision_shape.is_valid()) {
+			p_list->push_back(PropertyInfo(Variant::BOOL, "selected_collision_one_way", PROPERTY_HINT_NONE));
+			p_list->push_back(PropertyInfo(Variant::REAL, "selected_collision_one_way_margin", PROPERTY_HINT_NONE));
+		}
 	}
 	if (tileset_editor->edit_mode == TileSetEditor::EDITMODE_NAVIGATION && tileset_editor->edited_navigation_shape.is_valid()) {
 		p_list->push_back(PropertyInfo(Variant::OBJECT, "selected_navigation", PROPERTY_HINT_RESOURCE_TYPE, tileset_editor->edited_navigation_shape->get_class()));
