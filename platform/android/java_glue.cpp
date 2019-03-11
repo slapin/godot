@@ -599,6 +599,7 @@ static jobject godot_io;
 typedef void (*GFXInitFunc)(void *ud, bool gl2);
 
 static jmethodID _on_video_init = 0;
+static jmethodID _restart = 0;
 static jobject _godot_instance;
 
 static jmethodID _openURI = 0;
@@ -620,6 +621,7 @@ static jmethodID _pauseVideo = 0;
 static jmethodID _stopVideo = 0;
 static jmethodID _setKeepScreenOn = 0;
 static jmethodID _alertDialog = 0;
+static jmethodID _requestPermission = 0;
 
 static void _gfx_init_func(void *ud, bool gl2) {
 }
@@ -745,6 +747,12 @@ static void _alert(const String &p_message, const String &p_title) {
 	env->CallVoidMethod(_godot_instance, _alertDialog, jStrMessage, jStrTitle);
 }
 
+static bool _request_permission(const String &p_name) {
+	JNIEnv *env = ThreadAndroid::get_env();
+	jstring jStrName = env->NewStringUTF(p_name.utf8().get_data());
+	return env->CallBooleanMethod(_godot_instance, _requestPermission, jStrName);
+}
+
 // volatile because it can be changed from non-main thread and we need to
 // ensure the change is immediately visible to other threads.
 static volatile int virtual_keyboard_height;
@@ -757,7 +765,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_setVirtualKeyboardHei
 	virtual_keyboard_height = p_height;
 }
 
-JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_initialize(JNIEnv *env, jobject obj, jobject activity, jboolean p_need_reload_hook, jobject p_asset_manager, jboolean p_use_apk_expansion) {
+JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_initialize(JNIEnv *env, jobject obj, jobject activity, jobject p_asset_manager, jboolean p_use_apk_expansion) {
 
 	initialized = true;
 
@@ -783,11 +791,13 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_initialize(JNIEnv *en
 		godot_io = gob;
 
 		_on_video_init = env->GetMethodID(cls, "onVideoInit", "()V");
+		_restart = env->GetMethodID(cls, "restart", "()V");
 		_setKeepScreenOn = env->GetMethodID(cls, "setKeepScreenOn", "(Z)V");
 		_alertDialog = env->GetMethodID(cls, "alert", "(Ljava/lang/String;Ljava/lang/String;)V");
 		_getGLESVersionCode = env->GetMethodID(cls, "getGLESVersionCode", "()I");
 		_getClipboard = env->GetMethodID(cls, "getClipboard", "()Ljava/lang/String;");
 		_setClipboard = env->GetMethodID(cls, "setClipboard", "(Ljava/lang/String;)V");
+		_requestPermission = env->GetMethodID(cls, "requestPermission", "(Ljava/lang/String;)Z");
 
 		if (cls) {
 			jclass c = env->GetObjectClass(gob);
@@ -820,8 +830,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_initialize(JNIEnv *en
 		AudioDriverAndroid::setup(gob);
 	}
 
-	os_android = new OS_Android(_gfx_init_func, env, _open_uri, _get_user_data_dir, _get_locale, _get_model, _get_screen_dpi, _show_vk, _hide_vk, _get_vk_height, _set_screen_orient, _get_unique_id, _get_system_dir, _get_gles_version_code, _play_video, _is_video_playing, _pause_video, _stop_video, _set_keep_screen_on, _alert, _set_clipboard, _get_clipboard, p_use_apk_expansion);
-	os_android->set_need_reload_hooks(p_need_reload_hook);
+	os_android = new OS_Android(_gfx_init_func, env, _open_uri, _get_user_data_dir, _get_locale, _get_model, _get_screen_dpi, _show_vk, _hide_vk, _get_vk_height, _set_screen_orient, _get_unique_id, _get_system_dir, _get_gles_version_code, _play_video, _is_video_playing, _pause_video, _stop_video, _set_keep_screen_on, _alert, _set_clipboard, _get_clipboard, _request_permission, p_use_apk_expansion);
 
 	char wd[500];
 	getcwd(wd, 500);
@@ -832,7 +841,6 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_initialize(JNIEnv *en
 static void _initialize_java_modules() {
 
 	if (!ProjectSettings::get_singleton()->has_setting("android/modules")) {
-		print_line("Android modules: Nothing to load, aborting");
 		return;
 	}
 
@@ -852,19 +860,16 @@ static void _initialize_java_modules() {
 		jmethodID getClassLoader = env->GetMethodID(activityClass, "getClassLoader", "()Ljava/lang/ClassLoader;");
 
 		jobject cls = env->CallObjectMethod(_godot_instance, getClassLoader);
-		//cls=env->NewGlobalRef(cls);
 
 		jclass classLoader = env->FindClass("java/lang/ClassLoader");
-		//classLoader=(jclass)env->NewGlobalRef(classLoader);
 
 		jmethodID findClass = env->GetMethodID(classLoader, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;");
 
 		for (int i = 0; i < mods.size(); i++) {
 
 			String m = mods[i];
-			//jclass singletonClass = env->FindClass(m.utf8().get_data());
 
-			print_line("Loading module: " + m);
+			print_line("Loading Android module: " + m);
 			jstring strClassName = env->NewStringUTF(m.utf8().get_data());
 			jclass singletonClass = (jclass)env->CallObjectMethod(cls, findClass, strClassName);
 
@@ -873,7 +878,6 @@ static void _initialize_java_modules() {
 				ERR_EXPLAIN("Couldn't find singleton for class: " + m);
 				ERR_CONTINUE(!singletonClass);
 			}
-			//singletonClass=(jclass)env->NewGlobalRef(singletonClass);
 
 			jmethodID initialize = env->GetStaticMethodID(singletonClass, "initialize", "(Landroid/app/Activity;)Lorg/godotengine/godot/Godot$SingletonBase;");
 
@@ -932,7 +936,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_setup(JNIEnv *env, jo
 	_initialize_java_modules();
 }
 
-JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_resize(JNIEnv *env, jobject obj, jint width, jint height, jboolean reload) {
+JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_resize(JNIEnv *env, jobject obj, jint width, jint height) {
 
 	if (os_android)
 		os_android->set_display_size(Size2(width, height));
@@ -941,12 +945,15 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_resize(JNIEnv *env, j
 JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_newcontext(JNIEnv *env, jobject obj, bool p_32_bits) {
 
 	if (os_android) {
-		os_android->set_context_is_16_bits(!p_32_bits);
-	}
-
-	if (os_android && step > 0) {
-
-		os_android->reload_gfx();
+		if (step == 0) {
+			// During startup
+			os_android->set_context_is_16_bits(!p_32_bits);
+		} else {
+			// GL context recreated because it was lost; restart app to let it reload everything
+			os_android->main_loop_end();
+			env->CallVoidMethod(_godot_instance, _restart);
+			step = -1; // Ensure no further steps are attempted
+		}
 	}
 }
 
@@ -958,6 +965,9 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_back(JNIEnv *env, job
 }
 
 JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_step(JNIEnv *env, jobject obj) {
+	if (step == -1)
+		return;
+
 	if (step == 0) {
 
 		// Since Godot is initialized on the UI thread, _main_thread_id was set to that thread's id,
@@ -1571,6 +1581,9 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_calldeferred(JNIEnv *
 	env->PopLocalFrame(NULL);
 }
 
-//Main::cleanup();
-
-//return os.get_exit_code();
+JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_requestPermissionResult(JNIEnv *env, jobject p_obj, jstring p_permission, jboolean p_result) {
+	String permission = jstring_to_string(p_permission, env);
+	if (permission == "android.permission.RECORD_AUDIO" && p_result) {
+		AudioDriver::get_singleton()->capture_start();
+	}
+}

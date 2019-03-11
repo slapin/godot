@@ -63,6 +63,7 @@ typedef void (*VideoStopFunc)();
 typedef void (*SetKeepScreenOnFunc)(bool p_enabled);
 typedef void (*AlertFunc)(const String &, const String &);
 typedef int (*VirtualKeyboardHeightFunc)();
+typedef bool (*RequestPermissionFunc)(const String &);
 
 class OS_Android : public OS_Unix {
 public:
@@ -94,7 +95,6 @@ private:
 	void *gfx_init_ud;
 
 	bool use_gl2;
-	bool use_reload_hooks;
 	bool use_apk_expansion;
 
 	bool use_16bits_fbo;
@@ -133,6 +133,7 @@ private:
 	VideoStopFunc video_stop_func;
 	SetKeepScreenOnFunc set_keep_screen_on_func;
 	AlertFunc alert_func;
+	RequestPermissionFunc request_permission_func;
 
 	//PowerAndroid *power_manager;
 	int video_driver_index;
@@ -160,6 +161,7 @@ public:
 	static OS *get_singleton();
 
 	virtual void alert(const String &p_alert, const String &p_title = "ALERT!");
+	virtual bool request_permission(const String &p_name);
 
 	virtual Error open_dynamic_library(const String p_path, void *&p_library_handle, bool p_also_set_library_path = false);
 
@@ -203,10 +205,8 @@ public:
 	void set_opengl_extensions(const char *p_gl_extensions);
 	void set_display_size(Size2 p_size);
 
-	void reload_gfx();
 	void set_context_is_16_bits(bool p_is_16);
 
-	void set_need_reload_hooks(bool p_needs_them);
 	virtual void set_screen_orientation(ScreenOrientation p_orientation);
 
 	virtual Error shell_open(String p_uri);
@@ -241,7 +241,7 @@ public:
 	void joy_connection_changed(int p_device, bool p_connected, String p_name);
 
 	virtual bool _check_internal_feature_support(const String &p_feature);
-	OS_Android(GFXInitFunc p_gfx_init_func, void *p_gfx_init_ud, OpenURIFunc p_open_uri_func, GetUserDataDirFunc p_get_user_data_dir_func, GetLocaleFunc p_get_locale_func, GetModelFunc p_get_model_func, GetScreenDPIFunc p_get_screen_dpi_func, ShowVirtualKeyboardFunc p_show_vk, HideVirtualKeyboardFunc p_hide_vk, VirtualKeyboardHeightFunc p_vk_height_func, SetScreenOrientationFunc p_screen_orient, GetUniqueIDFunc p_get_unique_id, GetSystemDirFunc p_get_sdir_func, GetGLVersionCodeFunc p_get_gl_version_func, VideoPlayFunc p_video_play_func, VideoIsPlayingFunc p_video_is_playing_func, VideoPauseFunc p_video_pause_func, VideoStopFunc p_video_stop_func, SetKeepScreenOnFunc p_set_keep_screen_on_func, AlertFunc p_alert_func, SetClipboardFunc p_set_clipboard, GetClipboardFunc p_get_clipboard, bool p_use_apk_expansion);
+	OS_Android(GFXInitFunc p_gfx_init_func, void *p_gfx_init_ud, OpenURIFunc p_open_uri_func, GetUserDataDirFunc p_get_user_data_dir_func, GetLocaleFunc p_get_locale_func, GetModelFunc p_get_model_func, GetScreenDPIFunc p_get_screen_dpi_func, ShowVirtualKeyboardFunc p_show_vk, HideVirtualKeyboardFunc p_hide_vk, VirtualKeyboardHeightFunc p_vk_height_func, SetScreenOrientationFunc p_screen_orient, GetUniqueIDFunc p_get_unique_id, GetSystemDirFunc p_get_sdir_func, GetGLVersionCodeFunc p_get_gl_version_func, VideoPlayFunc p_video_play_func, VideoIsPlayingFunc p_video_is_playing_func, VideoPauseFunc p_video_pause_func, VideoStopFunc p_video_stop_func, SetKeepScreenOnFunc p_set_keep_screen_on_func, AlertFunc p_alert_func, SetClipboardFunc p_set_clipboard, GetClipboardFunc p_get_clipboard, RequestPermissionFunc p_request_permission, bool p_use_apk_expansion);
 	~OS_Android();
 };
 

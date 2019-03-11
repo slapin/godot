@@ -138,10 +138,15 @@ TextureEditor::TextureEditor() {
 	set_custom_minimum_size(Size2(1, 150));
 }
 
+TextureEditor::~TextureEditor() {
+	if (!texture.is_null()) {
+		texture->remove_change_receptor(this);
+	}
+}
 //
 bool EditorInspectorPluginTexture::can_handle(Object *p_object) {
 
-	return Object::cast_to<Texture>(p_object) != NULL;
+	return Object::cast_to<ImageTexture>(p_object) != NULL || Object::cast_to<AtlasTexture>(p_object) != NULL || Object::cast_to<StreamTexture>(p_object) != NULL || Object::cast_to<LargeTexture>(p_object) != NULL || Object::cast_to<AnimatedTexture>(p_object) != NULL;
 }
 
 void EditorInspectorPluginTexture::parse_begin(Object *p_object) {
