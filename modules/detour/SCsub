@@ -59,8 +59,9 @@ env_detour.Append(CPPPATH=[thirdparty_dir + "/Recast/Include",
     thirdparty_dir + "/DetourCrowd/Include",
     thirdparty_dir + "/DetourTileCache/Include",
     "#thirdparty/fastlz"])
-env_detour.Append(CPPFLAGS=["-DNDEBUG", "-DTILE_CACHE"])
-
+# See https://github.com/recastnavigation/recastnavigation/issues/380
+# for Wno-error=class-memaccess
+env_detour.Append(CPPFLAGS=["-DNDEBUG", "-DTILE_CACHE", "-Wno-error=class-memaccess"])
 
 # Godot source files
 env_detour.add_source_files(env.modules_sources, "*.cpp")
