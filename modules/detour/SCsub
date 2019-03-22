@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from methods import use_gcc, get_compiler_version
+
 Import('env')
 Import('env_modules')
 
@@ -60,7 +62,12 @@ env_detour.Append(CPPPATH=[thirdparty_dir + "/Recast/Include",
     thirdparty_dir + "/DetourTileCache/Include",
     "#thirdparty/fastlz"])
 env_detour.Append(CPPFLAGS=["-DNDEBUG", "-DTILE_CACHE"])
-
+# See https://github.com/recastnavigation/recastnavigation/issues/380
+# for Wno-error=class-memaccess
+if use_gcc(env):
+    gcc_version = get_compiler_version(env)
+    if gcc_version != None and gcc_version[0] >= '8':
+        env_detour.Append(CPPFLAGS=["-Wno-error=class-memaccess", "-Wno-error=shadow=local"])
 
 # Godot source files
 env_detour.add_source_files(env.modules_sources, "*.cpp")
