@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from methods import use_gcc, get_compiler_version
+from methods import using_gcc, get_compiler_version
 
 Import('env')
 Import('env_modules')
@@ -64,7 +64,7 @@ env_detour.Append(CPPPATH=[thirdparty_dir + "/Recast/Include",
 env_detour.Append(CPPFLAGS=["-DNDEBUG", "-DTILE_CACHE"])
 # See https://github.com/recastnavigation/recastnavigation/issues/380
 # for Wno-error=class-memaccess
-if use_gcc(env):
+if using_gcc(env):
     gcc_version = get_compiler_version(env)
     if gcc_version != None and gcc_version[0] >= '8':
         env_detour.Append(CPPFLAGS=["-Wno-error=class-memaccess", "-Wno-error=shadow=local"])
