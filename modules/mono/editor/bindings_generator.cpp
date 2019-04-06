@@ -98,7 +98,7 @@
 #define C_METHOD_MONOARRAY_TO(m_type) C_NS_MONOMARSHAL "::mono_array_to_" #m_type
 #define C_METHOD_MONOARRAY_FROM(m_type) C_NS_MONOMARSHAL "::" #m_type "_to_mono_array"
 
-#define BINDINGS_GENERATOR_VERSION UINT32_C(7)
+#define BINDINGS_GENERATOR_VERSION UINT32_C(8)
 
 const char *BindingsGenerator::TypeInterface::DEFAULT_VARARG_C_IN = "\t%0 %1_in = %1;\n";
 
@@ -277,7 +277,7 @@ String BindingsGenerator::bbcode_to_xml(const String &p_bbcode, const TypeInterf
 		} else if (code_tag) {
 			xml_output.append("[");
 			pos = brk_pos + 1;
-		} else if (tag.begins_with("method ") || tag.begins_with("member ") || tag.begins_with("signal ") || tag.begins_with("enum ")) {
+		} else if (tag.begins_with("method ") || tag.begins_with("member ") || tag.begins_with("signal ") || tag.begins_with("enum ") || tag.begins_with("constant ")) {
 			String link_target = tag.substr(tag.find(" ") + 1, tag.length());
 			String link_tag = tag.substr(0, tag.find(" "));
 
@@ -386,6 +386,97 @@ String BindingsGenerator::bbcode_to_xml(const String &p_bbcode, const TypeInterf
 					xml_output.append(link_target);
 					xml_output.append("</c>");
 				}
+			} else if (link_tag == "const") {
+				if (!target_itype || !target_itype->is_object_type) {
+					if (OS::get_singleton()->is_stdout_verbose()) {
+						if (target_itype) {
+							OS::get_singleton()->print("Cannot resolve constant reference for non-Godot.Object type in documentation: %s\n", link_target.utf8().get_data());
+						} else {
+							OS::get_singleton()->print("Cannot resolve type from constant reference in documentation: %s\n", link_target.utf8().get_data());
+						}
+					}
+
+					// TODO Map what we can
+					xml_output.append("<c>");
+					xml_output.append(link_target);
+					xml_output.append("</c>");
+				} else if (!target_itype && target_cname == name_cache.type_at_GlobalScope) {
+					String target_name = (String)target_cname;
+
+					// Try to find as a global constant
+					const ConstantInterface *target_iconst = find_constant_by_name(target_name, global_constants);
+
+					if (target_iconst) {
+						// Found global constant
+						xml_output.append("<see cref=\"" BINDINGS_NAMESPACE "." BINDINGS_GLOBAL_SCOPE_CLASS ".");
+						xml_output.append(target_iconst->proxy_name);
+						xml_output.append("\"/>");
+					} else {
+						// Try to find as global enum constant
+						const EnumInterface *target_ienum = NULL;
+
+						for (const List<EnumInterface>::Element *E = global_enums.front(); E; E = E->next()) {
+							target_ienum = &E->get();
+							target_iconst = find_constant_by_name(target_name, target_ienum->constants);
+							if (target_iconst)
+								break;
+						}
+
+						if (target_iconst) {
+							xml_output.append("<see cref=\"" BINDINGS_NAMESPACE ".");
+							xml_output.append(target_ienum->cname);
+							xml_output.append(".");
+							xml_output.append(target_iconst->proxy_name);
+							xml_output.append("\"/>");
+						} else {
+							ERR_PRINTS("Cannot resolve global constant reference in documentation: " + link_target);
+
+							xml_output.append("<c>");
+							xml_output.append(link_target);
+							xml_output.append("</c>");
+						}
+					}
+				} else {
+					String target_name = (String)target_cname;
+
+					// Try to find the constant in the current class
+					const ConstantInterface *target_iconst = find_constant_by_name(target_name, target_itype->constants);
+
+					if (target_iconst) {
+						// Found constant in current class
+						xml_output.append("<see cref=\"" BINDINGS_NAMESPACE ".");
+						xml_output.append(target_itype->proxy_name);
+						xml_output.append(".");
+						xml_output.append(target_iconst->proxy_name);
+						xml_output.append("\"/>");
+					} else {
+						// Try to find as enum constant in the current class
+						const EnumInterface *target_ienum = NULL;
+
+						for (const List<EnumInterface>::Element *E = target_itype->enums.front(); E; E = E->next()) {
+							target_ienum = &E->get();
+							target_iconst = find_constant_by_name(target_name, target_ienum->constants);
+							if (target_iconst)
+								break;
+						}
+
+						if (target_iconst) {
+							xml_output.append("<see cref=\"" BINDINGS_NAMESPACE ".");
+							xml_output.append(target_itype->proxy_name);
+							xml_output.append(".");
+							xml_output.append(target_ienum->cname);
+							xml_output.append(".");
+							xml_output.append(target_iconst->proxy_name);
+							xml_output.append("\"/>");
+						} else {
+							ERR_PRINTS("Cannot resolve constant reference in documentation: " + link_target);
+
+							xml_output.append("<c>");
+							xml_output.append(link_target);
+							xml_output.append("</c>");
+						}
+					}
+				}
 			}
 
 			pos = brk_end + 1;
@@ -414,7 +505,7 @@ String BindingsGenerator::bbcode_to_xml(const String &p_bbcode, const TypeInterf
 			} else if (tag == "Nil") {
 				xml_output.append("<see langword=\"null\"/>");
 			} else if (tag.begins_with("@")) {
-				// @Global Scope, @GDScript, etc
+				// @GlobalScope, @GDScript, etc
 				xml_output.append("<c>");
 				xml_output.append(tag);
 				xml_output.append("</c>");
@@ -1912,20 +2003,13 @@ Error BindingsGenerator::_generate_glue_method(const BindingsGenerator::TypeInte
 				String vararg_arg = "arg" + argc_str;
 				String real_argc_str = itos(p_imethod.arguments.size() - 1); // Arguments count without vararg
 
-				p_output.push_back("\tVector<Variant> varargs;\n"
-								   "\tint vararg_length = mono_array_length(");
+				p_output.push_back("\tint vararg_length = mono_array_length(");
 				p_output.push_back(vararg_arg);
 				p_output.push_back(");\n\tint total_length = ");
 				p_output.push_back(real_argc_str);
-				p_output.push_back(" + vararg_length;\n\t");
-				p_output.push_back(err_fail_macro);
-				p_output.push_back("(varargs.resize(vararg_length) != OK");
-				p_output.push_back(fail_ret);
-				p_output.push_back(");\n\tVector<Variant*> " C_LOCAL_PTRCALL_ARGS ";\n\t");
-				p_output.push_back(err_fail_macro);
-				p_output.push_back("(call_args.resize(total_length) != OK");
-				p_output.push_back(fail_ret);
-				p_output.push_back(");\n");
+				p_output.push_back(" + vararg_length;\n"
+								   "\tArgumentsVector<Variant> varargs(vararg_length);\n"
+								   "\tArgumentsVector<const Variant *> " C_LOCAL_PTRCALL_ARGS "(total_length);\n");
 				p_output.push_back(c_in_statements);
 				p_output.push_back("\tfor (int i = 0; i < vararg_length; i++) " OPEN_BLOCK
 								   "\t\tMonoObject* elem = mono_array_get(");
@@ -1934,7 +2018,7 @@ Error BindingsGenerator::_generate_glue_method(const BindingsGenerator::TypeInte
 								   "\t\tvarargs.set(i, GDMonoMarshal::mono_object_to_variant(elem));\n"
 								   "\t\t" C_LOCAL_PTRCALL_ARGS ".set(");
 				p_output.push_back(real_argc_str);
-				p_output.push_back(" + i, &varargs.write[i]);\n\t" CLOSE_BLOCK);
+				p_output.push_back(" + i, &varargs.get(i));\n\t" CLOSE_BLOCK);
 			} else {
 				p_output.push_back(c_in_statements);
 				p_output.push_back("\tconst void* " C_LOCAL_PTRCALL_ARGS "[");
@@ -1956,7 +2040,7 @@ Error BindingsGenerator::_generate_glue_method(const BindingsGenerator::TypeInte
 			}
 
 			p_output.push_back(CS_PARAM_METHODBIND "->call(" CS_PARAM_INSTANCE ", ");
-			p_output.push_back(p_imethod.arguments.size() ? "(const Variant**)" C_LOCAL_PTRCALL_ARGS ".ptr()" : "NULL");
+			p_output.push_back(p_imethod.arguments.size() ? C_LOCAL_PTRCALL_ARGS ".ptr()" : "NULL");
 			p_output.push_back(", total_length, vcall_error);\n");
 
 			// See the comment on the C_LOCAL_VARARG_RET declaration
@@ -2413,6 +2497,7 @@ void BindingsGenerator::_default_argument_from_variant(const Variant &p_val, Arg
 				r_iarg.default_argument = "null";
 				break;
 			}
+			FALLTHROUGH;
 		case Variant::DICTIONARY:
 		case Variant::_RID:
 			r_iarg.default_argument = "new %s()";

@@ -81,6 +81,7 @@
 #include "editor/plugins/collision_polygon_2d_editor_plugin.h"
 #include "editor/plugins/collision_polygon_editor_plugin.h"
 #include "editor/plugins/collision_shape_2d_editor_plugin.h"
+#include "editor/plugins/cpu_particles_2d_editor_plugin.h"
 #include "editor/plugins/cpu_particles_editor_plugin.h"
 #include "editor/plugins/curve_editor_plugin.h"
 #include "editor/plugins/editor_preview_plugins.h"
@@ -1899,7 +1900,8 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 				break;
 			}
 
-		} // fallthrough
+			FALLTHROUGH;
+		}
 		case SCENE_TAB_CLOSE:
 		case FILE_SAVE_SCENE: {
 
@@ -1918,8 +1920,8 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 
 				break;
 			}
-			// fallthrough to save_as
-		};
+			FALLTHROUGH;
+		}
 		case FILE_SAVE_AS_SCENE: {
 			int scene_idx = (p_option == FILE_SAVE_SCENE || p_option == FILE_SAVE_AS_SCENE) ? -1 : tab_closing;
 
@@ -3350,12 +3352,30 @@ Ref<Texture> EditorNode::get_class_icon(const String &p_class, const String &p_f
 	if (ScriptServer::is_global_class(p_class)) {
 		String icon_path = EditorNode::get_editor_data().script_class_get_icon_path(p_class);
 		RES icon;
+
 		if (FileAccess::exists(icon_path)) {
 			icon = ResourceLoader::load(icon_path);
+			if (icon.is_valid())
+				return icon;
 		}
-		if (!icon.is_valid()) {
-			icon = gui_base->get_icon(ScriptServer::get_global_class_native_base(p_class), "EditorIcons");
+
+		Ref<Script> script = ResourceLoader::load(ScriptServer::get_global_class_path(p_class), "Script");
+
+		while (script.is_valid()) {
+			String current_icon_path;
+			script->get_language()->get_global_class_name(script->get_path(), NULL, &current_icon_path);
+			if (FileAccess::exists(current_icon_path)) {
+				RES texture = ResourceLoader::load(current_icon_path);
+				if (texture.is_valid())
+					return texture;
+			}
+			script = script->get_base_script();
 		}
+
+		if (icon.is_null()) {
+			icon = gui_base->get_icon(ScriptServer::get_global_class_base(p_class), "EditorIcons");
+		}
+
 		return icon;
 	}
 
@@ -5895,6 +5915,7 @@ EditorNode::EditorNode() {
 	add_editor_plugin(memnew(SpriteEditorPlugin(this)));
 	add_editor_plugin(memnew(Skeleton2DEditorPlugin(this)));
 	add_editor_plugin(memnew(ParticlesEditorPlugin(this)));
+	add_editor_plugin(memnew(CPUParticles2DEditorPlugin(this)));
 	add_editor_plugin(memnew(CPUParticlesEditorPlugin(this)));
 	add_editor_plugin(memnew(ResourcePreloaderEditorPlugin(this)));
 	add_editor_plugin(memnew(ItemListEditorPlugin(this)));
