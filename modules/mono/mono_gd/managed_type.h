@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  context_gl.h                                                         */
+/*  managed_type.h                                                       */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,39 +28,31 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef CONTEXT_GL_H
-#define CONTEXT_GL_H
+#ifndef MANAGED_TYPE_H
+#define MANAGED_TYPE_H
 
-#if defined(OPENGL_ENABLED) || defined(GLES_ENABLED)
+#include <mono/metadata/object.h>
 
-#include "core/typedefs.h"
+#include "gd_mono_header.h"
 
-/**
-	@author Juan Linietsky <reduzio@gmail.com>
-*/
+struct ManagedType {
+	int type_encoding;
+	GDMonoClass *type_class;
 
-class ContextGL {
+	static ManagedType from_class(GDMonoClass *p_class);
+	static ManagedType from_class(MonoClass *p_mono_class);
+	static ManagedType from_type(MonoType *p_mono_type);
+	static ManagedType from_reftype(MonoReflectionType *p_mono_reftype);
 
-	static ContextGL *singleton;
+	ManagedType() :
+			type_encoding(0),
+			type_class(NULL) {
+	}
 
-public:
-	static ContextGL *get_singleton();
-
-	virtual void release_current() = 0;
-
-	virtual void make_current() = 0;
-
-	virtual void swap_buffers() = 0;
-
-	virtual Error initialize() = 0;
-
-	virtual void set_use_vsync(bool p_use) = 0;
-	virtual bool is_using_vsync() const = 0;
-
-	ContextGL();
-	virtual ~ContextGL();
+	ManagedType(int p_type_encoding, GDMonoClass *p_type_class) :
+			type_encoding(p_type_encoding),
+			type_class(p_type_class) {
+	}
 };
 
-#endif
-
-#endif
+#endif // MANAGED_TYPE_H

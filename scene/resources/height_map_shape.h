@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  context_egl_uwp.h                                                    */
+/*  height_map_shape.h                                                   */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,59 +28,35 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef CONTEXT_EGL_UWP_H
-#define CONTEXT_EGL_UWP_H
+#ifndef HEIGHT_MAP_SHAPE_H
+#define HEIGHT_MAP_SHAPE_H
 
-#include <wrl.h>
+#include "scene/resources/shape.h"
 
-#include <EGL/egl.h>
+class HeightMapShape : public Shape {
+	GDCLASS(HeightMapShape, Shape);
 
-#include "core/error_list.h"
-#include "core/os/os.h"
+	int map_width;
+	int map_depth;
+	PoolRealArray map_data;
+	float min_height;
+	float max_height;
 
-using namespace Windows::UI::Core;
+protected:
+	static void _bind_methods();
+	virtual void _update_shape();
 
-class ContextEGL_UWP {
-
-public:
-	enum Driver {
-		GLES_2_0,
-		GLES_3_0,
-	};
-
-private:
-	CoreWindow ^ window;
-
-	EGLDisplay mEglDisplay;
-	EGLContext mEglContext;
-	EGLSurface mEglSurface;
-
-	EGLint width;
-	EGLint height;
-
-	bool vsync;
-
-	Driver driver;
+	virtual Vector<Vector3> _gen_debug_mesh_lines();
 
 public:
-	void release_current();
+	void set_map_width(int p_new);
+	int get_map_width() const;
+	void set_map_depth(int p_new);
+	int get_map_depth() const;
+	void set_map_data(PoolRealArray p_new);
+	PoolRealArray get_map_data() const;
 
-	void make_current();
-
-	int get_window_width();
-	int get_window_height();
-	void swap_buffers();
-
-	void set_use_vsync(bool use) { vsync = use; }
-	bool is_using_vsync() const { return vsync; }
-
-	Error initialize();
-	void reset();
-
-	void cleanup();
-
-	ContextEGL_UWP(CoreWindow ^ p_window, Driver p_driver);
-	~ContextEGL_UWP();
+	HeightMapShape();
 };
 
-#endif // CONTEXT_EGL_UWP_H
+#endif /* !HEIGHT_MAP_SHAPE_H */
