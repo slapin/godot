@@ -204,7 +204,7 @@ void editor_register_and_generate_icons(Ref<Theme> p_theme, bool p_dark_theme = 
 		}
 
 	// generate thumb files with the given thumb size
-	bool force_filter = !(p_thumb_size == 64 && p_thumb_size == 32); // we don't need filter with original resolution
+	bool force_filter = p_thumb_size != 64 && p_thumb_size != 32; // we don't need filter with original resolution
 	if (p_thumb_size >= 64) {
 		float scale = (float)p_thumb_size / 64.0 * EDSCALE;
 		for (int i = 0; i < editor_bg_thumbs_count; i++) {
@@ -832,7 +832,7 @@ Ref<Theme> create_editor_theme(const Ref<Theme> p_theme) {
 	theme->set_constant("side_margin", "TabContainer", 0);
 	theme->set_icon("tab", "TextEdit", theme->get_icon("GuiTab", "EditorIcons"));
 	theme->set_color("font_color", "TextEdit", font_color);
-	theme->set_color("caret_color", "TextEdit", highlight_color);
+	theme->set_color("caret_color", "TextEdit", font_color);
 	theme->set_color("selection_color", "TextEdit", font_color_selection);
 
 	// H/VSplitContainer

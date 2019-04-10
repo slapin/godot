@@ -68,6 +68,7 @@ const char *Expression::func_name[Expression::FUNC_MAX] = {
 	"lerp",
 	"inverse_lerp",
 	"range_lerp",
+	"smoothstep",
 	"dectime",
 	"randomize",
 	"randi",
@@ -185,6 +186,7 @@ int Expression::get_func_argument_count(BuiltinFunc p_func) {
 			return 2;
 		case MATH_LERP:
 		case MATH_INVERSE_LERP:
+		case MATH_SMOOTHSTEP:
 		case MATH_DECTIME:
 		case MATH_WRAP:
 		case MATH_WRAPF:
@@ -391,6 +393,12 @@ void Expression::exec_func(BuiltinFunc p_func, const Variant **p_inputs, Variant
 			VALIDATE_ARG_NUM(3);
 			VALIDATE_ARG_NUM(4);
 			*r_return = Math::range_lerp((double)*p_inputs[0], (double)*p_inputs[1], (double)*p_inputs[2], (double)*p_inputs[3], (double)*p_inputs[4]);
+		} break;
+		case MATH_SMOOTHSTEP: {
+			VALIDATE_ARG_NUM(0);
+			VALIDATE_ARG_NUM(1);
+			VALIDATE_ARG_NUM(2);
+			*r_return = Math::smoothstep((double)*p_inputs[0], (double)*p_inputs[1], (double)*p_inputs[2]);
 		} break;
 		case MATH_DECTIME: {
 
@@ -752,7 +760,8 @@ void Expression::exec_func(BuiltinFunc p_func, const Variant **p_inputs, Variant
 			*r_return = String(color);
 
 		} break;
-		default: {}
+		default: {
+		}
 	}
 }
 
@@ -1671,7 +1680,8 @@ Expression::ENode *Expression::_parse_expression() {
 			case TK_OP_BIT_OR: op = Variant::OP_BIT_OR; break;
 			case TK_OP_BIT_XOR: op = Variant::OP_BIT_XOR; break;
 			case TK_OP_BIT_INVERT: op = Variant::OP_BIT_NEGATE; break;
-			default: {};
+			default: {
+			};
 		}
 
 		if (op == Variant::OP_MAX) { //stop appending stuff

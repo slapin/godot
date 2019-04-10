@@ -1278,7 +1278,8 @@ bool RasterizerSceneGLES3::_setup_material(RasterizerStorageGLES3::Material *p_m
 
 				} break;
 
-				default: {}
+				default: {
+				}
 			}
 		}
 
@@ -1525,7 +1526,8 @@ void RasterizerSceneGLES3::_setup_geometry(RenderList::Element *e, const Transfo
 			}
 
 		} break;
-		default: {}
+		default: {
+		}
 	}
 }
 
@@ -1847,7 +1849,8 @@ void RasterizerSceneGLES3::_render_geometry(RenderList::Element *e) {
 			}
 
 		} break;
-		default: {}
+		default: {
+		}
 	}
 }
 
@@ -3248,7 +3251,8 @@ void RasterizerSceneGLES3::_fill_render_list(InstanceBase **p_cull_result, int p
 				}
 
 			} break;
-			default: {}
+			default: {
+			}
 		}
 	}
 }
@@ -3667,7 +3671,7 @@ void RasterizerSceneGLES3::_post_process(Environment *env, const CameraMatrix &p
 		}
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, storage->frame.current_rt->effects.mip_maps[0].color);
-		storage->shaders.copy.set_conditional(CopyShaderGLES3::LINEAR_TO_SRGB, true);
+		storage->shaders.copy.set_conditional(CopyShaderGLES3::LINEAR_TO_SRGB, !storage->frame.current_rt->flags[RasterizerStorage::RENDER_TARGET_KEEP_3D_LINEAR]);
 		storage->shaders.copy.set_conditional(CopyShaderGLES3::V_FLIP, storage->frame.current_rt->flags[RasterizerStorage::RENDER_TARGET_VFLIP]);
 		storage->shaders.copy.set_conditional(CopyShaderGLES3::DISABLE_ALPHA, !storage->frame.current_rt->flags[RasterizerStorage::RENDER_TARGET_TRANSPARENT]);
 		storage->shaders.copy.bind();
@@ -4423,7 +4427,8 @@ void RasterizerSceneGLES3::render_scene(const Transform &p_cam_transform, const 
 				glEnable(GL_DEPTH_TEST);
 				glEnable(GL_CULL_FACE);
 				break;
-			default: {}
+			default: {
+			}
 		}
 	}
 
