@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  context_gl.cpp                                                       */
+/*  managed_type.cpp                                                     */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,28 +28,31 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#include "context_gl.h"
+#include "managed_type.h"
 
-#if defined(OPENGL_ENABLED) || defined(GLES_ENABLED)
+#include "gd_mono.h"
+#include "gd_mono_class.h"
 
-ContextGL *ContextGL::singleton = NULL;
-
-ContextGL *ContextGL::get_singleton() {
-
-	return singleton;
+ManagedType ManagedType::from_class(GDMonoClass *p_class) {
+	return ManagedType(mono_type_get_type(p_class->get_mono_type()), p_class);
 }
 
-ContextGL::ContextGL() {
+ManagedType ManagedType::from_class(MonoClass *p_mono_class) {
+	GDMonoClass *tclass = GDMono::get_singleton()->get_class(p_mono_class);
+	ERR_FAIL_COND_V(!tclass, ManagedType());
 
-	ERR_FAIL_COND(singleton);
-
-	singleton = this;
+	return ManagedType(mono_type_get_type(tclass->get_mono_type()), tclass);
 }
 
-ContextGL::~ContextGL() {
+ManagedType ManagedType::from_type(MonoType *p_mono_type) {
+	MonoClass *mono_class = mono_class_from_mono_type(p_mono_type);
+	GDMonoClass *tclass = GDMono::get_singleton()->get_class(mono_class);
+	ERR_FAIL_COND_V(!tclass, ManagedType());
 
-	if (singleton == this)
-		singleton = NULL;
+	return ManagedType(mono_type_get_type(p_mono_type), tclass);
 }
 
-#endif
+ManagedType ManagedType::from_reftype(MonoReflectionType *p_mono_reftype) {
+	MonoType *mono_type = mono_reflection_type_get_type(p_mono_reftype);
+	return from_type(mono_type);
+}

@@ -2289,6 +2289,16 @@ void EditorPropertyResource::_update_menu_items() {
 				E = E->next();
 			}
 
+			List<StringName> global_classes;
+			ScriptServer::get_global_class_list(&global_classes);
+			E = global_classes.front();
+			while (E) {
+				if (EditorNode::get_editor_data().script_class_is_parent(E->get(), base_type)) {
+					valid_inheritors.insert(E->get());
+				}
+				E = E->next();
+			}
+
 			for (Set<String>::Element *F = valid_inheritors.front(); F; F = F->next()) {
 				String t = F->get();
 
@@ -2305,7 +2315,7 @@ void EditorPropertyResource::_update_menu_items() {
 					}
 				}
 
-				if (!is_custom_resource && !ClassDB::can_instance(t))
+				if (!is_custom_resource && !(ScriptServer::is_global_class(t) || ClassDB::can_instance(t)))
 					continue;
 
 				inheritors_array.push_back(t);
@@ -2873,7 +2883,8 @@ bool EditorInspectorDefaultPlugin::parse_property(Object *p_object, Variant::Typ
 					case PROPERTY_HINT_LAYERS_3D_PHYSICS:
 						lt = EditorPropertyLayers::LAYER_PHYSICS_3D;
 						break;
-					default: {} //compiler could be smarter here and realize this can't happen
+					default: {
+					} //compiler could be smarter here and realize this can't happen
 				}
 				EditorPropertyLayers *editor = memnew(EditorPropertyLayers);
 				editor->setup(lt);
@@ -3010,7 +3021,8 @@ bool EditorInspectorDefaultPlugin::parse_property(Object *p_object, Variant::Typ
 					case PROPERTY_HINT_PROPERTY_OF_BASE_TYPE: type = EditorPropertyMember::MEMBER_PROPERTY_OF_BASE_TYPE; break;
 					case PROPERTY_HINT_PROPERTY_OF_INSTANCE: type = EditorPropertyMember::MEMBER_PROPERTY_OF_INSTANCE; break;
 					case PROPERTY_HINT_PROPERTY_OF_SCRIPT: type = EditorPropertyMember::MEMBER_PROPERTY_OF_SCRIPT; break;
-					default: {}
+					default: {
+					}
 				}
 				editor->setup(type, p_hint_text);
 				add_property_editor(p_path, editor);
@@ -3274,7 +3286,8 @@ bool EditorInspectorDefaultPlugin::parse_property(Object *p_object, Variant::Typ
 			editor->setup(Variant::POOL_COLOR_ARRAY);
 			add_property_editor(p_path, editor);
 		} break;
-		default: {}
+		default: {
+		}
 	}
 
 	return false; //can be overridden, although it will most likely be last anyway

@@ -294,6 +294,7 @@ struct _VariantCall {
 	VCALL_LOCALMEM1R(String, is_valid_hex_number);
 	VCALL_LOCALMEM0R(String, is_valid_html_color);
 	VCALL_LOCALMEM0R(String, is_valid_ip_address);
+	VCALL_LOCALMEM0R(String, is_valid_filename);
 	VCALL_LOCALMEM0R(String, to_int);
 	VCALL_LOCALMEM0R(String, to_float);
 	VCALL_LOCALMEM0R(String, hex_to_int);
@@ -341,6 +342,7 @@ struct _VariantCall {
 	VCALL_LOCALMEM1R(Vector2, project);
 	VCALL_LOCALMEM1R(Vector2, angle_to);
 	VCALL_LOCALMEM1R(Vector2, angle_to_point);
+	VCALL_LOCALMEM1R(Vector2, direction_to);
 	VCALL_LOCALMEM2R(Vector2, linear_interpolate);
 	VCALL_LOCALMEM2R(Vector2, slerp);
 	VCALL_LOCALMEM4R(Vector2, cubic_interpolate);
@@ -397,6 +399,7 @@ struct _VariantCall {
 	VCALL_LOCALMEM1R(Vector3, distance_squared_to);
 	VCALL_LOCALMEM1R(Vector3, project);
 	VCALL_LOCALMEM1R(Vector3, angle_to);
+	VCALL_LOCALMEM1R(Vector3, direction_to);
 	VCALL_LOCALMEM1R(Vector3, slide);
 	VCALL_LOCALMEM1R(Vector3, bounce);
 	VCALL_LOCALMEM1R(Vector3, reflect);
@@ -1540,6 +1543,7 @@ void register_variant_methods() {
 	ADDFUNC1R(STRING, BOOL, String, is_valid_hex_number, BOOL, "with_prefix", varray(false));
 	ADDFUNC0R(STRING, BOOL, String, is_valid_html_color, varray());
 	ADDFUNC0R(STRING, BOOL, String, is_valid_ip_address, varray());
+	ADDFUNC0R(STRING, BOOL, String, is_valid_filename, varray());
 	ADDFUNC0R(STRING, INT, String, to_int, varray());
 	ADDFUNC0R(STRING, REAL, String, to_float, varray());
 	ADDFUNC0R(STRING, INT, String, hex_to_int, varray());
@@ -1556,6 +1560,7 @@ void register_variant_methods() {
 	ADDFUNC0R(VECTOR2, REAL, Vector2, angle, varray());
 	ADDFUNC0R(VECTOR2, REAL, Vector2, length_squared, varray());
 	ADDFUNC0R(VECTOR2, BOOL, Vector2, is_normalized, varray());
+	ADDFUNC1R(VECTOR2, VECTOR2, Vector2, direction_to, VECTOR2, "b", varray());
 	ADDFUNC1R(VECTOR2, REAL, Vector2, distance_to, VECTOR2, "to", varray());
 	ADDFUNC1R(VECTOR2, REAL, Vector2, distance_squared_to, VECTOR2, "to", varray());
 	ADDFUNC1R(VECTOR2, VECTOR2, Vector2, project, VECTOR2, "b", varray());
@@ -1604,6 +1609,7 @@ void register_variant_methods() {
 	ADDFUNC2R(VECTOR3, VECTOR3, Vector3, linear_interpolate, VECTOR3, "b", REAL, "t", varray());
 	ADDFUNC2R(VECTOR3, VECTOR3, Vector3, slerp, VECTOR3, "b", REAL, "t", varray());
 	ADDFUNC4R(VECTOR3, VECTOR3, Vector3, cubic_interpolate, VECTOR3, "b", VECTOR3, "pre_a", VECTOR3, "post_b", REAL, "t", varray());
+	ADDFUNC1R(VECTOR3, VECTOR3, Vector3, direction_to, VECTOR3, "b", varray());
 	ADDFUNC1R(VECTOR3, REAL, Vector3, dot, VECTOR3, "b", varray());
 	ADDFUNC1R(VECTOR3, VECTOR3, Vector3, cross, VECTOR3, "b", varray());
 	ADDFUNC1R(VECTOR3, BASIS, Vector3, outer, VECTOR3, "b", varray());
@@ -1927,9 +1933,9 @@ void register_variant_methods() {
 	_VariantCall::add_variant_constant(Variant::TRANSFORM, "IDENTITY", identity_transform);
 	transform_x.set(-1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0);
 	_VariantCall::add_variant_constant(Variant::TRANSFORM, "FLIP_X", transform_x);
-	transform_x.set(1, 0, 0, 0, -1, 0, 0, 0, 1, 0, 0, 0);
+	transform_y.set(1, 0, 0, 0, -1, 0, 0, 0, 1, 0, 0, 0);
 	_VariantCall::add_variant_constant(Variant::TRANSFORM, "FLIP_Y", transform_y);
-	transform_x.set(1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0);
+	transform_z.set(1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0);
 	_VariantCall::add_variant_constant(Variant::TRANSFORM, "FLIP_Z", transform_z);
 
 	_VariantCall::add_variant_constant(Variant::PLANE, "PLANE_YZ", Plane(Vector3(1, 0, 0), 0));
