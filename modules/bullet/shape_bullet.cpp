@@ -523,8 +523,9 @@ void HeightMapShapeBullet::set_data(const Variant &p_data) {
 			}
 		}
 	}
+	float mf = (fabs(l_min_height) > fabs(l_max_height)) ? fabs(l_min_height) : fabs(l_max_height);
 
-	setup(l_heights, l_width, l_depth, l_min_height, l_max_height);
+	setup(l_heights, l_width, l_depth, -mf, mf);
 }
 
 Variant HeightMapShapeBullet::get_data() const {
