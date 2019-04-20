@@ -36,7 +36,7 @@ struct FastLZCompressor : public dtTileCacheCompressor {
 			const int /*maxCompressedSize*/,
 			int *compressedSize) {
 		*compressedSize =
-				fastlz_compress((const void *const)buffer, bufferSize, compressed);
+				fastlz_compress((const void *)buffer, bufferSize, compressed);
 		return DT_SUCCESS;
 	}
 
