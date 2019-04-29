@@ -84,7 +84,6 @@ public:
 
 		container = memnew(VBoxContainer);
 		add_child(container);
-		//set_child_rect(container);
 
 		child_container = memnew(GridContainer);
 		child_container->set_columns(3);
@@ -99,12 +98,14 @@ public:
 		grid_offset_x->set_min(-SPIN_BOX_GRID_RANGE);
 		grid_offset_x->set_max(SPIN_BOX_GRID_RANGE);
 		grid_offset_x->set_suffix("px");
+		grid_offset_x->set_h_size_flags(SIZE_EXPAND_FILL);
 		child_container->add_child(grid_offset_x);
 
 		grid_offset_y = memnew(SpinBox);
 		grid_offset_y->set_min(-SPIN_BOX_GRID_RANGE);
 		grid_offset_y->set_max(SPIN_BOX_GRID_RANGE);
 		grid_offset_y->set_suffix("px");
+		grid_offset_y->set_h_size_flags(SIZE_EXPAND_FILL);
 		child_container->add_child(grid_offset_y);
 
 		label = memnew(Label);
@@ -116,12 +117,14 @@ public:
 		grid_step_x->set_min(0.01);
 		grid_step_x->set_max(SPIN_BOX_GRID_RANGE);
 		grid_step_x->set_suffix("px");
+		grid_step_x->set_h_size_flags(SIZE_EXPAND_FILL);
 		child_container->add_child(grid_step_x);
 
 		grid_step_y = memnew(SpinBox);
 		grid_step_y->set_min(0.01);
 		grid_step_y->set_max(SPIN_BOX_GRID_RANGE);
 		grid_step_y->set_suffix("px");
+		grid_step_y->set_h_size_flags(SIZE_EXPAND_FILL);
 		child_container->add_child(grid_step_y);
 
 		container->add_child(memnew(HSeparator));
@@ -139,6 +142,7 @@ public:
 		rotation_offset->set_min(-SPIN_BOX_ROTATION_RANGE);
 		rotation_offset->set_max(SPIN_BOX_ROTATION_RANGE);
 		rotation_offset->set_suffix("deg");
+		rotation_offset->set_h_size_flags(SIZE_EXPAND_FILL);
 		child_container->add_child(rotation_offset);
 
 		label = memnew(Label);
@@ -150,6 +154,7 @@ public:
 		rotation_step->set_min(-SPIN_BOX_ROTATION_RANGE);
 		rotation_step->set_max(SPIN_BOX_ROTATION_RANGE);
 		rotation_step->set_suffix("deg");
+		rotation_step->set_h_size_flags(SIZE_EXPAND_FILL);
 		child_container->add_child(rotation_step);
 	}
 
@@ -1858,7 +1863,7 @@ bool CanvasItemEditor::_gui_input_move(const Ref<InputEvent> &p_event) {
 		}
 
 		// Confirm the move (only if it was moved)
-		if (b.is_valid() && !b->is_pressed() && b->get_button_index() == BUTTON_LEFT && (drag_type == DRAG_MOVE)) {
+		if (b.is_valid() && !b->is_pressed() && b->get_button_index() == BUTTON_LEFT) {
 			if (transform.affine_inverse().xform(b->get_position()) != drag_from) {
 				_commit_canvas_item_state(drag_selection, TTR("Move CanvasItem"), true);
 			}
@@ -3911,6 +3916,8 @@ void CanvasItemEditor::_popup_callback(int p_op) {
 			viewport->update();
 		} break;
 		case LOCK_SELECTED: {
+			undo_redo->create_action(TTR("Lock Selected"));
+
 			List<Node *> selection = editor_selection->get_selected_node_list();
 			for (List<Node *>::Element *E = selection.front(); E; E = E->next()) {
 				CanvasItem *canvas_item = Object::cast_to<CanvasItem>(E->get());
@@ -3919,12 +3926,18 @@ void CanvasItemEditor::_popup_callback(int p_op) {
 				if (canvas_item->get_viewport() != EditorNode::get_singleton()->get_scene_root())
 					continue;
 
-				canvas_item->set_meta("_edit_lock_", true);
-				emit_signal("item_lock_status_changed");
+				undo_redo->add_do_method(canvas_item, "set_meta", "_edit_lock_", true);
+				undo_redo->add_undo_method(canvas_item, "remove_meta", "_edit_lock_");
+				undo_redo->add_do_method(this, "emit_signal", "item_lock_status_changed");
+				undo_redo->add_undo_method(this, "emit_signal", "item_lock_status_changed");
 			}
-			viewport->update();
+			undo_redo->add_do_method(viewport, "update", Variant());
+			undo_redo->add_undo_method(viewport, "update", Variant());
+			undo_redo->commit_action();
 		} break;
 		case UNLOCK_SELECTED: {
+			undo_redo->create_action(TTR("Unlock Selected"));
+
 			List<Node *> selection = editor_selection->get_selected_node_list();
 			for (List<Node *>::Element *E = selection.front(); E; E = E->next()) {
 				CanvasItem *canvas_item = Object::cast_to<CanvasItem>(E->get());
@@ -3933,12 +3946,18 @@ void CanvasItemEditor::_popup_callback(int p_op) {
 				if (canvas_item->get_viewport() != EditorNode::get_singleton()->get_scene_root())
 					continue;
 
-				canvas_item->set_meta("_edit_lock_", Variant());
-				emit_signal("item_lock_status_changed");
+				undo_redo->add_do_method(canvas_item, "remove_meta", "_edit_lock_");
+				undo_redo->add_undo_method(canvas_item, "set_meta", "_edit_lock_", true);
+				undo_redo->add_do_method(this, "emit_signal", "item_lock_status_changed");
+				undo_redo->add_undo_method(this, "emit_signal", "item_lock_status_changed");
 			}
-			viewport->update();
+			undo_redo->add_do_method(viewport, "update", Variant());
+			undo_redo->add_undo_method(viewport, "update", Variant());
+			undo_redo->commit_action();
 		} break;
 		case GROUP_SELECTED: {
+			undo_redo->create_action(TTR("Group Selected"));
+
 			List<Node *> selection = editor_selection->get_selected_node_list();
 			for (List<Node *>::Element *E = selection.front(); E; E = E->next()) {
 				CanvasItem *canvas_item = Object::cast_to<CanvasItem>(E->get());
@@ -3947,12 +3966,18 @@ void CanvasItemEditor::_popup_callback(int p_op) {
 				if (canvas_item->get_viewport() != EditorNode::get_singleton()->get_scene_root())
 					continue;
 
-				canvas_item->set_meta("_edit_group_", true);
-				emit_signal("item_group_status_changed");
+				undo_redo->add_do_method(canvas_item, "set_meta", "_edit_group_", true);
+				undo_redo->add_undo_method(canvas_item, "remove_meta", "_edit_group_");
+				undo_redo->add_do_method(this, "emit_signal", "item_group_status_changed");
+				undo_redo->add_undo_method(this, "emit_signal", "item_group_status_changed");
 			}
-			viewport->update();
+			undo_redo->add_do_method(viewport, "update", Variant());
+			undo_redo->add_undo_method(viewport, "update", Variant());
+			undo_redo->commit_action();
 		} break;
 		case UNGROUP_SELECTED: {
+			undo_redo->create_action(TTR("Ungroup Selected"));
+
 			List<Node *> selection = editor_selection->get_selected_node_list();
 			for (List<Node *>::Element *E = selection.front(); E; E = E->next()) {
 				CanvasItem *canvas_item = Object::cast_to<CanvasItem>(E->get());
@@ -3961,10 +3986,14 @@ void CanvasItemEditor::_popup_callback(int p_op) {
 				if (canvas_item->get_viewport() != EditorNode::get_singleton()->get_scene_root())
 					continue;
 
-				canvas_item->set_meta("_edit_group_", Variant());
-				emit_signal("item_group_status_changed");
+				undo_redo->add_do_method(canvas_item, "remove_meta", "_edit_group_");
+				undo_redo->add_undo_method(canvas_item, "set_meta", "_edit_group_", true);
+				undo_redo->add_do_method(this, "emit_signal", "item_group_status_changed");
+				undo_redo->add_undo_method(this, "emit_signal", "item_group_status_changed");
 			}
-			viewport->update();
+			undo_redo->add_do_method(viewport, "update", Variant());
+			undo_redo->add_undo_method(viewport, "update", Variant());
+			undo_redo->commit_action();
 		} break;
 		case ANCHORS_AND_MARGINS_PRESET_TOP_LEFT: {
 			_set_anchors_and_margins_preset(PRESET_TOP_LEFT);
@@ -4777,6 +4806,7 @@ CanvasItemEditor::CanvasItemEditor(EditorNode *p_editor) {
 	hb->add_child(snap_config_menu);
 	snap_config_menu->set_h_size_flags(SIZE_SHRINK_END);
 	snap_config_menu->set_tooltip(TTR("Snapping Options"));
+	snap_config_menu->set_switch_on_hover(true);
 
 	PopupMenu *p = snap_config_menu->get_popup();
 	p->connect("id_pressed", this, "_popup_callback");
@@ -4828,6 +4858,7 @@ CanvasItemEditor::CanvasItemEditor(EditorNode *p_editor) {
 	skeleton_menu = memnew(MenuButton);
 	hb->add_child(skeleton_menu);
 	skeleton_menu->set_tooltip(TTR("Skeleton Options"));
+	skeleton_menu->set_switch_on_hover(true);
 
 	p = skeleton_menu->get_popup();
 	p->set_hide_on_checkable_item_selection(false);
@@ -4846,8 +4877,10 @@ CanvasItemEditor::CanvasItemEditor(EditorNode *p_editor) {
 	view_menu->set_text(TTR("View"));
 	hb->add_child(view_menu);
 	view_menu->get_popup()->connect("id_pressed", this, "_popup_callback");
+	view_menu->set_switch_on_hover(true);
 
 	p = view_menu->get_popup();
+	p->set_hide_on_checkable_item_selection(false);
 	p->add_check_shortcut(ED_SHORTCUT("canvas_item_editor/show_grid", TTR("Show Grid"), KEY_G), SHOW_GRID);
 	p->add_check_shortcut(ED_SHORTCUT("canvas_item_editor/show_helpers", TTR("Show Helpers"), KEY_H), SHOW_HELPERS);
 	p->add_check_shortcut(ED_SHORTCUT("canvas_item_editor/show_rulers", TTR("Show Rulers"), KEY_R), SHOW_RULERS);
@@ -4866,6 +4899,7 @@ CanvasItemEditor::CanvasItemEditor(EditorNode *p_editor) {
 	presets_menu->set_text(TTR("Layout"));
 	hb->add_child(presets_menu);
 	presets_menu->hide();
+	presets_menu->set_switch_on_hover(true);
 
 	p = presets_menu->get_popup();
 	p->connect("id_pressed", this, "_popup_callback");
@@ -4923,6 +4957,7 @@ CanvasItemEditor::CanvasItemEditor(EditorNode *p_editor) {
 	animation_menu->set_text(TTR("Animation"));
 	animation_hb->add_child(animation_menu);
 	animation_menu->get_popup()->connect("id_pressed", this, "_popup_callback");
+	animation_menu->set_switch_on_hover(true);
 
 	p = animation_menu->get_popup();
 

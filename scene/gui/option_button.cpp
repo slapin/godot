@@ -72,6 +72,11 @@ void OptionButton::_notification(int p_what) {
 
 		Point2 ofs(size.width - arrow->get_width() - get_constant("arrow_margin"), int(Math::abs((size.height - arrow->get_height()) / 2)));
 		arrow->draw(ci, ofs, clr);
+	} else if (p_what == NOTIFICATION_VISIBILITY_CHANGED) {
+
+		if (!is_visible_in_tree()) {
+			popup->hide();
+		}
 	}
 }
 
@@ -340,6 +345,7 @@ void OptionButton::_bind_methods() {
 OptionButton::OptionButton() {
 
 	current = -1;
+	set_toggle_mode(true);
 	set_text_align(ALIGN_LEFT);
 	set_action_mode(ACTION_MODE_BUTTON_PRESS);
 
@@ -350,6 +356,7 @@ OptionButton::OptionButton() {
 	popup->set_pass_on_modal_close_click(false);
 	popup->connect("id_pressed", this, "_selected");
 	popup->connect("id_focused", this, "_focused");
+	popup->connect("popup_hide", this, "set_pressed", varray(false));
 }
 
 OptionButton::~OptionButton() {

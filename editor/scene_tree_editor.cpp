@@ -88,12 +88,18 @@ void SceneTreeEditor::_cell_button_pressed(Object *p_item, int p_column, int p_i
 		}
 		undo_redo->commit_action();
 	} else if (p_id == BUTTON_LOCK) {
+		undo_redo->create_action(TTR("Unlock Node"));
 
 		if (n->is_class("CanvasItem") || n->is_class("Spatial")) {
-			n->set_meta("_edit_lock_", Variant());
-			_update_tree();
-			emit_signal("node_changed");
+
+			undo_redo->add_do_method(n, "remove_meta", "_edit_lock_");
+			undo_redo->add_undo_method(n, "set_meta", "_edit_lock_", true);
+			undo_redo->add_do_method(this, "_update_tree", Variant());
+			undo_redo->add_undo_method(this, "_update_tree", Variant());
+			undo_redo->add_do_method(this, "emit_signal", "node_changed");
+			undo_redo->add_undo_method(this, "emit_signal", "node_changed");
 		}
+		undo_redo->commit_action();
 	} else if (p_id == BUTTON_PIN) {
 
 		if (n->is_class("AnimationPlayer")) {
@@ -102,11 +108,18 @@ void SceneTreeEditor::_cell_button_pressed(Object *p_item, int p_column, int p_i
 		}
 
 	} else if (p_id == BUTTON_GROUP) {
-		if (n->is_class("CanvasItem")) {
-			n->set_meta("_edit_group_", Variant());
-			_update_tree();
-			emit_signal("node_changed");
+		undo_redo->create_action(TTR("Button Group"));
+
+		if (n->is_class("CanvasItem") || n->is_class("Spatial")) {
+
+			undo_redo->add_do_method(n, "remove_meta", "_edit_group_");
+			undo_redo->add_undo_method(n, "set_meta", "_edit_group_", true);
+			undo_redo->add_do_method(this, "_update_tree", Variant());
+			undo_redo->add_undo_method(this, "_update_tree", Variant());
+			undo_redo->add_do_method(this, "emit_signal", "node_changed");
+			undo_redo->add_undo_method(this, "emit_signal", "node_changed");
 		}
+		undo_redo->commit_action();
 	} else if (p_id == BUTTON_WARNING) {
 
 		String config_err = n->get_configuration_warning();
@@ -302,6 +315,10 @@ bool SceneTreeEditor::_add_nodes(Node *p_node, TreeItem *p_parent) {
 			bool is_locked = p_node->has_meta("_edit_lock_");
 			if (is_locked)
 				item->add_button(0, get_icon("Lock", "EditorIcons"), BUTTON_LOCK, false, TTR("Node is locked.\nClick to unlock it."));
+
+			bool is_grouped = p_node->has_meta("_edit_group_");
+			if (is_grouped)
+				item->add_button(0, get_icon("Group", "EditorIcons"), BUTTON_GROUP, false, TTR("Children are not selectable.\nClick to make selectable."));
 
 			bool v = p_node->call("is_visible");
 			if (v)

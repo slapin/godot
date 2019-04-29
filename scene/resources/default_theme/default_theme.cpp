@@ -423,6 +423,8 @@ void fill_default_theme(Ref<Theme> &theme, const Ref<Font> &default_font, const 
 	theme->set_stylebox("completion", "TextEdit", make_stylebox(tree_bg_png, 3, 3, 3, 3, 0, 0, 0, 0));
 
 	theme->set_icon("tab", "TextEdit", make_icon(tab_png));
+	theme->set_icon("folded", "TextEdit", make_icon(arrow_right_png));
+	theme->set_icon("fold", "TextEdit", make_icon(arrow_down_png));
 
 	theme->set_font("font", "TextEdit", default_font);
 
@@ -795,7 +797,7 @@ void fill_default_theme(Ref<Theme> &theme, const Ref<Font> &default_font, const 
 	theme->set_font("bold_italics_font", "RichTextLabel", default_font);
 	theme->set_font("mono_font", "RichTextLabel", default_font);
 
-	theme->set_color("default_color", "RichTextLabel", control_font_color);
+	theme->set_color("default_color", "RichTextLabel", Color(1, 1, 1));
 	theme->set_color("font_color_selected", "RichTextLabel", font_color_selection);
 	theme->set_color("selection_color", "RichTextLabel", Color(0.1, 0.1, 1, 0.8));
 

@@ -4,7 +4,7 @@
 ## assimp
 
 - Upstream: http://github.com/assimp/assimp
-- Version: git (d2b45377e4b09a1f43be95e45553afcc06b03f4b)
+- Version: git (d3d98a7ec0c8d38e1952b46dfe53f7e9233dc92d)
 - License: BSD-3-Clause
 
 
@@ -122,7 +122,7 @@ Use UI font variant if available, because it has tight vertical metrics and good
 ## freetype
 
 - Upstream: https://www.freetype.org
-- Version: 2.9.1
+- Version: 2.10.0
 - License: FreeType License (BSD-like)
 
 Files extracted from upstream source:
@@ -170,7 +170,7 @@ Files extracted from upstream source:
 ## libpng
 
 - Upstream: http://libpng.org/pub/png/libpng.html
-- Version: 1.6.35
+- Version: 1.6.37
 - License: libpng/zlib
 
 Files extracted from upstream source:

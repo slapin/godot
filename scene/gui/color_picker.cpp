@@ -776,6 +776,12 @@ void ColorPickerButton::_notification(int p_what) {
 	if (p_what == MainLoop::NOTIFICATION_WM_QUIT_REQUEST && popup) {
 		popup->hide();
 	}
+
+	if (p_what == NOTIFICATION_VISIBILITY_CHANGED) {
+		if (popup && !is_visible_in_tree()) {
+			popup->hide();
+		}
+	}
 }
 
 void ColorPickerButton::set_pick_color(const Color &p_color) {
@@ -825,6 +831,8 @@ void ColorPickerButton::_update_picker() {
 		add_child(popup);
 		picker->connect("color_changed", this, "_color_changed");
 		popup->connect("modal_closed", this, "_modal_closed");
+		popup->connect("about_to_show", this, "set_pressed", varray(true));
+		popup->connect("popup_hide", this, "set_pressed", varray(false));
 		picker->set_pick_color(color);
 		picker->set_edit_alpha(edit_alpha);
 	}
@@ -855,4 +863,6 @@ ColorPickerButton::ColorPickerButton() {
 	picker = NULL;
 	popup = NULL;
 	edit_alpha = true;
+
+	set_toggle_mode(true);
 }

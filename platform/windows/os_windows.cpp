@@ -53,6 +53,7 @@
 
 #include <avrt.h>
 #include <direct.h>
+#include <knownfolders.h>
 #include <process.h>
 #include <regstr.h>
 #include <shlobj.h>
@@ -1410,26 +1411,29 @@ Error OS_Windows::initialize(const VideoMode &p_desired, int p_video_driver, int
 
 void OS_Windows::set_clipboard(const String &p_text) {
 
+	// Convert LF line endings to CRLF in clipboard content
+	// Otherwise, line endings won't be visible when pasted in other software
+	String text = p_text.replace("\n", "\r\n");
+
 	if (!OpenClipboard(hWnd)) {
 		ERR_EXPLAIN("Unable to open clipboard.");
 		ERR_FAIL();
 	};
 	EmptyClipboard();
 
-	HGLOBAL mem = GlobalAlloc(GMEM_MOVEABLE, (p_text.length() + 1) * sizeof(CharType));
+	HGLOBAL mem = GlobalAlloc(GMEM_MOVEABLE, (text.length() + 1) * sizeof(CharType));
 	if (mem == NULL) {
 		ERR_EXPLAIN("Unable to allocate memory for clipboard contents.");
 		ERR_FAIL();
 	};
 	LPWSTR lptstrCopy = (LPWSTR)GlobalLock(mem);
-	memcpy(lptstrCopy, p_text.c_str(), (p_text.length() + 1) * sizeof(CharType));
-	//memset((lptstrCopy + p_text.length()), 0, sizeof(CharType));
+	memcpy(lptstrCopy, text.c_str(), (text.length() + 1) * sizeof(CharType));
 	GlobalUnlock(mem);
 
 	SetClipboardData(CF_UNICODETEXT, mem);
 
 	// set the CF_TEXT version (not needed?)
-	CharString utf8 = p_text.utf8();
+	CharString utf8 = text.utf8();
 	mem = GlobalAlloc(GMEM_MOVEABLE, utf8.length() + 1);
 	if (mem == NULL) {
 		ERR_EXPLAIN("Unable to allocate memory for clipboard contents.");
@@ -2460,7 +2464,7 @@ void OS_Windows::GetMaskBitmaps(HBITMAP hSourceBitmap, COLORREF clrTransparent, 
 	DeleteDC(hMainDC);
 }
 
-Error OS_Windows::execute(const String &p_path, const List<String> &p_arguments, bool p_blocking, ProcessID *r_child_id, String *r_pipe, int *r_exitcode, bool read_stderr) {
+Error OS_Windows::execute(const String &p_path, const List<String> &p_arguments, bool p_blocking, ProcessID *r_child_id, String *r_pipe, int *r_exitcode, bool read_stderr, Mutex *p_pipe_mutex) {
 
 	if (p_blocking && r_pipe) {
 
@@ -2479,7 +2483,13 @@ Error OS_Windows::execute(const String &p_path, const List<String> &p_arguments,
 		char buf[65535];
 		while (fgets(buf, 65535, f)) {
 
+			if (p_pipe_mutex) {
+				p_pipe_mutex->lock();
+			}
 			(*r_pipe) += buf;
+			if (p_pipe_mutex) {
+				p_pipe_mutex->unlock();
+			}
 		}
 
 		int rv = _pclose(f);
@@ -2870,39 +2880,41 @@ String OS_Windows::get_godot_dir_name() const {
 
 String OS_Windows::get_system_dir(SystemDir p_dir) const {
 
-	int id;
+	KNOWNFOLDERID id;
 
 	switch (p_dir) {
 		case SYSTEM_DIR_DESKTOP: {
-			id = CSIDL_DESKTOPDIRECTORY;
+			id = FOLDERID_Desktop;
 		} break;
 		case SYSTEM_DIR_DCIM: {
-			id = CSIDL_MYPICTURES;
+			id = FOLDERID_Pictures;
 		} break;
 		case SYSTEM_DIR_DOCUMENTS: {
-			id = CSIDL_PERSONAL;
+			id = FOLDERID_Documents;
 		} break;
 		case SYSTEM_DIR_DOWNLOADS: {
-			id = 0x000C;
+			id = FOLDERID_Downloads;
 		} break;
 		case SYSTEM_DIR_MOVIES: {
-			id = CSIDL_MYVIDEO;
+			id = FOLDERID_Videos;
 		} break;
 		case SYSTEM_DIR_MUSIC: {
-			id = CSIDL_MYMUSIC;
+			id = FOLDERID_Music;
 		} break;
 		case SYSTEM_DIR_PICTURES: {
-			id = CSIDL_MYPICTURES;
+			id = FOLDERID_Pictures;
 		} break;
 		case SYSTEM_DIR_RINGTONES: {
-			id = CSIDL_MYMUSIC;
+			id = FOLDERID_Music;
 		} break;
 	}
 
-	WCHAR szPath[MAX_PATH];
-	HRESULT res = SHGetFolderPathW(NULL, id, NULL, 0, szPath);
+	PWSTR szPath;
+	HRESULT res = SHGetKnownFolderPath(id, 0, NULL, &szPath);
 	ERR_FAIL_COND_V(res != S_OK, String());
-	return String(szPath);
+	String path = String(szPath);
+	CoTaskMemFree(szPath);
+	return path;
 }
 
 String OS_Windows::get_user_data_dir() const {
