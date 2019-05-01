@@ -1177,6 +1177,14 @@ void CodeTextEditor::goto_line_selection(int p_line, int p_begin, int p_end) {
 	text_editor->select(p_line, p_begin, p_line, p_end);
 }
 
+void CodeTextEditor::set_executing_line(int p_line) {
+	text_editor->set_executing_line(p_line);
+}
+
+void CodeTextEditor::clear_executing_line() {
+	text_editor->clear_executing_line();
+}
+
 Variant CodeTextEditor::get_edit_state() {
 	Dictionary state;
 
@@ -1289,6 +1297,8 @@ void CodeTextEditor::_on_settings_change() {
 	text_editor->set_callhint_settings(
 			EDITOR_DEF("text_editor/completion/put_callhint_tooltip_below_current_line", true),
 			EDITOR_DEF("text_editor/completion/callhint_tooltip_offset", Vector2()));
+
+	idle->set_wait_time(EDITOR_DEF("text_editor/completion/idle_parse_delay", 2.0));
 }
 
 void CodeTextEditor::_text_changed_idle_timeout() {
@@ -1403,7 +1413,7 @@ CodeTextEditor::CodeTextEditor() {
 	idle = memnew(Timer);
 	add_child(idle);
 	idle->set_one_shot(true);
-	idle->set_wait_time(EDITOR_DEF("text_editor/completion/idle_parse_delay", 2));
+	idle->set_wait_time(EDITOR_DEF("text_editor/completion/idle_parse_delay", 2.0));
 
 	code_complete_timer = memnew(Timer);
 	add_child(code_complete_timer);

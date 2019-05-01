@@ -115,6 +115,9 @@ void TileMapEditor::_update_button_tool() {
 		default:
 			break;
 	}
+
+	if (tool != TOOL_PICKING)
+		last_tool = tool;
 }
 
 void TileMapEditor::_button_tool_select(int p_tool) {
@@ -237,22 +240,23 @@ void TileMapEditor::set_selected_tiles(Vector<int> p_tiles) {
 	palette->ensure_current_is_visible();
 }
 
-void TileMapEditor::_create_set_cell_undo(const Vector2 &p_vec, const CellOp &p_cell_old, const CellOp &p_cell_new) {
+Dictionary TileMapEditor::_create_cell_dictionary(int tile, bool flip_x, bool flip_y, bool transpose, Vector2 autotile_coord) {
 
-	Dictionary cell_old;
-	Dictionary cell_new;
+	Dictionary cell;
 
-	cell_old["id"] = p_cell_old.idx;
-	cell_old["flip_h"] = p_cell_old.xf;
-	cell_old["flip_y"] = p_cell_old.yf;
-	cell_old["transpose"] = p_cell_old.tr;
-	cell_old["auto_coord"] = p_cell_old.ac;
+	cell["id"] = tile;
+	cell["flip_h"] = flip_x;
+	cell["flip_y"] = flip_y;
+	cell["transpose"] = transpose;
+	cell["auto_coord"] = autotile_coord;
 
-	cell_new["id"] = p_cell_new.idx;
-	cell_new["flip_h"] = p_cell_new.xf;
-	cell_new["flip_y"] = p_cell_new.yf;
-	cell_new["transpose"] = p_cell_new.tr;
-	cell_new["auto_coord"] = p_cell_new.ac;
+	return cell;
+}
+
+void TileMapEditor::_create_set_cell_undo_redo(const Vector2 &p_vec, const CellOp &p_cell_old, const CellOp &p_cell_new) {
+
+	Dictionary cell_old = _create_cell_dictionary(p_cell_old.idx, p_cell_old.xf, p_cell_old.yf, p_cell_old.tr, p_cell_old.ac);
+	Dictionary cell_new = _create_cell_dictionary(p_cell_new.idx, p_cell_new.xf, p_cell_new.yf, p_cell_new.tr, p_cell_new.ac);
 
 	undo_redo->add_undo_method(node, "_set_celld", p_vec, cell_old);
 	undo_redo->add_do_method(node, "_set_celld", p_vec, cell_new);
@@ -268,7 +272,7 @@ void TileMapEditor::_finish_undo() {
 
 	if (undo_data.size()) {
 		for (Map<Point2i, CellOp>::Element *E = undo_data.front(); E; E = E->next()) {
-			_create_set_cell_undo(E->key(), E->get(), _get_op_from_cell(E->key()));
+			_create_set_cell_undo_redo(E->key(), E->get(), _get_op_from_cell(E->key()));
 		}
 
 		undo_data.clear();
@@ -316,10 +320,7 @@ void TileMapEditor::_set_cell(const Point2i &p_pos, Vector<int> p_values, bool p
 		}
 	}
 
-	Variant v_pos_x = p_pos.x, v_pos_y = p_pos.y, v_tile = p_value, v_flip_h = p_flip_h, v_flip_v = p_flip_v, v_transpose = p_transpose, v_autotile_coord = Vector2(p_autotile_coord.x, p_autotile_coord.y);
-	const Variant *args[7] = { &v_pos_x, &v_pos_y, &v_tile, &v_flip_h, &v_flip_v, &v_transpose, &v_autotile_coord };
-	Variant::CallError ce;
-	node->call("set_cell", args, 7, ce);
+	node->_set_celld(p_pos, _create_cell_dictionary(p_value, p_flip_h, p_flip_v, p_transpose, p_autotile_coord));
 
 	if (manual_autotile || (p_value != -1 && node->get_tileset()->tile_get_tile_mode(p_value) == TileSet::ATLAS_TILE)) {
 		if (current != -1) {
@@ -949,11 +950,7 @@ bool TileMapEditor::forward_gui_input(const Ref<InputEvent> &p_event) {
 
 					if (mb->get_shift()) {
 
-#ifdef APPLE_STYLE_KEYS
 						if (mb->get_command())
-#else
-						if (mb->get_control())
-#endif
 							tool = TOOL_RECTANGLE_PAINT;
 						else
 							tool = TOOL_LINE_PAINT;
@@ -964,11 +961,8 @@ bool TileMapEditor::forward_gui_input(const Ref<InputEvent> &p_event) {
 						_update_button_tool();
 						return true;
 					}
-#ifdef APPLE_STYLE_KEYS
+
 					if (mb->get_command()) {
-#else
-					if (mb->get_control()) {
-#endif
 						tool = TOOL_PICKING;
 						_pick_tile(over_tile);
 						_update_button_tool();
@@ -1136,11 +1130,7 @@ bool TileMapEditor::forward_gui_input(const Ref<InputEvent> &p_event) {
 					_start_undo(TTR("Erase TileMap"));
 
 					if (mb->get_shift()) {
-#ifdef APPLE_STYLE_KEYS
 						if (mb->get_command())
-#else
-						if (mb->get_control())
-#endif
 							tool = TOOL_RECTANGLE_ERASE;
 						else
 							tool = TOOL_LINE_ERASE;
@@ -1344,6 +1334,14 @@ bool TileMapEditor::forward_gui_input(const Ref<InputEvent> &p_event) {
 
 	if (k.is_valid() && k->is_pressed()) {
 
+		if (last_tool == TOOL_NONE && tool == TOOL_PICKING && k->get_scancode() == KEY_SHIFT && k->get_command()) {
+			// trying to draw a rectangle with the painting tool, so change to the correct tool
+			tool = last_tool;
+
+			CanvasItemEditor::get_singleton()->update_viewport();
+			_update_button_tool();
+		}
+
 		if (k->get_scancode() == KEY_ESCAPE) {
 
 			if (tool == TOOL_PASTING)
@@ -1448,8 +1446,30 @@ bool TileMapEditor::forward_gui_input(const Ref<InputEvent> &p_event) {
 			CanvasItemEditor::get_singleton()->update_viewport();
 			return true;
 		}
-	}
+	} else if (k.is_valid()) { // release event
 
+		if (tool == TOOL_NONE) {
+
+			if (k->get_scancode() == KEY_SHIFT && k->get_command()) {
+
+				tool = TOOL_PICKING;
+				_update_button_tool();
+			}
+		} else if (tool == TOOL_PICKING) {
+
+#ifdef APPLE_STYLE_KEYS
+			if (k->get_scancode() == KEY_META) {
+#else
+			if (k->get_scancode() == KEY_CONTROL) {
+#endif
+				// go back to that last tool if KEY_CONTROL was released
+				tool = last_tool;
+
+				CanvasItemEditor::get_singleton()->update_viewport();
+				_update_button_tool();
+			}
+		}
+	}
 	return false;
 }
 
@@ -1923,6 +1943,7 @@ TileMapEditor::TileMapEditor(EditorNode *p_editor) {
 	// Tools
 	paint_button = memnew(ToolButton);
 	paint_button->set_shortcut(ED_SHORTCUT("tile_map_editor/paint_tile", TTR("Paint Tile"), KEY_P));
+	paint_button->set_tooltip(TTR("Shift+RMB: Line Draw\nShift+Ctrl+RMB: Rectangle Paint"));
 	paint_button->connect("pressed", this, "_button_tool_select", make_binds(TOOL_NONE));
 	paint_button->set_toggle_mode(true);
 	toolbar->add_child(paint_button);

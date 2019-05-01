@@ -2101,6 +2101,14 @@ void VisualScriptEditor::goto_line(int p_line, bool p_with_error) {
 	}
 }
 
+void VisualScriptEditor::set_executing_line(int p_line) {
+	// todo: add a way to show which node is executing right now.
+}
+
+void VisualScriptEditor::clear_executing_line() {
+	// todo: add a way to show which node is executing right now.
+}
+
 void VisualScriptEditor::trim_trailing_whitespace() {
 }
 
@@ -3566,7 +3574,7 @@ VisualScriptEditor::VisualScriptEditor() {
 	graph->connect("scroll_offset_changed", this, "_graph_ofs_changed");
 
 	select_func_text = memnew(Label);
-	select_func_text->set_text(TTR("Select or create a function to edit graph"));
+	select_func_text->set_text(TTR("Select or create a function to edit its graph."));
 	select_func_text->set_align(Label::ALIGN_CENTER);
 	select_func_text->set_valign(Label::VALIGN_CENTER);
 	select_func_text->set_h_size_flags(SIZE_EXPAND_FILL);

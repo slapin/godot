@@ -309,8 +309,8 @@ public:
 					setting = true;
 					undo_redo->create_action(TTR("Anim Change Keyframe Value"), UndoRedo::MERGE_ENDS);
 					Vector2 prev = animation->bezier_track_get_key_in_handle(track, key);
-					undo_redo->add_do_method(animation.ptr(), "bezier_track_set_in_handle", track, key, value);
-					undo_redo->add_undo_method(animation.ptr(), "bezier_track_set_in_handle", track, key, prev);
+					undo_redo->add_do_method(animation.ptr(), "bezier_track_set_key_in_handle", track, key, value);
+					undo_redo->add_undo_method(animation.ptr(), "bezier_track_set_key_in_handle", track, key, prev);
 					undo_redo->add_do_method(this, "_update_obj", animation);
 					undo_redo->add_undo_method(this, "_update_obj", animation);
 					undo_redo->commit_action();
@@ -325,8 +325,8 @@ public:
 					setting = true;
 					undo_redo->create_action(TTR("Anim Change Keyframe Value"), UndoRedo::MERGE_ENDS);
 					Vector2 prev = animation->bezier_track_get_key_out_handle(track, key);
-					undo_redo->add_do_method(animation.ptr(), "bezier_track_set_out_handle", track, key, value);
-					undo_redo->add_undo_method(animation.ptr(), "bezier_track_set_out_handle", track, key, prev);
+					undo_redo->add_do_method(animation.ptr(), "bezier_track_set_key_out_handle", track, key, value);
+					undo_redo->add_undo_method(animation.ptr(), "bezier_track_set_key_out_handle", track, key, prev);
 					undo_redo->add_do_method(this, "_update_obj", animation);
 					undo_redo->add_undo_method(this, "_update_obj", animation);
 					undo_redo->commit_action();
@@ -1274,13 +1274,7 @@ void AnimationTrackEdit::_notification(int p_what) {
 				} else if (animation->track_get_type(track) == Animation::TYPE_ANIMATION) {
 					text = TTR("Anim Clips:");
 				} else {
-					Vector<StringName> sn = path.get_subnames();
-					for (int i = 0; i < sn.size(); i++) {
-						if (i > 0) {
-							text += ".";
-						}
-						text += sn[i];
-					}
+					text += path.get_concatenated_subnames();
 				}
 				text_color.a *= 0.7;
 			} else if (node) {
@@ -1294,14 +1288,10 @@ void AnimationTrackEdit::_notification(int p_what) {
 				draw_texture(icon, Point2(ofs, int(get_size().height - icon->get_height()) / 2));
 				icon_cache = icon;
 
-				text = node->get_name();
+				text = String() + node->get_name() + ":" + path.get_concatenated_subnames();
 				ofs += hsep;
 				ofs += icon->get_width();
-				Vector<StringName> sn = path.get_subnames();
-				for (int i = 0; i < sn.size(); i++) {
-					text += ".";
-					text += sn[i];
-				}
+
 			} else {
 				icon_cache = type_icon;
 
@@ -2547,6 +2537,15 @@ void AnimationTrackEditor::set_animation(const Ref<Animation> &p_anim) {
 		step->set_read_only(false);
 		snap->set_disabled(false);
 		snap_mode->set_disabled(false);
+
+		imported_anim_warning->hide();
+		for (int i = 0; i < animation->get_track_count(); i++) {
+			if (animation->track_is_imported(i)) {
+				imported_anim_warning->show();
+				break;
+			}
+		}
+
 	} else {
 		hscroll->hide();
 		edit->set_disabled(true);
@@ -3527,7 +3526,10 @@ void AnimationTrackEditor::_animation_changed() {
 	if (key_edit && key_edit->setting) {
 		//if editing a key, just update the edited track, makes refresh less costly
 		if (key_edit->track < track_edits.size()) {
-			track_edits[key_edit->track]->update();
+			if (animation->track_get_type(key_edit->track) == Animation::TYPE_BEZIER)
+				bezier_edit->update();
+			else
+				track_edits[key_edit->track]->update();
 		}
 		return;
 	}
@@ -3616,6 +3618,7 @@ void AnimationTrackEditor::_notification(int p_what) {
 		snap->set_icon(get_icon("Snap", "EditorIcons"));
 		view_group->set_icon(get_icon(view_group->is_pressed() ? "AnimationTrackList" : "AnimationTrackGroup", "EditorIcons"));
 		selected_filter->set_icon(get_icon("AnimationFilter", "EditorIcons"));
+		imported_anim_warning->set_icon(get_icon("NodeWarning", "EditorIcons"));
 		main_panel->add_style_override("panel", get_stylebox("bg", "Tree"));
 	}
 
@@ -4909,6 +4912,15 @@ float AnimationTrackEditor::snap_time(float p_value) {
 	return p_value;
 }
 
+void AnimationTrackEditor::_show_imported_anim_warning() const {
+
+	EditorNode::get_singleton()->show_warning(TTR("This animation belongs to an imported scene, so changes to imported tracks will not be saved.\n\n"
+												  "To enable the ability to add custom tracks, navigate to the scene's import settings and set\n"
+												  "\"Animation > Storage\" to \"Files\", enable \"Animation > Keep Custom Tracks\", then re-import.\n"
+												  "Alternatively, use an import preset that imports animations to separate files."),
+			TTR("Warning: Editing imported animation"));
+}
+
 void AnimationTrackEditor::_bind_methods() {
 
 	ClassDB::bind_method("_animation_changed", &AnimationTrackEditor::_animation_changed);
@@ -4947,6 +4959,7 @@ void AnimationTrackEditor::_bind_methods() {
 	ClassDB::bind_method("_view_group_toggle", &AnimationTrackEditor::_view_group_toggle);
 	ClassDB::bind_method("_selection_changed", &AnimationTrackEditor::_selection_changed);
 	ClassDB::bind_method("_snap_mode_changed", &AnimationTrackEditor::_snap_mode_changed);
+	ClassDB::bind_method("_show_imported_anim_warning", &AnimationTrackEditor::_show_imported_anim_warning);
 
 	ADD_SIGNAL(MethodInfo("timeline_changed", PropertyInfo(Variant::REAL, "position"), PropertyInfo(Variant::BOOL, "drag")));
 	ADD_SIGNAL(MethodInfo("keying_changed"));
@@ -5017,6 +5030,13 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	//timeline_vbox->add_child(memnew(HSeparator));
 	HBoxContainer *bottom_hb = memnew(HBoxContainer);
 	add_child(bottom_hb);
+
+	imported_anim_warning = memnew(Button);
+	imported_anim_warning->hide();
+	imported_anim_warning->set_tooltip(TTR("Warning: Editing imported animation"));
+	imported_anim_warning->connect("pressed", this, "_show_imported_anim_warning");
+	bottom_hb->add_child(imported_anim_warning);
+
 	bottom_hb->add_spacer();
 
 	selected_filter = memnew(ToolButton);

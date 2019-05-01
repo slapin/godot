@@ -54,9 +54,11 @@ Size2 PopupMenu::get_minimum_size() const {
 	Ref<Font> font = get_font("font");
 
 	float max_w = 0;
+	float icon_w = 0;
 	int font_h = font->get_height();
-	int check_w = MAX(get_icon("checked")->get_width(), get_icon("radio_checked")->get_width());
+	int check_w = MAX(get_icon("checked")->get_width(), get_icon("radio_checked")->get_width()) + hseparation;
 	int accel_max_w = 0;
+	bool has_check = false;
 
 	for (int i = 0; i < items.size(); i++) {
 
@@ -65,8 +67,7 @@ Size2 PopupMenu::get_minimum_size() const {
 
 			Size2 icon_size = items[i].icon->get_size();
 			size.height = MAX(icon_size.height, font_h);
-			size.width += icon_size.width;
-			size.width += hseparation;
+			icon_w = MAX(icon_size.width + hseparation, icon_w);
 		} else {
 
 			size.height = font_h;
@@ -74,10 +75,8 @@ Size2 PopupMenu::get_minimum_size() const {
 
 		size.width += items[i].h_ofs;
 
-		if (items[i].checkable_type) {
-
-			size.width += check_w + hseparation;
-		}
+		if (items[i].checkable_type)
+			has_check = true;
 
 		String text = items[i].shortcut.is_valid() ? String(tr(items[i].shortcut->get_name())) : items[i].xl_text;
 		size.width += font->get_string_size(text).width;
@@ -91,16 +90,17 @@ Size2 PopupMenu::get_minimum_size() const {
 			accel_max_w = MAX(accel_w, accel_max_w);
 		}
 
-		if (items[i].submenu != "") {
-
+		if (items[i].submenu != "")
 			size.width += get_icon("submenu")->get_width();
-		}
+
+		max_w = MAX(max_w, size.width);
 
 		minsize.height += size.height;
-		max_w = MAX(max_w, size.width);
 	}
 
-	minsize.width += max_w + accel_max_w;
+	minsize.width += max_w + icon_w + accel_max_w;
+	if (has_check)
+		minsize.width += check_w;
 
 	return minsize;
 }
@@ -147,10 +147,10 @@ int PopupMenu::_get_mouse_over(const Point2 &p_over) const {
 void PopupMenu::_activate_submenu(int over) {
 
 	Node *n = get_node(items[over].submenu);
-	ERR_EXPLAIN("item subnode does not exist: " + items[over].submenu);
+	ERR_EXPLAIN("Item subnode does not exist: " + items[over].submenu);
 	ERR_FAIL_COND(!n);
 	Popup *pm = Object::cast_to<Popup>(n);
-	ERR_EXPLAIN("item subnode is not a Popup: " + items[over].submenu);
+	ERR_EXPLAIN("Item subnode is not a Popup: " + items[over].submenu);
 	ERR_FAIL_COND(!pm);
 	if (pm->is_visible_in_tree())
 		return; //already visible!
@@ -159,13 +159,14 @@ void PopupMenu::_activate_submenu(int over) {
 	Rect2 pr(p, get_size());
 	Ref<StyleBox> style = get_stylebox("panel");
 
-	Point2 pos = p + Point2(get_size().width, items[over]._ofs_cache - style->get_offset().y);
+	Point2 pos = p + Point2(get_size().width, items[over]._ofs_cache - style->get_offset().y) * get_global_transform().get_scale();
 	Size2 size = pm->get_size();
 	// fix pos
 	if (pos.x + size.width > get_viewport_rect().size.width)
 		pos.x = p.x - size.width;
 
 	pm->set_position(pos);
+	pm->set_scale(get_global_transform().get_scale());
 	pm->popup();
 
 	PopupMenu *pum = Object::cast_to<PopupMenu>(pm);
@@ -196,11 +197,11 @@ void PopupMenu::_scroll(float p_factor, const Point2 &p_over) {
 	int vseparation = get_constant("vseparation");
 	Ref<Font> font = get_font("font");
 
-	float dy = (vseparation + font->get_height()) * 3 * p_factor;
+	float dy = (vseparation + font->get_height()) * 3 * p_factor * get_global_transform().get_scale().y;
 	if (dy > 0 && global_y < 0)
 		dy = MIN(dy, -global_y - 1);
-	else if (dy < 0 && global_y + get_size().y > get_viewport_rect().size.y)
-		dy = -MIN(-dy, global_y + get_size().y - get_viewport_rect().size.y - 1);
+	else if (dy < 0 && global_y + get_size().y * get_global_transform().get_scale().y > get_viewport_rect().size.y)
+		dy = -MIN(-dy, global_y + get_size().y * get_global_transform().get_scale().y - get_viewport_rect().size.y - 1);
 	set_position(get_position() + Vector2(0, dy));
 
 	Ref<InputEventMouseMotion> ie;
@@ -289,7 +290,7 @@ void PopupMenu::_gui_input(const Ref<InputEvent> &p_event) {
 
 			case BUTTON_WHEEL_DOWN: {
 
-				if (get_global_position().y + get_size().y > get_viewport_rect().size.y) {
+				if (get_global_position().y + get_size().y * get_global_transform().get_scale().y > get_viewport_rect().size.y) {
 					_scroll(-b->get_factor(), b->get_position());
 				}
 			} break;
@@ -415,7 +416,6 @@ void PopupMenu::_notification(int p_what) {
 
 			minimum_size_changed();
 			update();
-
 		} break;
 		case NOTIFICATION_DRAW: {
 
@@ -443,15 +443,31 @@ void PopupMenu::_notification(int p_what) {
 			Color font_color_hover = get_color("font_color_hover");
 			float font_h = font->get_height();
 
+			// Add the check and the wider icon to the offset of all items.
+			float icon_ofs = 0.0;
+			bool has_check = false;
+			for (int i = 0; i < items.size(); i++) {
+
+				if (!items[i].icon.is_null())
+					icon_ofs = MAX(items[i].icon->get_size().height, icon_ofs);
+
+				if (items[i].checkable_type)
+					has_check = true;
+			}
+			if (icon_ofs > 0.0)
+				icon_ofs += hseparation;
+
+			float check_ofs = 0.0;
+			if (has_check)
+				check_ofs = MAX(get_icon("checked")->get_width(), get_icon("radio_checked")->get_width()) + hseparation;
+
 			for (int i = 0; i < items.size(); i++) {
 
 				if (i > 0)
 					ofs.y += vseparation;
 				Point2 item_ofs = ofs;
-				float h;
 				Size2 icon_size;
-
-				Color icon_color(1, 1, 1, items[i].disabled ? 0.5 : 1);
+				float h;
 
 				if (!items[i].icon.is_null()) {
 
@@ -489,16 +505,15 @@ void PopupMenu::_notification(int p_what) {
 					}
 				}
 
+				Color icon_color(1, 1, 1, items[i].disabled ? 0.5 : 1);
+
 				if (items[i].checkable_type) {
 					Texture *icon = (items[i].checked ? check[items[i].checkable_type - 1] : uncheck[items[i].checkable_type - 1]).ptr();
 					icon->draw(ci, item_ofs + Point2(0, Math::floor((h - icon->get_height()) / 2.0)), icon_color);
-					item_ofs.x += icon->get_width() + hseparation;
 				}
 
 				if (!items[i].icon.is_null()) {
-					items[i].icon->draw(ci, item_ofs + Point2(0, Math::floor((h - icon_size.height) / 2.0)), icon_color);
-					item_ofs.x += items[i].icon->get_width();
-					item_ofs.x += hseparation;
+					items[i].icon->draw(ci, item_ofs + Size2(check_ofs, 0) + Point2(0, Math::floor((h - icon_size.height) / 2.0)), icon_color);
 				}
 
 				if (items[i].submenu != "") {
@@ -514,6 +529,7 @@ void PopupMenu::_notification(int p_what) {
 					}
 				} else {
 
+					item_ofs.x += icon_ofs + check_ofs;
 					font->draw(ci, item_ofs + Point2(0, Math::floor((h - font_h) / 2.0)), text, items[i].disabled ? font_color_disabled : (i == mouse_over ? font_color_hover : font_color));
 				}
 
@@ -528,7 +544,6 @@ void PopupMenu::_notification(int p_what) {
 
 				ofs.y += h;
 			}
-
 		} break;
 		case MainLoop::NOTIFICATION_WM_FOCUS_OUT: {
 
