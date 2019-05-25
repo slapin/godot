@@ -705,7 +705,7 @@ LRESULT OS_Windows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 					}
 				}
 			} else if (mouse_mode != MOUSE_MODE_CAPTURED) {
-				// for reasons unknown to mankind, wheel comes in screen cordinates
+				// for reasons unknown to mankind, wheel comes in screen coordinates
 				POINT coords;
 				coords.x = mb->get_position().x;
 				coords.y = mb->get_position().y;
@@ -2119,7 +2119,7 @@ void OS_Windows::request_attention() {
 	FlashWindowEx(&info);
 }
 
-String OS_Windows::get_name() {
+String OS_Windows::get_name() const {
 
 	return "Windows";
 }

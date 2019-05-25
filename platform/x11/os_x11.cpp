@@ -534,22 +534,26 @@ Error OS_X11::initialize(const VideoMode &p_desired, int p_video_driver, int p_a
 	}
 
 	{
-		Pixmap cursormask;
-		XGCValues xgc;
-		GC gc;
-		XColor col;
-		Cursor cursor;
+		// Creating an empty/transparent cursor
 
-		cursormask = XCreatePixmap(x11_display, RootWindow(x11_display, DefaultScreen(x11_display)), 1, 1, 1);
+		// Create 1x1 bitmap
+		Pixmap cursormask = XCreatePixmap(x11_display,
+				RootWindow(x11_display, DefaultScreen(x11_display)), 1, 1, 1);
+
+		// Fill with zero
+		XGCValues xgc;
 		xgc.function = GXclear;
-		gc = XCreateGC(x11_display, cursormask, GCFunction, &xgc);
+		GC gc = XCreateGC(x11_display, cursormask, GCFunction, &xgc);
 		XFillRectangle(x11_display, cursormask, gc, 0, 0, 1, 1);
-		col.pixel = 0;
-		col.red = 0;
-		col.flags = 4;
-		cursor = XCreatePixmapCursor(x11_display,
-				cursormask, cursormask,
+
+		// Color value doesn't matter. Mask zero means no foreground or background will be drawn
+		XColor col = {};
+
+		Cursor cursor = XCreatePixmapCursor(x11_display,
+				cursormask, // source (using cursor mask as placeholder, since it'll all be ignored)
+				cursormask, // mask
 				&col, &col, 0, 0);
+
 		XFreePixmap(x11_display, cursormask);
 		XFreeGC(x11_display, gc);
 
@@ -1184,18 +1188,20 @@ void OS_X11::set_window_position(const Point2 &p_position) {
 		//exclude window decorations
 		XSync(x11_display, False);
 		Atom prop = XInternAtom(x11_display, "_NET_FRAME_EXTENTS", True);
-		Atom type;
-		int format;
-		unsigned long len;
-		unsigned long remaining;
-		unsigned char *data = NULL;
-		if (XGetWindowProperty(x11_display, x11_window, prop, 0, 4, False, AnyPropertyType, &type, &format, &len, &remaining, &data) == Success) {
-			if (format == 32 && len == 4) {
-				long *extents = (long *)data;
-				x = extents[0];
-				y = extents[2];
+		if (prop != None) {
+			Atom type;
+			int format;
+			unsigned long len;
+			unsigned long remaining;
+			unsigned char *data = NULL;
+			if (XGetWindowProperty(x11_display, x11_window, prop, 0, 4, False, AnyPropertyType, &type, &format, &len, &remaining, &data) == Success) {
+				if (format == 32 && len == 4) {
+					long *extents = (long *)data;
+					x = extents[0];
+					y = extents[2];
+				}
+				XFree(data);
 			}
-			XFree(data);
 		}
 	}
 	XMoveWindow(x11_display, x11_window, p_position.x - x, p_position.y - y);
@@ -1215,18 +1221,20 @@ Size2 OS_X11::get_real_window_size() const {
 	int w = xwa.width;
 	int h = xwa.height;
 	Atom prop = XInternAtom(x11_display, "_NET_FRAME_EXTENTS", True);
-	Atom type;
-	int format;
-	unsigned long len;
-	unsigned long remaining;
-	unsigned char *data = NULL;
-	if (XGetWindowProperty(x11_display, x11_window, prop, 0, 4, False, AnyPropertyType, &type, &format, &len, &remaining, &data) == Success) {
-		if (format == 32 && len == 4) {
-			long *extents = (long *)data;
-			w += extents[0] + extents[1]; // left, right
-			h += extents[2] + extents[3]; // top, bottom
+	if (prop != None) {
+		Atom type;
+		int format;
+		unsigned long len;
+		unsigned long remaining;
+		unsigned char *data = NULL;
+		if (XGetWindowProperty(x11_display, x11_window, prop, 0, 4, False, AnyPropertyType, &type, &format, &len, &remaining, &data) == Success) {
+			if (format == 32 && len == 4) {
+				long *extents = (long *)data;
+				w += extents[0] + extents[1]; // left, right
+				h += extents[2] + extents[3]; // top, bottom
+			}
+			XFree(data);
 		}
-		XFree(data);
 	}
 	return Size2(w, h);
 }
@@ -2588,7 +2596,7 @@ String OS_X11::get_clipboard() const {
 	return ret;
 }
 
-String OS_X11::get_name() {
+String OS_X11::get_name() const {
 
 	return "X11";
 }

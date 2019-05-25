@@ -1210,10 +1210,7 @@ Ref<Image> RasterizerStorageGLES3::texture_get_data(RID p_texture, int p_layer) 
 
 	for (int i = 0; i < texture->mipmaps; i++) {
 
-		int ofs = 0;
-		if (i > 0) {
-			ofs = Image::get_image_data_size(texture->alloc_width, texture->alloc_height, real_format, i - 1);
-		}
+		int ofs = Image::get_image_mipmap_offset(texture->alloc_width, texture->alloc_height, real_format, i);
 
 		if (texture->compressed) {
 
@@ -7269,6 +7266,10 @@ RID RasterizerStorageGLES3::render_target_create() {
 	rt->texture = texture_owner.make_rid(t);
 
 	return render_target_owner.make_rid(rt);
+}
+
+void RasterizerStorageGLES3::render_target_set_position(RID p_render_target, int p_x, int p_y) {
+	//only used in GLES2
 }
 
 void RasterizerStorageGLES3::render_target_set_size(RID p_render_target, int p_width, int p_height) {

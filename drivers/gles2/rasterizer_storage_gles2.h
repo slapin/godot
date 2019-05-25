@@ -92,6 +92,8 @@ public:
 
 		bool support_shadow_cubemaps;
 
+		bool multisample_supported;
+
 		GLuint depth_internalformat;
 		GLuint depth_type;
 
@@ -1132,9 +1134,13 @@ public:
 
 	struct RenderTarget : public RID_Data {
 		GLuint fbo;
-
 		GLuint color;
 		GLuint depth;
+
+		GLuint multisample_fbo;
+		GLuint multisample_color;
+		GLuint multisample_depth;
+		bool multisample_active;
 
 		// TODO post processing effects?
 
@@ -1169,7 +1175,7 @@ public:
 			}
 		} external;
 
-		int width, height;
+		int x, y, width, height;
 
 		bool flags[RENDER_TARGET_FLAG_MAX];
 
@@ -1182,6 +1188,12 @@ public:
 				fbo(0),
 				color(0),
 				depth(0),
+				multisample_fbo(0),
+				multisample_color(0),
+				multisample_depth(0),
+				multisample_active(false),
+				x(0),
+				y(0),
 				width(0),
 				height(0),
 				used_in_frame(false),
@@ -1199,6 +1211,7 @@ public:
 	void _render_target_allocate(RenderTarget *rt);
 
 	virtual RID render_target_create();
+	virtual void render_target_set_position(RID p_render_target, int p_x, int p_y);
 	virtual void render_target_set_size(RID p_render_target, int p_width, int p_height);
 	virtual RID render_target_get_texture(RID p_render_target) const;
 	virtual void render_target_set_external_texture(RID p_render_target, unsigned int p_texture_id);

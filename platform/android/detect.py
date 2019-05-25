@@ -214,13 +214,14 @@ def configure(env):
     lib_sysroot = env["ANDROID_NDK_ROOT"] + "/platforms/" + env['ndk_platform'] + "/" + env['ARCH']
 
     ## Compile flags
-
-    if env['android_stl']:
+    # Disable exceptions and rtti on non-tools (template) builds
+    if env['tools'] or env['android_stl']:
         env.Append(CPPFLAGS=["-isystem", env["ANDROID_NDK_ROOT"] + "/sources/cxx-stl/llvm-libc++/include"])
         env.Append(CPPFLAGS=["-isystem", env["ANDROID_NDK_ROOT"] + "/sources/cxx-stl/llvm-libc++abi/include"])
         env.Append(CXXFLAGS=['-frtti', "-std=gnu++14"])
     else:
         env.Append(CXXFLAGS=['-fno-rtti', '-fno-exceptions'])
+        # Don't use dynamic_cast, necessary with no-rtti.
         env.Append(CPPFLAGS=['-DNO_SAFE_CAST'])
 
     ndk_version = get_ndk_version(env["ANDROID_NDK_ROOT"])
@@ -301,7 +302,7 @@ def configure(env):
 
     env.Prepend(CPPPATH=['#platform/android'])
     env.Append(CPPFLAGS=['-DANDROID_ENABLED', '-DUNIX_ENABLED', '-DNO_FCNTL'])
-    env.Append(LIBS=['OpenSLES', 'EGL', 'GLESv3', 'android', 'log', 'z', 'dl'])
+    env.Append(LIBS=['OpenSLES', 'EGL', 'GLESv3', 'GLESv2', 'android', 'log', 'z', 'dl'])
 
 # Return NDK version string in source.properties (adapted from the Chromium project).
 def get_ndk_version(path):

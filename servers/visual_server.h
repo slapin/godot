@@ -610,6 +610,7 @@ public:
 	virtual void viewport_set_parent_viewport(RID p_viewport, RID p_parent_viewport) = 0;
 
 	virtual void viewport_attach_to_screen(RID p_viewport, const Rect2 &p_rect = Rect2(), int p_screen = 0) = 0;
+	virtual void viewport_set_render_direct_to_screen(RID p_viewport, bool p_enable) = 0;
 	virtual void viewport_detach(RID p_viewport) = 0;
 
 	enum ViewportUpdateMode {
@@ -814,7 +815,7 @@ public:
 	virtual void instance_set_scenario(RID p_instance, RID p_scenario) = 0; // from can be mesh, light, poly, area and portal so far.
 	virtual void instance_set_layer_mask(RID p_instance, uint32_t p_mask) = 0;
 	virtual void instance_set_transform(RID p_instance, const Transform &p_transform) = 0;
-	virtual void instance_attach_object_instance_id(RID p_instance, ObjectID p_ID) = 0;
+	virtual void instance_attach_object_instance_id(RID p_instance, ObjectID p_id) = 0;
 	virtual void instance_set_blend_shape_weight(RID p_instance, int p_shape, float p_weight) = 0;
 	virtual void instance_set_surface_material(RID p_instance, int p_surface, RID p_material) = 0;
 	virtual void instance_set_visible(RID p_instance, bool p_visible) = 0;

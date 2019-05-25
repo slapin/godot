@@ -66,7 +66,7 @@ int sfind(const String &p_text, int p_from) {
 					break;
 				case 1: {
 					CharType c = src[read_pos];
-					found = src[read_pos] == 's' || (c >= '0' || c <= '4');
+					found = src[read_pos] == 's' || (c >= '0' && c <= '4');
 					break;
 				}
 				default:
@@ -210,7 +210,7 @@ String str_format(const char *p_format, ...) {
 #endif
 #endif
 
-#if defined(MINGW_ENABLED) || defined(_MSC_VER)
+#if defined(MINGW_ENABLED) || defined(_MSC_VER) && _MSC_VER < 1900
 #define vsnprintf(m_buffer, m_count, m_format, m_argptr) vsnprintf_s(m_buffer, m_count, _TRUNCATE, m_format, m_argptr)
 #endif
 

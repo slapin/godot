@@ -68,6 +68,7 @@ void LineEdit::_gui_input(Ref<InputEvent> p_event) {
 		_reset_caret_blink_timer();
 		if (b->is_pressed()) {
 
+			accept_event(); //don't pass event further when clicked on text field
 			if (!text.empty() && is_editable() && _is_over_clear_button(b->get_position())) {
 				clear_button_status.press_attempt = true;
 				clear_button_status.pressing_inside = true;
@@ -613,9 +614,7 @@ void LineEdit::_notification(int p_what) {
 #endif
 		case NOTIFICATION_RESIZED: {
 
-			if (expand_to_text_length) {
-				window_pos = 0; //force scroll back since it's expanding to text length
-			}
+			window_pos = 0;
 			set_cursor_position(get_cursor_position());
 
 		} break;
@@ -1658,6 +1657,7 @@ LineEdit::LineEdit() {
 	context_menu_enabled = true;
 	menu = memnew(PopupMenu);
 	add_child(menu);
+	editable = false; // initialise to opposite first, so we get past the early-out in set_editable
 	set_editable(true);
 	menu->connect("id_pressed", this, "menu_option");
 	expand_to_text_length = false;

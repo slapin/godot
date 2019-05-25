@@ -137,7 +137,7 @@ public:
 	void run_async();
 	bool main_loop_iterate();
 
-	virtual Error execute(const String &p_path, const List<String> &p_arguments, bool p_blocking, ProcessID *r_child_id = NULL, String *r_pipe = NULL, int *r_exitcode = NULL, bool read_stderr = false);
+	virtual Error execute(const String &p_path, const List<String> &p_arguments, bool p_blocking, ProcessID *r_child_id = NULL, String *r_pipe = NULL, int *r_exitcode = NULL, bool read_stderr = false, Mutex *p_pipe_mutex = NULL);
 	virtual Error kill(const ProcessID &p_pid);
 	virtual int get_process_id() const;
 
@@ -146,7 +146,7 @@ public:
 	virtual void set_icon(const Ref<Image> &p_icon);
 	String get_executable_path() const;
 	virtual Error shell_open(String p_uri);
-	virtual String get_name();
+	virtual String get_name() const;
 	virtual bool can_draw() const;
 
 	virtual String get_resource_dir() const;

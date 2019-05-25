@@ -97,11 +97,10 @@ class AnimationPlayerEditor : public VBoxContainer {
 	Button *play_from;
 	Button *play_bw;
 	Button *play_bw_from;
-
-	//Button *pause;
 	Button *autoplay;
 
 	MenuButton *tool_anim;
+	ToolButton *onion_toggle;
 	MenuButton *onion_skinning;
 	ToolButton *pin;
 	SpinBox *frame;
@@ -172,7 +171,9 @@ class AnimationPlayerEditor : public VBoxContainer {
 	void _autoplay_pressed();
 	void _stop_pressed();
 	void _pause_pressed();
+	String _get_current_animation() const;
 	void _animation_selected(int p_which);
+	void _current_animation_updated();
 	void _animation_new();
 	void _animation_rename();
 	void _animation_name_edited();
@@ -228,7 +229,6 @@ class AnimationPlayerEditor : public VBoxContainer {
 
 protected:
 	void _notification(int p_what);
-	void _gui_input(Ref<InputEvent> p_event);
 	void _node_removed(Node *p_node);
 	static void _bind_methods();
 
@@ -257,6 +257,7 @@ class AnimationPlayerEditorPlugin : public EditorPlugin {
 
 	AnimationPlayerEditor *anim_editor;
 	EditorNode *editor;
+	Button *button;
 
 protected:
 	void _notification(int p_what);
