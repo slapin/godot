@@ -214,7 +214,7 @@ public:
 	bool is_in_low_processor_usage_mode() const;
 
 	String get_executable_path() const;
-	int execute(const String &p_path, const Vector<String> &p_arguments, bool p_blocking, Array p_output = Array());
+	int execute(const String &p_path, const Vector<String> &p_arguments, bool p_blocking, Array p_output = Array(), bool p_read_stderr = false);
 
 	Error kill(int p_pid);
 	Error shell_open(String p_uri);
@@ -275,6 +275,7 @@ public:
 
 	void set_use_file_access_save_and_swap(bool p_enable);
 
+	void set_native_icon(const String &p_filename);
 	void set_icon(const Ref<Image> &p_icon);
 
 	int get_exit_code() const;

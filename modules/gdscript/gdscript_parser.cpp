@@ -3369,7 +3369,7 @@ void GDScriptParser::_parse_extends(ClassNode *p_class) {
 		return;
 	}
 
-	if (!p_class->constant_expressions.empty() || !p_class->subclasses.empty() || !p_class->functions.empty() || !p_class->variables.empty()) {
+	if (!p_class->constant_expressions.empty() || !p_class->subclasses.empty() || !p_class->functions.empty() || !p_class->variables.empty() || p_class->classname_used) {
 
 		_set_error("'extends' must be used before anything else.");
 		return;
@@ -3497,7 +3497,7 @@ void GDScriptParser::_parse_class(ClassNode *p_class) {
 					_set_error("'class_name' is only valid for the main class namespace.");
 					return;
 				}
-				if (self_path.empty()) {
+				if (self_path.begins_with("res://") && self_path.find("::") != -1) {
 					_set_error("'class_name' not allowed in built-in scripts.");
 					return;
 				}
@@ -3506,6 +3506,12 @@ void GDScriptParser::_parse_class(ClassNode *p_class) {
 					_set_error("'class_name' syntax: 'class_name <UniqueName>'");
 					return;
 				}
+				if (p_class->classname_used) {
+					_set_error("'class_name' already used for this class.");
+					return;
+				}
+
+				p_class->classname_used = true;
 
 				p_class->name = tokenizer->get_token_identifier(1);
 
@@ -6015,7 +6021,11 @@ bool GDScriptParser::_is_type_compatible(const DataType &p_container, const Data
 }
 
 GDScriptParser::DataType GDScriptParser::_reduce_node_type(Node *p_node) {
+#ifdef DEBUG_ENABLED
+	if (p_node->get_datatype().has_type && p_node->type != Node::TYPE_ARRAY && p_node->type != Node::TYPE_DICTIONARY) {
+#else
 	if (p_node->get_datatype().has_type) {
+#endif
 		return p_node->get_datatype();
 	}
 

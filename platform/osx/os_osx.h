@@ -60,6 +60,7 @@ public:
 		unsigned int osx_state;
 		bool pressed;
 		bool echo;
+		bool raw;
 		uint32_t scancode;
 		uint32_t unicode;
 	};
@@ -186,6 +187,7 @@ public:
 	virtual Size2 get_window_size() const;
 	virtual Size2 get_real_window_size() const;
 
+	virtual void set_native_icon(const String &p_filename);
 	virtual void set_icon(const Ref<Image> &p_icon);
 
 	virtual MainLoop *get_main_loop() const;

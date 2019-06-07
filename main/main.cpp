@@ -161,7 +161,7 @@ static String unescape_cmdline(const String &p_str) {
 static String get_full_version_string() {
 	String hash = String(VERSION_HASH);
 	if (hash.length() != 0)
-		hash = "." + hash.left(7);
+		hash = "." + hash.left(9);
 	return String(VERSION_FULL_BUILD) + hash;
 }
 
@@ -204,7 +204,8 @@ void finalize_physics() {
 
 void Main::print_help(const char *p_binary) {
 
-	print_line(String(VERSION_NAME) + " v" + get_full_version_string() + " - https://godotengine.org");
+	print_line(String(VERSION_NAME) + " v" + get_full_version_string() + " - " + String(VERSION_WEBSITE));
+	OS::get_singleton()->print("Free and open source software under the terms of the MIT license.\n");
 	OS::get_singleton()->print("(c) 2007-2019 Juan Linietsky, Ariel Manzur.\n");
 	OS::get_singleton()->print("(c) 2014-2019 Godot Engine contributors.\n");
 	OS::get_singleton()->print("\n");
@@ -374,7 +375,7 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 
 	while (I) {
 
-		I->get() = unescape_cmdline(I->get().strip_escapes());
+		I->get() = unescape_cmdline(I->get().strip_edges());
 		I = I->next();
 	}
 
@@ -1091,6 +1092,9 @@ error:
 
 Error Main::setup2(Thread::ID p_main_tid_override) {
 
+	// Print engine name and version
+	print_line(String(VERSION_NAME) + " v" + get_full_version_string() + " - " + String(VERSION_WEBSITE));
+
 	if (p_main_tid_override) {
 		Thread::_main_thread_id = p_main_tid_override;
 	}
@@ -1196,6 +1200,12 @@ Error Main::setup2(Thread::ID p_main_tid_override) {
 
 	GLOBAL_DEF("application/config/icon", String());
 	ProjectSettings::get_singleton()->set_custom_property_info("application/config/icon", PropertyInfo(Variant::STRING, "application/config/icon", PROPERTY_HINT_FILE, "*.png,*.webp"));
+
+	GLOBAL_DEF("application/config/macos_native_icon", String());
+	ProjectSettings::get_singleton()->set_custom_property_info("application/config/macos_native_icon", PropertyInfo(Variant::STRING, "application/config/macos_native_icon", PROPERTY_HINT_FILE, "*.icns"));
+
+	GLOBAL_DEF("application/config/windows_native_icon", String());
+	ProjectSettings::get_singleton()->set_custom_property_info("application/config/windows_native_icon", PropertyInfo(Variant::STRING, "application/config/windows_native_icon", PROPERTY_HINT_FILE, "*.ico"));
 
 	InputDefault *id = Object::cast_to<InputDefault>(Input::get_singleton());
 	if (id) {
@@ -1747,8 +1757,24 @@ bool Main::start() {
 				ERR_FAIL_COND_V(!scene, false)
 				sml->add_current_scene(scene);
 
+#ifdef OSX_ENABLED
+				String mac_iconpath = GLOBAL_DEF("application/config/macos_native_icon", "Variant()");
+				if (mac_iconpath != "") {
+					OS::get_singleton()->set_native_icon(mac_iconpath);
+					hasicon = true;
+				}
+#endif
+
+#ifdef WINDOWS_ENABLED
+				String win_iconpath = GLOBAL_DEF("application/config/windows_native_icon", "Variant()");
+				if (win_iconpath != "") {
+					OS::get_singleton()->set_native_icon(win_iconpath);
+					hasicon = true;
+				}
+#endif
+
 				String iconpath = GLOBAL_DEF("application/config/icon", "Variant()");
-				if (iconpath != "") {
+				if ((iconpath != "") && (!hasicon)) {
 					Ref<Image> icon;
 					icon.instance();
 					if (ImageLoader::load_image(iconpath, icon) == OK) {

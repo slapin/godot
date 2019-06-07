@@ -50,7 +50,7 @@ inline bool _is_symbol(CharType c) {
 
 static bool _is_text_char(CharType c) {
 
-	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
+	return !is_symbol(c);
 }
 
 static bool _is_whitespace(CharType c) {
@@ -406,6 +406,7 @@ void TextEdit::_update_scrollbars() {
 		cursor.line_ofs = 0;
 		cursor.wrap_ofs = 0;
 		v_scroll->set_value(0);
+		v_scroll->set_max(0);
 		v_scroll->hide();
 	}
 
@@ -424,6 +425,7 @@ void TextEdit::_update_scrollbars() {
 
 		cursor.x_ofs = 0;
 		h_scroll->set_value(0);
+		h_scroll->set_max(0);
 		h_scroll->hide();
 	}
 
@@ -4167,7 +4169,7 @@ void TextEdit::_scroll_moved(double p_to_val) {
 		int v_scroll_i = floor(get_v_scroll());
 		int sc = 0;
 		int n_line;
-		for (n_line = 0; n_line < text.size(); n_line++) {
+		for (n_line = 0; n_line < text.size() - 1; n_line++) {
 			if (!is_line_hidden(n_line)) {
 				sc++;
 				sc += times_line_wraps(n_line);

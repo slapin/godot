@@ -515,6 +515,9 @@
 		</method>
 	</methods>
 	<members>
+		<member name="allow_search" type="bool" setter="set_allow_search" getter="get_allow_search">
+			If [code]true[/code], allows to navigate [PopupMenu] with letter keys. Default value: [code]false[/code].
+		</member>
 		<member name="hide_on_checkable_item_selection" type="bool" setter="set_hide_on_checkable_item_selection" getter="is_hide_on_checkable_item_selection">
 		</member>
 		<member name="hide_on_item_selection" type="bool" setter="set_hide_on_item_selection" getter="is_hide_on_item_selection">

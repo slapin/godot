@@ -442,14 +442,14 @@ Error _OS::shell_open(String p_uri) {
 	return OS::get_singleton()->shell_open(p_uri);
 };
 
-int _OS::execute(const String &p_path, const Vector<String> &p_arguments, bool p_blocking, Array p_output) {
+int _OS::execute(const String &p_path, const Vector<String> &p_arguments, bool p_blocking, Array p_output, bool p_read_stderr) {
 
 	OS::ProcessID pid = -2;
 	List<String> args;
 	for (int i = 0; i < p_arguments.size(); i++)
 		args.push_back(p_arguments[i]);
 	String pipe;
-	Error err = OS::get_singleton()->execute(p_path, args, p_blocking, &pid, &pipe);
+	Error err = OS::get_singleton()->execute(p_path, args, p_blocking, &pid, &pipe, NULL, p_read_stderr);
 	p_output.clear();
 	p_output.push_back(pipe);
 	if (err != OK)
@@ -609,6 +609,11 @@ uint64_t _OS::get_static_memory_peak_usage() const {
 uint64_t _OS::get_dynamic_memory_usage() const {
 
 	return OS::get_singleton()->get_dynamic_memory_usage();
+}
+
+void _OS::set_native_icon(const String &p_filename) {
+
+	OS::get_singleton()->set_native_icon(p_filename);
 }
 
 void _OS::set_icon(const Ref<Image> &p_icon) {
@@ -1178,7 +1183,7 @@ void _OS::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_processor_count"), &_OS::get_processor_count);
 
 	ClassDB::bind_method(D_METHOD("get_executable_path"), &_OS::get_executable_path);
-	ClassDB::bind_method(D_METHOD("execute", "path", "arguments", "blocking", "output"), &_OS::execute, DEFVAL(Array()));
+	ClassDB::bind_method(D_METHOD("execute", "path", "arguments", "blocking", "output", "read_stderr"), &_OS::execute, DEFVAL(Array()), DEFVAL(false));
 	ClassDB::bind_method(D_METHOD("kill", "pid"), &_OS::kill);
 	ClassDB::bind_method(D_METHOD("shell_open", "uri"), &_OS::shell_open);
 	ClassDB::bind_method(D_METHOD("get_process_id"), &_OS::get_process_id);
@@ -1199,6 +1204,7 @@ void _OS::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_system_time_secs"), &_OS::get_system_time_secs);
 	ClassDB::bind_method(D_METHOD("get_system_time_msecs"), &_OS::get_system_time_msecs);
 
+	ClassDB::bind_method(D_METHOD("set_native_icon", "filename"), &_OS::set_native_icon);
 	ClassDB::bind_method(D_METHOD("set_icon", "icon"), &_OS::set_icon);
 
 	ClassDB::bind_method(D_METHOD("get_exit_code"), &_OS::get_exit_code);
