@@ -99,6 +99,7 @@ public:
 	virtual void set_executing_line(int p_line) = 0;
 	virtual void clear_executing_line() = 0;
 	virtual void trim_trailing_whitespace() = 0;
+	virtual void insert_final_newline() = 0;
 	virtual void convert_indent_to_spaces() = 0;
 	virtual void convert_indent_to_tabs() = 0;
 	virtual void ensure_focus() = 0;
@@ -263,6 +264,7 @@ class ScriptEditor : public PanelContainer {
 	void _tab_changed(int p_which);
 	void _menu_option(int p_option);
 	void _theme_option(int p_option);
+	void _show_save_theme_as_dialog();
 
 	Tree *disk_changed_list;
 	ConfirmationDialog *disk_changed;

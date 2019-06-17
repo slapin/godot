@@ -1002,7 +1002,7 @@ static const _KeyCodeMap _keycodes[55] = {
 	{ '/', KEY_SLASH }
 };
 
-static int remapKey(unsigned int key) {
+static int remapKey(unsigned int key, unsigned int state) {
 
 	if (isNumpadKey(key))
 		return translateKey(key);
@@ -1024,7 +1024,7 @@ static int remapKey(unsigned int key) {
 	OSStatus err = UCKeyTranslate(keyboardLayout,
 			key,
 			kUCKeyActionDisplay,
-			0,
+			(state >> 8) & 0xFF,
 			LMGetKbdType(),
 			kUCKeyTranslateNoDeadKeysBit,
 			&keysDown,
@@ -1051,7 +1051,7 @@ static int remapKey(unsigned int key) {
 		NSString *characters = [event characters];
 		NSUInteger length = [characters length];
 
-		if (!OS_OSX::singleton->im_active && length > 0 && keycode_has_unicode(remapKey([event keyCode]))) {
+		if (!OS_OSX::singleton->im_active && length > 0 && keycode_has_unicode(remapKey([event keyCode], [event modifierFlags]))) {
 			// Fallback unicode character handler used if IME is not active
 			for (NSUInteger i = 0; i < length; i++) {
 				OS_OSX::KeyEvent ke;
@@ -1059,7 +1059,7 @@ static int remapKey(unsigned int key) {
 				ke.osx_state = [event modifierFlags];
 				ke.pressed = true;
 				ke.echo = [event isARepeat];
-				ke.scancode = remapKey([event keyCode]);
+				ke.scancode = remapKey([event keyCode], [event modifierFlags]);
 				ke.raw = true;
 				ke.unicode = [characters characterAtIndex:i];
 
@@ -1071,7 +1071,7 @@ static int remapKey(unsigned int key) {
 			ke.osx_state = [event modifierFlags];
 			ke.pressed = true;
 			ke.echo = [event isARepeat];
-			ke.scancode = remapKey([event keyCode]);
+			ke.scancode = remapKey([event keyCode], [event modifierFlags]);
 			ke.raw = false;
 			ke.unicode = 0;
 
@@ -1129,7 +1129,7 @@ static int remapKey(unsigned int key) {
 		}
 
 		ke.osx_state = mod;
-		ke.scancode = remapKey(key);
+		ke.scancode = remapKey(key, mod);
 		ke.unicode = 0;
 
 		push_to_key_event_buffer(ke);
@@ -1144,14 +1144,14 @@ static int remapKey(unsigned int key) {
 		NSUInteger length = [characters length];
 
 		// Fallback unicode character handler used if IME is not active
-		if (!OS_OSX::singleton->im_active && length > 0 && keycode_has_unicode(remapKey([event keyCode]))) {
+		if (!OS_OSX::singleton->im_active && length > 0 && keycode_has_unicode(remapKey([event keyCode], [event modifierFlags]))) {
 			for (NSUInteger i = 0; i < length; i++) {
 				OS_OSX::KeyEvent ke;
 
 				ke.osx_state = [event modifierFlags];
 				ke.pressed = false;
 				ke.echo = [event isARepeat];
-				ke.scancode = remapKey([event keyCode]);
+				ke.scancode = remapKey([event keyCode], [event modifierFlags]);
 				ke.raw = true;
 				ke.unicode = [characters characterAtIndex:i];
 
@@ -1163,7 +1163,7 @@ static int remapKey(unsigned int key) {
 			ke.osx_state = [event modifierFlags];
 			ke.pressed = false;
 			ke.echo = [event isARepeat];
-			ke.scancode = remapKey([event keyCode]);
+			ke.scancode = remapKey([event keyCode], [event modifierFlags]);
 			ke.raw = true;
 			ke.unicode = 0;
 
@@ -1542,6 +1542,8 @@ Error OS_OSX::initialize(const VideoMode &p_desired, int p_video_driver, int p_a
 	visual_server->init();
 	AudioDriverManager::initialize(p_audio_driver);
 
+	camera_server = memnew(CameraOSX);
+
 	input = memnew(InputDefault);
 	joypad_osx = memnew(JoypadOSX);
 
@@ -1551,7 +1553,7 @@ Error OS_OSX::initialize(const VideoMode &p_desired, int p_video_driver, int p_a
 
 	restore_rect = Rect2(get_window_position(), get_window_size());
 
-	if (p_desired.layered_splash) {
+	if (p_desired.layered) {
 		set_window_per_pixel_transparency_enabled(true);
 	}
 	return OK;
@@ -1572,6 +1574,11 @@ void OS_OSX::finalize() {
 	CGDisplayRemoveReconfigurationCallback(displays_arrangement_changed, NULL);
 
 	delete_main_loop();
+
+	if (camera_server) {
+		memdelete(camera_server);
+		camera_server = NULL;
+	}
 
 	memdelete(joypad_osx);
 	memdelete(input);

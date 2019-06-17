@@ -63,6 +63,7 @@ void EditorFileDialog::_notification(int p_what) {
 		dir_up->set_icon(get_icon("ArrowUp", "EditorIcons"));
 		refresh->set_icon(get_icon("Reload", "EditorIcons"));
 		favorite->set_icon(get_icon("Favorites", "EditorIcons"));
+		show_hidden->set_icon(get_icon("GuiVisibilityVisible", "EditorIcons"));
 
 		fav_up->set_icon(get_icon("MoveUp", "EditorIcons"));
 		fav_down->set_icon(get_icon("MoveDown", "EditorIcons"));
@@ -86,9 +87,9 @@ void EditorFileDialog::_notification(int p_what) {
 
 	} else if (p_what == EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED) {
 
-		bool show_hidden = EditorSettings::get_singleton()->get("filesystem/file_dialog/show_hidden_files");
-		if (show_hidden_files != show_hidden)
-			set_show_hidden_files(show_hidden);
+		bool is_showing_hidden = EditorSettings::get_singleton()->get("filesystem/file_dialog/show_hidden_files");
+		if (show_hidden_files != is_showing_hidden)
+			set_show_hidden_files(is_showing_hidden);
 		set_display_mode((DisplayMode)EditorSettings::get_singleton()->get("filesystem/file_dialog/display_mode").operator int());
 
 		// update icons
@@ -140,7 +141,7 @@ void EditorFileDialog::_unhandled_input(const Ref<InputEvent> &p_event) {
 				handled = true;
 			}
 			if (ED_IS_SHORTCUT("file_dialog/toggle_favorite", p_event)) {
-				_favorite_toggled(favorite->is_pressed());
+				_favorite_pressed();
 				handled = true;
 			}
 			if (ED_IS_SHORTCUT("file_dialog/toggle_mode", p_event)) {
@@ -231,6 +232,7 @@ void EditorFileDialog::_file_entered(const String &p_file) {
 }
 
 void EditorFileDialog::_save_confirm_pressed() {
+
 	String f = dir_access->get_current_dir().plus_file(file->get_text());
 	_save_to_recent();
 	hide();
@@ -717,20 +719,19 @@ void EditorFileDialog::update_file_list() {
 	List<String> files;
 	List<String> dirs;
 
-	bool isdir;
-	bool ishidden;
-	bool show_hidden = show_hidden_files;
+	bool is_dir;
+	bool is_hidden;
 	String item;
 
-	while ((item = dir_access->get_next(&isdir)) != "") {
+	while ((item = dir_access->get_next(&is_dir)) != "") {
 
 		if (item == "." || item == "..")
 			continue;
 
-		ishidden = dir_access->current_is_hidden();
+		is_hidden = dir_access->current_is_hidden();
 
-		if (show_hidden || !ishidden) {
-			if (!isdir)
+		if (show_hidden_files || !is_hidden) {
+			if (!is_dir)
 				files.push_back(item);
 			else
 				dirs.push_back(item);
@@ -1130,6 +1131,7 @@ void EditorFileDialog::_update_drives() {
 }
 
 void EditorFileDialog::_favorite_selected(int p_idx) {
+
 	dir_access->change_dir(favorites->get_item_metadata(p_idx));
 	file->set_text("");
 	update_dir();
@@ -1210,7 +1212,7 @@ void EditorFileDialog::_update_favorites() {
 
 			favorites->add_item(name, folder_icon);
 		} else {
-			continue; // We don't handle favorite files here
+			continue; // We don't handle favorite files here.
 		}
 
 		favorites->set_item_metadata(favorites->get_item_count() - 1, favorited[i]);
@@ -1218,11 +1220,12 @@ void EditorFileDialog::_update_favorites() {
 		if (setthis) {
 			favorite->set_pressed(true);
 			favorites->set_current(favorites->get_item_count() - 1);
+			recent->unselect_all();
 		}
 	}
 }
 
-void EditorFileDialog::_favorite_toggled(bool p_toggle) {
+void EditorFileDialog::_favorite_pressed() {
 	bool res = access == ACCESS_RESOURCES;
 
 	String cd = get_current_dir();
@@ -1375,7 +1378,7 @@ void EditorFileDialog::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_go_forward"), &EditorFileDialog::_go_forward);
 	ClassDB::bind_method(D_METHOD("_go_up"), &EditorFileDialog::_go_up);
 
-	ClassDB::bind_method(D_METHOD("_favorite_toggled"), &EditorFileDialog::_favorite_toggled);
+	ClassDB::bind_method(D_METHOD("_favorite_pressed"), &EditorFileDialog::_favorite_pressed);
 	ClassDB::bind_method(D_METHOD("_favorite_selected"), &EditorFileDialog::_favorite_selected);
 	ClassDB::bind_method(D_METHOD("_favorite_move_up"), &EditorFileDialog::_favorite_move_up);
 	ClassDB::bind_method(D_METHOD("_favorite_move_down"), &EditorFileDialog::_favorite_move_down);
@@ -1411,6 +1414,7 @@ void EditorFileDialog::_bind_methods() {
 
 void EditorFileDialog::set_show_hidden_files(bool p_show) {
 	show_hidden_files = p_show;
+	show_hidden->set_pressed(p_show);
 	invalidate();
 }
 
@@ -1516,16 +1520,22 @@ EditorFileDialog::EditorFileDialog() {
 	pathhb->add_child(refresh);
 
 	favorite = memnew(ToolButton);
-	favorite->set_flat(true);
 	favorite->set_toggle_mode(true);
 	favorite->set_tooltip(TTR("(Un)favorite current folder."));
-	favorite->connect("toggled", this, "_favorite_toggled");
+	favorite->connect("pressed", this, "_favorite_pressed");
 	pathhb->add_child(favorite);
+
+	show_hidden = memnew(ToolButton);
+	show_hidden->set_toggle_mode(true);
+	show_hidden->set_pressed(is_showing_hidden_files());
+	show_hidden->set_tooltip(TTR("Toggle visibility of hidden files."));
+	show_hidden->connect("toggled", this, "set_show_hidden_files");
+	pathhb->add_child(show_hidden);
+
+	pathhb->add_child(memnew(VSeparator));
 
 	Ref<ButtonGroup> view_mode_group;
 	view_mode_group.instance();
-
-	pathhb->add_child(memnew(VSeparator));
 
 	mode_thumbnails = memnew(ToolButton);
 	mode_thumbnails->connect("pressed", this, "set_display_mode", varray(DISPLAY_THUMBNAILS));
@@ -1586,6 +1596,7 @@ EditorFileDialog::EditorFileDialog() {
 	rec_vb->set_custom_minimum_size(Size2(150, 100) * EDSCALE);
 	rec_vb->set_v_size_flags(SIZE_EXPAND_FILL);
 	recent = memnew(ItemList);
+	recent->set_allow_reselect(true);
 	rec_vb->add_margin_child(TTR("Recent:"), recent, true);
 	recent->connect("item_selected", this, "_recent_selected");
 
@@ -1602,7 +1613,7 @@ EditorFileDialog::EditorFileDialog() {
 	list_vb->add_child(memnew(Label(TTR("Directories & Files:"))));
 	preview_hb->add_child(list_vb);
 
-	// Item (files and folders) list with context menu
+	// Item (files and folders) list with context menu.
 
 	item_list = memnew(ItemList);
 	item_list->set_v_size_flags(SIZE_EXPAND_FILL);
@@ -1615,7 +1626,7 @@ EditorFileDialog::EditorFileDialog() {
 	item_menu->connect("id_pressed", this, "_item_menu_id_pressed");
 	add_child(item_menu);
 
-	// Other stuff
+	// Other stuff.
 
 	preview_vb = memnew(VBoxContainer);
 	preview_hb->add_child(preview_vb);
@@ -1634,7 +1645,7 @@ EditorFileDialog::EditorFileDialog() {
 	filter = memnew(OptionButton);
 	filter->set_stretch_ratio(3);
 	filter->set_h_size_flags(SIZE_EXPAND_FILL);
-	filter->set_clip_text(true); // too many extensions overflow it
+	filter->set_clip_text(true); // Too many extensions overflow it.
 	filename_hbc->add_child(filter);
 	filename_hbc->set_h_size_flags(SIZE_EXPAND_FILL);
 	item_vb->add_child(filename_hbc);

@@ -140,6 +140,7 @@ public:
 	virtual uint32_t texture_get_height(RID p_texture) const = 0;
 	virtual uint32_t texture_get_depth(RID p_texture) const = 0;
 	virtual void texture_set_size_override(RID p_texture, int p_width, int p_height, int p_depth_3d) = 0;
+	virtual void texture_bind(RID p_texture, uint32_t p_texture_no) = 0;
 
 	virtual void texture_set_path(RID p_texture, const String &p_path) = 0;
 	virtual String texture_get_path(RID p_texture) const = 0;
@@ -707,6 +708,7 @@ public:
 		ENV_BG_COLOR_SKY,
 		ENV_BG_CANVAS,
 		ENV_BG_KEEP,
+		ENV_BG_CAMERA_FEED,
 		ENV_BG_MAX
 	};
 
@@ -718,6 +720,7 @@ public:
 	virtual void environment_set_bg_energy(RID p_env, float p_energy) = 0;
 	virtual void environment_set_canvas_max_layer(RID p_env, int p_max_layer) = 0;
 	virtual void environment_set_ambient_light(RID p_env, const Color &p_color, float p_energy = 1.0, float p_sky_contribution = 0.0) = 0;
+	virtual void environment_set_camera_feed_id(RID p_env, int p_camera_feed_id) = 0;
 
 	//set default SSAO options
 	//set default SSR options
@@ -1029,7 +1032,7 @@ public:
 	virtual void mesh_add_surface_from_mesh_data(RID p_mesh, const Geometry::MeshData &p_mesh_data);
 	virtual void mesh_add_surface_from_planes(RID p_mesh, const PoolVector<Plane> &p_planes);
 
-	virtual void set_boot_image(const Ref<Image> &p_image, const Color &p_color, bool p_scale) = 0;
+	virtual void set_boot_image(const Ref<Image> &p_image, const Color &p_color, bool p_scale, bool p_use_filter = true) = 0;
 	virtual void set_default_clear_color(const Color &p_color) = 0;
 
 	enum Features {

@@ -2956,26 +2956,12 @@ String String::replace(const char *p_key, const char *p_with) const {
 
 String String::replace_first(const String &p_key, const String &p_with) const {
 
-	String new_string;
-	int search_from = 0;
-	int result = 0;
-
-	while ((result = find(p_key, search_from)) >= 0) {
-
-		new_string += substr(search_from, result - search_from);
-		new_string += p_with;
-		search_from = result + p_key.length();
-		break;
+	int pos = find(p_key);
+	if (pos >= 0) {
+		return substr(0, pos) + p_with + substr(pos + p_key.length(), length());
 	}
 
-	if (search_from == 0) {
-
-		return *this;
-	}
-
-	new_string += substr(search_from, length() - search_from);
-
-	return new_string;
+	return *this;
 }
 String String::replacen(const String &p_key, const String &p_with) const {
 
@@ -3235,7 +3221,7 @@ static int _humanize_digits(int p_num) {
 String String::humanize_size(size_t p_size) {
 
 	uint64_t _div = 1;
-	static const char *prefix[] = { " Bytes", " KB", " MB", " GB", "TB", " PB", "HB", "" };
+	static const char *prefix[] = { " Bytes", " KB", " MB", " GB", " TB", " PB", " EB", "" };
 	int prefix_idx = 0;
 
 	while (p_size > (_div * 1024) && prefix[prefix_idx][0]) {
@@ -3246,7 +3232,7 @@ String String::humanize_size(size_t p_size) {
 	int digits = prefix_idx > 0 ? _humanize_digits(p_size / _div) : 0;
 	double divisor = prefix_idx > 0 ? _div : 1;
 
-	return String::num(p_size / divisor, digits) + prefix[prefix_idx];
+	return String::num(p_size / divisor).pad_decimals(digits) + prefix[prefix_idx];
 }
 bool String::is_abs_path() const {
 

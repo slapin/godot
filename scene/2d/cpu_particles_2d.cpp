@@ -29,8 +29,9 @@
 /*************************************************************************/
 
 #include "cpu_particles_2d.h"
-#include "particles_2d.h"
+
 #include "scene/2d/canvas_item.h"
+#include "scene/2d/particles_2d.h"
 #include "scene/resources/particles_material.h"
 #include "servers/visual_server.h"
 
@@ -85,7 +86,9 @@ void CPUParticles2D::set_randomness_ratio(float p_ratio) {
 void CPUParticles2D::set_use_local_coordinates(bool p_enable) {
 
 	local_coords = p_enable;
+	set_notify_transform(!p_enable);
 }
+
 void CPUParticles2D::set_speed_scale(float p_scale) {
 
 	speed_scale = p_scale;
@@ -324,9 +327,9 @@ void CPUParticles2D::set_param_curve(Parameter p_param, const Ref<Curve> &p_curv
 		case PARAM_ANGULAR_VELOCITY: {
 			_adjust_curve_range(p_curve, -360, 360);
 		} break;
-		/*case PARAM_ORBIT_VELOCITY: {
+		case PARAM_ORBIT_VELOCITY: {
 			_adjust_curve_range(p_curve, -500, 500);
-		} break;*/
+		} break;
 		case PARAM_LINEAR_ACCEL: {
 			_adjust_curve_range(p_curve, -200, 200);
 		} break;
@@ -489,12 +492,6 @@ void CPUParticles2D::_validate_property(PropertyInfo &property) const {
 	if (property.name == "emission_colors" && emission_shape != EMISSION_SHAPE_POINTS && emission_shape != EMISSION_SHAPE_DIRECTED_POINTS) {
 		property.usage = 0;
 	}
-
-	/*
-	if (property.name.begins_with("orbit_") && !flags[FLAG_DISABLE_Z]) {
-		property.usage = 0;
-	}
-	*/
 }
 
 static uint32_t idhash(uint32_t x) {
@@ -545,6 +542,8 @@ void CPUParticles2D::_particles_process(float p_delta) {
 		velocity_xform[2] = Vector2();
 	}
 
+	float system_phase = time / lifetime;
+
 	for (int i = 0; i < pcount; i++) {
 
 		Particle &p = parray[i];
@@ -552,21 +551,26 @@ void CPUParticles2D::_particles_process(float p_delta) {
 		if (!emitting && !p.active)
 			continue;
 
-		float restart_time = (float(i) / float(pcount)) * lifetime;
 		float local_delta = p_delta;
+
+		// The phase is a ratio between 0 (birth) and 1 (end of life) for each particle.
+		// While we use time in tests later on, for randomness we use the phase as done in the
+		// original shader code, and we later multiply by lifetime to get the time.
+		float restart_phase = float(i) / float(pcount);
 
 		if (randomness_ratio > 0.0) {
 			uint32_t seed = cycle;
-			if (restart_time >= time) {
+			if (restart_phase >= system_phase) {
 				seed -= uint32_t(1);
 			}
 			seed *= uint32_t(pcount);
 			seed += uint32_t(i);
 			float random = float(idhash(seed) % uint32_t(65536)) / 65536.0;
-			restart_time += randomness_ratio * random * 1.0 / float(pcount);
+			restart_phase += randomness_ratio * random * 1.0 / float(pcount);
 		}
 
-		restart_time *= (1.0 - explosiveness_ratio);
+		restart_phase *= (1.0 - explosiveness_ratio);
+		float restart_time = restart_phase * lifetime;
 		bool restart = false;
 
 		if (time > prev_time) {
@@ -688,16 +692,12 @@ void CPUParticles2D::_particles_process(float p_delta) {
 			if (curve_parameters[PARAM_INITIAL_LINEAR_VELOCITY].is_valid()) {
 				tex_linear_velocity = curve_parameters[PARAM_INITIAL_LINEAR_VELOCITY]->interpolate(p.custom[1]);
 			}
-			/*
+
 			float tex_orbit_velocity = 0.0;
-
-			if (flags[FLAG_DISABLE_Z]) {
-
-				if (curve_parameters[PARAM_INITIAL_ORBIT_VELOCITY].is_valid()) {
-					tex_orbit_velocity = curve_parameters[PARAM_INITIAL_ORBIT_VELOCITY]->interpolate(p.custom[1]);
-				}
+			if (curve_parameters[PARAM_ORBIT_VELOCITY].is_valid()) {
+				tex_orbit_velocity = curve_parameters[PARAM_ORBIT_VELOCITY]->interpolate(p.custom[1]);
 			}
-*/
+
 			float tex_angular_velocity = 0.0;
 			if (curve_parameters[PARAM_ANGULAR_VELOCITY].is_valid()) {
 				tex_angular_velocity = curve_parameters[PARAM_ANGULAR_VELOCITY]->interpolate(p.custom[1]);
@@ -748,22 +748,19 @@ void CPUParticles2D::_particles_process(float p_delta) {
 			force += diff.length() > 0.0 ? diff.normalized() * (parameters[PARAM_RADIAL_ACCEL] + tex_radial_accel) * Math::lerp(1.0f, rand_from_seed(alt_seed), randomness[PARAM_RADIAL_ACCEL]) : Vector2();
 			//apply tangential acceleration;
 			Vector2 yx = Vector2(diff.y, diff.x);
-			force += yx.length() > 0.0 ? (yx * Vector2(-1.0, 1.0)) * ((parameters[PARAM_TANGENTIAL_ACCEL] + tex_tangential_accel) * Math::lerp(1.0f, rand_from_seed(alt_seed), randomness[PARAM_TANGENTIAL_ACCEL])) : Vector2();
+			force += yx.length() > 0.0 ? (yx * Vector2(-1.0, 1.0)).normalized() * ((parameters[PARAM_TANGENTIAL_ACCEL] + tex_tangential_accel) * Math::lerp(1.0f, rand_from_seed(alt_seed), randomness[PARAM_TANGENTIAL_ACCEL])) : Vector2();
 			//apply attractor forces
 			p.velocity += force * local_delta;
 			//orbit velocity
-#if 0
-			if (flags[FLAG_DISABLE_Z]) {
-
-				float orbit_amount = (orbit_velocity + tex_orbit_velocity) * mix(1.0, rand_from_seed(alt_seed), orbit_velocity_random);
-				if (orbit_amount != 0.0) {
-					float ang = orbit_amount * DELTA * pi * 2.0;
-					mat2 rot = mat2(vec2(cos(ang), -sin(ang)), vec2(sin(ang), cos(ang)));
-					TRANSFORM[3].xy -= diff.xy;
-					TRANSFORM[3].xy += rot * diff.xy;
-				}
+			float orbit_amount = (parameters[PARAM_ORBIT_VELOCITY] + tex_orbit_velocity) * Math::lerp(1.0f, rand_from_seed(alt_seed), randomness[PARAM_ORBIT_VELOCITY]);
+			if (orbit_amount != 0.0) {
+				float ang = orbit_amount * local_delta * Math_PI * 2.0;
+				// Not sure why the ParticlesMaterial code uses a clockwise rotation matrix,
+				// but we use -ang here to reproduce its behavior.
+				Transform2D rot = Transform2D(-ang, Vector2());
+				p.transform[2] -= diff;
+				p.transform[2] += rot.basis_xform(diff);
 			}
-#endif
 			if (curve_parameters[PARAM_INITIAL_LINEAR_VELOCITY].is_valid()) {
 				p.velocity = p.velocity.normalized() * tex_linear_velocity;
 			}
@@ -865,11 +862,6 @@ void CPUParticles2D::_update_particle_data_buffer() {
 		PoolVector<Particle>::Read r = particles.read();
 		float *ptr = w.ptr();
 
-		Transform2D un_transform;
-		if (!local_coords) {
-			un_transform = get_global_transform().affine_inverse();
-		}
-
 		if (draw_order != DRAW_ORDER_INDEX) {
 			ow = particle_order.write();
 			order = ow.ptr();
@@ -891,7 +883,7 @@ void CPUParticles2D::_update_particle_data_buffer() {
 			Transform2D t = r[idx].transform;
 
 			if (!local_coords) {
-				t = un_transform * t;
+				t = inv_emission_transform * t;
 			}
 
 			if (r[idx].active) {
@@ -1060,6 +1052,42 @@ void CPUParticles2D::_notification(int p_what) {
 
 		_update_particle_data_buffer();
 	}
+
+	if (p_what == NOTIFICATION_TRANSFORM_CHANGED) {
+
+		inv_emission_transform = get_global_transform().affine_inverse();
+
+		if (!local_coords) {
+
+			int pc = particles.size();
+
+			PoolVector<float>::Write w = particle_data.write();
+			PoolVector<Particle>::Read r = particles.read();
+			float *ptr = w.ptr();
+
+			for (int i = 0; i < pc; i++) {
+
+				Transform2D t = inv_emission_transform * r[i].transform;
+
+				if (r[i].active) {
+
+					ptr[0] = t.elements[0][0];
+					ptr[1] = t.elements[1][0];
+					ptr[2] = 0;
+					ptr[3] = t.elements[2][0];
+					ptr[4] = t.elements[0][1];
+					ptr[5] = t.elements[1][1];
+					ptr[6] = 0;
+					ptr[7] = t.elements[2][1];
+
+				} else {
+					zeromem(ptr, sizeof(float) * 8);
+				}
+
+				ptr += 13;
+			}
+		}
+	}
 }
 
 void CPUParticles2D::convert_from_particles(Node *p_particles) {
@@ -1174,15 +1202,16 @@ void CPUParticles2D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "emitting"), "set_emitting", "is_emitting");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "amount", PROPERTY_HINT_EXP_RANGE, "1,1000000,1"), "set_amount", "get_amount");
 	ADD_GROUP("Time", "");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "lifetime", PROPERTY_HINT_EXP_RANGE, "0.01,600.0,0.01,or_greater"), "set_lifetime", "get_lifetime");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "lifetime", PROPERTY_HINT_RANGE, "0.01,600.0,0.01,or_greater"), "set_lifetime", "get_lifetime");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "one_shot"), "set_one_shot", "get_one_shot");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "preprocess", PROPERTY_HINT_EXP_RANGE, "0.00,600.0,0.01"), "set_pre_process_time", "get_pre_process_time");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "preprocess", PROPERTY_HINT_RANGE, "0.00,600.0,0.01"), "set_pre_process_time", "get_pre_process_time");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "speed_scale", PROPERTY_HINT_RANGE, "0,64,0.01"), "set_speed_scale", "get_speed_scale");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "explosiveness", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_explosiveness_ratio", "get_explosiveness_ratio");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "randomness", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_randomness_ratio", "get_randomness_ratio");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "fixed_fps", PROPERTY_HINT_RANGE, "0,1000,1"), "set_fixed_fps", "get_fixed_fps");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "fract_delta"), "set_fractional_delta", "get_fractional_delta");
 	ADD_GROUP("Drawing", "");
+	// No visibility_rect property contrarily to Particles2D, it's updated automatically.
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "local_coords"), "set_use_local_coordinates", "get_use_local_coordinates");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "draw_order", PROPERTY_HINT_ENUM, "Index,Lifetime"), "set_draw_order", "get_draw_order");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "texture", PROPERTY_HINT_RESOURCE_TYPE, "Texture"), "set_texture", "get_texture");
@@ -1263,12 +1292,10 @@ void CPUParticles2D::_bind_methods() {
 	ADD_PROPERTYI(PropertyInfo(Variant::REAL, "angular_velocity", PROPERTY_HINT_RANGE, "-720,720,0.01,or_lesser,or_greater"), "set_param", "get_param", PARAM_ANGULAR_VELOCITY);
 	ADD_PROPERTYI(PropertyInfo(Variant::REAL, "angular_velocity_random", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_param_randomness", "get_param_randomness", PARAM_ANGULAR_VELOCITY);
 	ADD_PROPERTYI(PropertyInfo(Variant::OBJECT, "angular_velocity_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_param_curve", "get_param_curve", PARAM_ANGULAR_VELOCITY);
-	/*
 	ADD_GROUP("Orbit Velocity", "orbit_");
 	ADD_PROPERTYI(PropertyInfo(Variant::REAL, "orbit_velocity", PROPERTY_HINT_RANGE, "-1000,1000,0.01,or_lesser,or_greater"), "set_param", "get_param", PARAM_ORBIT_VELOCITY);
 	ADD_PROPERTYI(PropertyInfo(Variant::REAL, "orbit_velocity_random", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_param_randomness", "get_param_randomness", PARAM_ORBIT_VELOCITY);
 	ADD_PROPERTYI(PropertyInfo(Variant::OBJECT, "orbit_velocity_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_param_curve", "get_param_curve", PARAM_ORBIT_VELOCITY);
-*/
 	ADD_GROUP("Linear Accel", "linear_");
 	ADD_PROPERTYI(PropertyInfo(Variant::REAL, "linear_accel", PROPERTY_HINT_RANGE, "-100,100,0.01,or_lesser,or_greater"), "set_param", "get_param", PARAM_LINEAR_ACCEL);
 	ADD_PROPERTYI(PropertyInfo(Variant::REAL, "linear_accel_random", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_param_randomness", "get_param_randomness", PARAM_LINEAR_ACCEL);
@@ -1324,6 +1351,8 @@ void CPUParticles2D::_bind_methods() {
 	BIND_ENUM_CONSTANT(PARAM_MAX);
 
 	BIND_ENUM_CONSTANT(FLAG_ALIGN_Y_TO_VELOCITY);
+	BIND_ENUM_CONSTANT(FLAG_ROTATE_Y); // Unused, but exposed for consistency with 3D.
+	BIND_ENUM_CONSTANT(FLAG_DISABLE_Z); // Unused, but exposed for consistency with 3D.
 	BIND_ENUM_CONSTANT(FLAG_MAX);
 
 	BIND_ENUM_CONSTANT(EMISSION_SHAPE_POINT);
@@ -1362,7 +1391,7 @@ CPUParticles2D::CPUParticles2D() {
 	set_spread(45);
 	set_flatness(0);
 	set_param(PARAM_INITIAL_LINEAR_VELOCITY, 1);
-	//set_param(PARAM_ORBIT_VELOCITY, 0);
+	set_param(PARAM_ORBIT_VELOCITY, 0);
 	set_param(PARAM_LINEAR_ACCEL, 0);
 	set_param(PARAM_ANGULAR_VELOCITY, 0);
 	set_param(PARAM_RADIAL_ACCEL, 0);

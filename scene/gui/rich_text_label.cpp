@@ -307,6 +307,13 @@ int RichTextLabel::_process_line(ItemFrame *p_frame, const Vector2 &p_ofs, int &
 
 		switch (it->type) {
 
+			case ITEM_ALIGN: {
+
+				ItemAlign *align_it = static_cast<ItemAlign *>(it);
+
+				align = align_it->align;
+
+			} break;
 			case ITEM_TEXT: {
 
 				ItemText *text = static_cast<ItemText *>(it);
@@ -592,7 +599,7 @@ int RichTextLabel::_process_line(ItemFrame *p_frame, const Vector2 &p_ofs, int &
 					//assign actual widths
 					for (int i = 0; i < table->columns.size(); i++) {
 						table->columns.write[i].width = table->columns[i].min_width;
-						if (table->columns[i].expand)
+						if (table->columns[i].expand && total_ratio > 0)
 							table->columns.write[i].width += table->columns[i].expand_ratio * remaining_width / total_ratio;
 						table->total_width += table->columns[i].width + hseparation;
 					}
@@ -1411,9 +1418,13 @@ void RichTextLabel::_add_item(Item *p_item, bool p_enter, bool p_ensure_newline)
 	if (p_enter)
 		current = p_item;
 
-	if (p_ensure_newline && current_frame->lines[current_frame->lines.size() - 1].from) {
-		_invalidate_current_line(current_frame);
-		current_frame->lines.resize(current_frame->lines.size() + 1);
+	if (p_ensure_newline) {
+		Item *from = current_frame->lines[current_frame->lines.size() - 1].from;
+		// only create a new line for Item types that generate content/layout, ignore those that represent formatting/styling
+		if (from && from->type != ITEM_FONT && from->type != ITEM_COLOR && from->type != ITEM_UNDERLINE && from->type != ITEM_STRIKETHROUGH) {
+			_invalidate_current_line(current_frame);
+			current_frame->lines.resize(current_frame->lines.size() + 1);
+		}
 	}
 
 	if (current_frame->lines[current_frame->lines.size() - 1].from == NULL) {

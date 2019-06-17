@@ -51,6 +51,7 @@ void SceneTreeEditor::_cell_button_pressed(Object *p_item, int p_column, int p_i
 	if (connect_to_script_mode) {
 		return; //don't do anything in this mode
 	}
+
 	TreeItem *item = Object::cast_to<TreeItem>(p_item);
 	ERR_FAIL_COND(!item);
 
@@ -220,23 +221,27 @@ bool SceneTreeEditor::_add_nodes(Node *p_node, TreeItem *p_parent) {
 		}
 
 		if (marked.has(p_node)) {
-			item->set_text(0, String(p_node->get_name()) + " " + TTR("(Connecting From)"));
-
+			String node_name = p_node->get_name();
+			if (connecting_signal) {
+				node_name += " " + TTR("(Connecting From)");
+			}
+			item->set_text(0, node_name);
 			item->set_custom_color(0, accent);
 		}
 	} else if (part_of_subscene) {
 
-		//item->set_selectable(0,marked_selectable);
 		if (valid_types.size() == 0) {
 			item->set_custom_color(0, get_color("disabled_font_color", "Editor"));
 		}
-
 	} else if (marked.has(p_node)) {
 
-		if (!connect_to_script_mode) {
-			item->set_selectable(0, marked_selectable);
+		String node_name = p_node->get_name();
+		if (connecting_signal) {
+			node_name += " " + TTR("(Connecting From)");
 		}
-		item->set_custom_color(0, get_color("error_color", "Editor"));
+		item->set_text(0, node_name);
+		item->set_selectable(0, marked_selectable);
+		item->set_custom_color(0, get_color("accent_color", "Editor"));
 	} else if (!marked_selectable && !marked_children_selectable) {
 
 		Node *node = p_node;
@@ -286,8 +291,8 @@ bool SceneTreeEditor::_add_nodes(Node *p_node, TreeItem *p_parent) {
 			p_node->connect("script_changed", this, "_node_script_changed", varray(p_node));
 
 		if (!p_node->get_script().is_null()) {
-
-			item->add_button(0, get_icon("Script", "EditorIcons"), BUTTON_SCRIPT, false, TTR("Open Script"));
+			Ref<Script> script = p_node->get_script();
+			item->add_button(0, get_icon("Script", "EditorIcons"), BUTTON_SCRIPT, false, TTR("Open Script:") + " " + script->get_path());
 		}
 
 		if (p_node->is_class("CanvasItem")) {
@@ -394,15 +399,17 @@ bool SceneTreeEditor::_add_nodes(Node *p_node, TreeItem *p_parent) {
 
 void SceneTreeEditor::_node_visibility_changed(Node *p_node) {
 
-	if (p_node != get_scene_node() && !p_node->get_owner()) {
+	if (!p_node || (p_node != get_scene_node() && !p_node->get_owner())) {
 
 		return;
 	}
-	TreeItem *item = p_node ? _find(tree->get_root(), p_node->get_path()) : NULL;
+
+	TreeItem *item = _find(tree->get_root(), p_node->get_path());
+
 	if (!item) {
-
 		return;
 	}
+
 	int idx = item->get_button_by_id(0, BUTTON_VISIBILITY);
 	ERR_FAIL_COND(idx == -1);
 
@@ -1033,6 +1040,11 @@ void SceneTreeEditor::set_connect_to_script_mode(bool p_enable) {
 	update_tree();
 }
 
+void SceneTreeEditor::set_connecting_signal(bool p_enable) {
+	connecting_signal = p_enable;
+	update_tree();
+}
+
 void SceneTreeEditor::_bind_methods() {
 
 	ClassDB::bind_method("_tree_changed", &SceneTreeEditor::_tree_changed);
@@ -1077,6 +1089,7 @@ void SceneTreeEditor::_bind_methods() {
 SceneTreeEditor::SceneTreeEditor(bool p_label, bool p_can_rename, bool p_can_open_instance) {
 
 	connect_to_script_mode = false;
+	connecting_signal = false;
 	undo_redo = NULL;
 	tree_dirty = true;
 	selected = NULL;

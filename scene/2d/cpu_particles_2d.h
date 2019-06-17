@@ -68,6 +68,8 @@ public:
 
 	enum Flags {
 		FLAG_ALIGN_Y_TO_VELOCITY,
+		FLAG_ROTATE_Y, // Unused, but exposed for consistency with 3D.
+		FLAG_DISABLE_Z, // Unused, but exposed for consistency with 3D.
 		FLAG_MAX
 	};
 
@@ -116,7 +118,7 @@ private:
 		const Particle *particles;
 
 		bool operator()(int p_a, int p_b) const {
-			return particles[p_a].time < particles[p_b].time;
+			return particles[p_a].time > particles[p_b].time;
 		}
 	};
 
@@ -141,6 +143,8 @@ private:
 	bool local_coords;
 	int fixed_fps;
 	bool fractional_delta;
+
+	Transform2D inv_emission_transform;
 
 	DrawOrder draw_order;
 

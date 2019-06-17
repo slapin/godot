@@ -1676,6 +1676,7 @@ void VisualServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("texture_set_path", "texture", "path"), &VisualServer::texture_set_path);
 	ClassDB::bind_method(D_METHOD("texture_get_path", "texture"), &VisualServer::texture_get_path);
 	ClassDB::bind_method(D_METHOD("texture_set_shrink_all_x2_on_set_data", "shrink"), &VisualServer::texture_set_shrink_all_x2_on_set_data);
+	ClassDB::bind_method(D_METHOD("texture_bind", "texture", "number"), &VisualServer::texture_bind);
 
 	ClassDB::bind_method(D_METHOD("texture_debug_usage"), &VisualServer::_texture_debug_usage_bind);
 	ClassDB::bind_method(D_METHOD("textures_keep_original", "enable"), &VisualServer::textures_keep_original);
@@ -2047,7 +2048,7 @@ void VisualServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_test_texture"), &VisualServer::get_test_texture);
 	ClassDB::bind_method(D_METHOD("get_white_texture"), &VisualServer::get_white_texture);
 
-	ClassDB::bind_method(D_METHOD("set_boot_image", "image", "color", "scale"), &VisualServer::set_boot_image);
+	ClassDB::bind_method(D_METHOD("set_boot_image", "image", "color", "scale", "use_filter"), &VisualServer::set_boot_image, DEFVAL(true));
 	ClassDB::bind_method(D_METHOD("set_default_clear_color", "color"), &VisualServer::set_default_clear_color);
 
 	ClassDB::bind_method(D_METHOD("has_feature", "feature"), &VisualServer::has_feature);

@@ -320,19 +320,19 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	_initial_set("interface/editor/custom_display_scale", 1.0f);
 	hints["interface/editor/custom_display_scale"] = PropertyInfo(Variant::REAL, "interface/editor/custom_display_scale", PROPERTY_HINT_RANGE, "0.5,3,0.01", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED);
 	_initial_set("interface/editor/main_font_size", 14);
-	hints["interface/editor/main_font_size"] = PropertyInfo(Variant::INT, "interface/editor/main_font_size", PROPERTY_HINT_RANGE, "10,40,1", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED);
-	_initial_set("interface/editor/code_font_size", 14);
-	hints["interface/editor/code_font_size"] = PropertyInfo(Variant::INT, "interface/editor/code_font_size", PROPERTY_HINT_RANGE, "8,96,1", PROPERTY_USAGE_DEFAULT);
+	hints["interface/editor/main_font_size"] = PropertyInfo(Variant::INT, "interface/editor/main_font_size", PROPERTY_HINT_RANGE, "8,48,1", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED);
 	_initial_set("interface/editor/main_font_antialiased", true);
-	_initial_set("interface/editor/code_font_antialiased", true);
 	_initial_set("interface/editor/main_font_hinting", 2);
 	hints["interface/editor/main_font_hinting"] = PropertyInfo(Variant::INT, "interface/editor/main_font_hinting", PROPERTY_HINT_ENUM, "None,Light,Normal", PROPERTY_USAGE_DEFAULT);
-	_initial_set("interface/editor/code_font_hinting", 2);
-	hints["interface/editor/code_font_hinting"] = PropertyInfo(Variant::INT, "interface/editor/code_font_hinting", PROPERTY_HINT_ENUM, "None,Light,Normal", PROPERTY_USAGE_DEFAULT);
 	_initial_set("interface/editor/main_font", "");
 	hints["interface/editor/main_font"] = PropertyInfo(Variant::STRING, "interface/editor/main_font", PROPERTY_HINT_GLOBAL_FILE, "*.ttf,*.otf", PROPERTY_USAGE_DEFAULT);
 	_initial_set("interface/editor/main_font_bold", "");
 	hints["interface/editor/main_font_bold"] = PropertyInfo(Variant::STRING, "interface/editor/main_font_bold", PROPERTY_HINT_GLOBAL_FILE, "*.ttf,*.otf", PROPERTY_USAGE_DEFAULT);
+	_initial_set("interface/editor/code_font_size", 14);
+	hints["interface/editor/code_font_size"] = PropertyInfo(Variant::INT, "interface/editor/code_font_size", PROPERTY_HINT_RANGE, "8,48,1", PROPERTY_USAGE_DEFAULT);
+	_initial_set("interface/editor/code_font_antialiased", true);
+	_initial_set("interface/editor/code_font_hinting", 2);
+	hints["interface/editor/code_font_hinting"] = PropertyInfo(Variant::INT, "interface/editor/code_font_hinting", PROPERTY_HINT_ENUM, "None,Light,Normal", PROPERTY_USAGE_DEFAULT);
 	_initial_set("interface/editor/code_font", "");
 	hints["interface/editor/code_font"] = PropertyInfo(Variant::STRING, "interface/editor/code_font", PROPERTY_HINT_GLOBAL_FILE, "*.ttf,*.otf", PROPERTY_USAGE_DEFAULT);
 	_initial_set("interface/editor/dim_editor_on_dialog_popup", true);
@@ -491,8 +491,12 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 
 	// Help
 	_initial_set("text_editor/help/show_help_index", true);
-	_initial_set("text_editor/help_source_font_size", 14);
-	hints["text_editor/help/help_source_font_size"] = PropertyInfo(Variant::REAL, "text_editor/help/help_source_font_size", PROPERTY_HINT_RANGE, "10, 50, 1");
+	_initial_set("text_editor/help/help_font_size", 15);
+	hints["text_editor/help/help_font_size"] = PropertyInfo(Variant::INT, "text_editor/help/help_font_size", PROPERTY_HINT_RANGE, "8,48,1");
+	_initial_set("text_editor/help/help_source_font_size", 14);
+	hints["text_editor/help/help_source_font_size"] = PropertyInfo(Variant::INT, "text_editor/help/help_source_font_size", PROPERTY_HINT_RANGE, "8,48,1");
+	_initial_set("text_editor/help/help_title_font_size", 23);
+	hints["text_editor/help/help_title_font_size"] = PropertyInfo(Variant::INT, "text_editor/help/help_title_font_size", PROPERTY_HINT_RANGE, "8,48,1");
 
 	/* Editors */
 
@@ -569,7 +573,7 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	_initial_set("editors/2d/bone_outline_size", 2);
 	_initial_set("editors/2d/viewport_border_color", Color(0.4, 0.4, 1.0, 0.4));
 	_initial_set("editors/2d/warped_mouse_panning", true);
-	_initial_set("editors/2d/simple_spacebar_panning", false);
+	_initial_set("editors/2d/simple_panning", false);
 	_initial_set("editors/2d/scroll_to_pan", false);
 	_initial_set("editors/2d/pan_speed", 20);
 
@@ -600,7 +604,8 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	_initial_set("run/auto_save/save_before_running", true);
 
 	// Output
-	hints["run/output/font_size"] = PropertyInfo(Variant::INT, "run/output/font_size", PROPERTY_HINT_RANGE, "8,96,1", PROPERTY_USAGE_DEFAULT);
+	_initial_set("run/output/font_size", 13);
+	hints["run/output/font_size"] = PropertyInfo(Variant::INT, "run/output/font_size", PROPERTY_HINT_RANGE, "8,48,1");
 	_initial_set("run/output/always_clear_output_on_play", true);
 	_initial_set("run/output/always_open_output_on_play", true);
 	_initial_set("run/output/always_close_output_on_stop", false);
@@ -697,6 +702,10 @@ bool EditorSettings::_save_text_editor_theme(String p_file) {
 		return true;
 	}
 	return false;
+}
+
+bool EditorSettings::_is_default_text_editor_theme(String p_theme_name) {
+	return p_theme_name == "default" || p_theme_name == "adaptive" || p_theme_name == "custom";
 }
 
 static Dictionary _get_builtin_script_templates() {
@@ -1123,7 +1132,7 @@ Variant _EDITOR_DEF(const String &p_setting, const Variant &p_default, bool p_re
 
 Variant _EDITOR_GET(const String &p_setting) {
 
-	ERR_FAIL_COND_V(!EditorSettings::get_singleton()->has_setting(p_setting), Variant())
+	ERR_FAIL_COND_V(!EditorSettings::get_singleton()->has_setting(p_setting), Variant());
 	return EditorSettings::get_singleton()->get(p_setting);
 }
 
@@ -1291,7 +1300,7 @@ void EditorSettings::list_text_editor_themes() {
 		d->list_dir_begin();
 		String file = d->get_next();
 		while (file != String()) {
-			if (file.get_extension() == "tet" && file.get_basename().to_lower() != "default" && file.get_basename().to_lower() != "adaptive" && file.get_basename().to_lower() != "custom") {
+			if (file.get_extension() == "tet" && !_is_default_text_editor_theme(file.get_basename().to_lower())) {
 				custom_themes.push_back(file.get_basename());
 			}
 			file = d->get_next();
@@ -1308,14 +1317,16 @@ void EditorSettings::list_text_editor_themes() {
 }
 
 void EditorSettings::load_text_editor_theme() {
-	if (get("text_editor/theme/color_theme") == "Default" || get("text_editor/theme/color_theme") == "Adaptive" || get("text_editor/theme/color_theme") == "Custom") {
-		if (get("text_editor/theme/color_theme") == "Default") {
+	String p_file = get("text_editor/theme/color_theme");
+
+	if (_is_default_text_editor_theme(p_file.get_file().to_lower())) {
+		if (p_file == "Default") {
 			_load_default_text_editor_theme();
 		}
 		return; // sorry for "Settings changed" console spam
 	}
 
-	String theme_path = get_text_editor_themes_dir().plus_file((String)get("text_editor/theme/color_theme") + ".tet");
+	String theme_path = get_text_editor_themes_dir().plus_file(p_file + ".tet");
 
 	Ref<ConfigFile> cf = memnew(ConfigFile);
 	Error err = cf->load(theme_path);
@@ -1367,7 +1378,7 @@ bool EditorSettings::save_text_editor_theme() {
 
 	String p_file = get("text_editor/theme/color_theme");
 
-	if (p_file.get_file().to_lower() == "default" || p_file.get_file().to_lower() == "adaptive" || p_file.get_file().to_lower() == "custom") {
+	if (_is_default_text_editor_theme(p_file.get_file().to_lower())) {
 		return false;
 	}
 	String theme_path = get_text_editor_themes_dir().plus_file(p_file + ".tet");
@@ -1379,7 +1390,7 @@ bool EditorSettings::save_text_editor_theme_as(String p_file) {
 		p_file += ".tet";
 	}
 
-	if (p_file.get_file().to_lower() == "default.tet" || p_file.get_file().to_lower() == "adaptive.tet" || p_file.get_file().to_lower() == "custom.tet") {
+	if (_is_default_text_editor_theme(p_file.get_file().to_lower().trim_suffix(".tet"))) {
 		return false;
 	}
 	if (_save_text_editor_theme(p_file)) {
@@ -1395,6 +1406,11 @@ bool EditorSettings::save_text_editor_theme_as(String p_file) {
 		return true;
 	}
 	return false;
+}
+
+bool EditorSettings::is_default_text_editor_theme() {
+	String p_file = get("text_editor/theme/color_theme");
+	return _is_default_text_editor_theme(p_file.get_file().to_lower());
 }
 
 Vector<String> EditorSettings::get_script_templates(const String &p_extension) {

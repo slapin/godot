@@ -40,6 +40,7 @@
 #include "webrtc_data_channel_gdnative.h"
 #include "webrtc_peer_connection_gdnative.h"
 #endif
+#include "webrtc_multiplayer.h"
 
 void register_webrtc_types() {
 #ifdef JAVASCRIPT_ENABLED
@@ -54,6 +55,7 @@ void register_webrtc_types() {
 	ClassDB::register_class<WebRTCDataChannelGDNative>();
 #endif
 	ClassDB::register_virtual_class<WebRTCDataChannel>();
+	ClassDB::register_class<WebRTCMultiplayer>();
 }
 
 void unregister_webrtc_types() {}

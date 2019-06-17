@@ -80,6 +80,7 @@ Error NetworkedMultiplayerENet::create_server(int p_port, int p_max_clients, int
 	ERR_FAIL_COND_V(p_out_bandwidth < 0, ERR_INVALID_PARAMETER);
 
 	ENetAddress address;
+	memset(&address, 0, sizeof(address));
 
 #ifdef GODOT_ENET
 	if (bind_ip.is_wildcard()) {
@@ -346,7 +347,7 @@ void NetworkedMultiplayerENet::poll() {
 
 					uint32_t *id = (uint32_t *)event.peer->data;
 
-					ERR_CONTINUE(event.packet->dataLength < 8)
+					ERR_CONTINUE(event.packet->dataLength < 8);
 
 					uint32_t source = decode_uint32(&event.packet->data[0]);
 					int target = decode_uint32(&event.packet->data[4]);
@@ -462,7 +463,7 @@ void NetworkedMultiplayerENet::disconnect_peer(int p_peer, bool now) {
 
 	ERR_FAIL_COND(!active);
 	ERR_FAIL_COND(!is_server());
-	ERR_FAIL_COND(!peer_map.has(p_peer))
+	ERR_FAIL_COND(!peer_map.has(p_peer));
 
 	if (now) {
 		enet_peer_disconnect_now(peer_map[p_peer], 0);

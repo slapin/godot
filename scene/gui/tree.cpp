@@ -39,7 +39,7 @@
 #include "scene/main/viewport.h"
 
 #ifdef TOOLS_ENABLED
-#include "editor/editor_node.h"
+#include "editor/editor_scale.h"
 #endif
 
 #include <limits.h>
@@ -318,7 +318,7 @@ void TreeItem::set_custom_draw(int p_column, Object *p_object, const StringName 
 
 void TreeItem::set_collapsed(bool p_collapsed) {
 
-	if (collapsed == p_collapsed)
+	if (collapsed == p_collapsed || !tree)
 		return;
 	collapsed = p_collapsed;
 	TreeItem *ci = tree->selected_item;
@@ -344,8 +344,7 @@ void TreeItem::set_collapsed(bool p_collapsed) {
 	}
 
 	_changed_notify();
-	if (tree)
-		tree->emit_signal("item_collapsed", this);
+	tree->emit_signal("item_collapsed", this);
 }
 
 bool TreeItem::is_collapsed() {
@@ -3721,6 +3720,10 @@ String Tree::get_tooltip(const Point2 &p_pos) const {
 
 			const TreeItem::Cell &c = it->cells[col];
 			int col_width = get_column_width(col);
+
+			for (int i = 0; i < col; i++)
+				pos.x -= get_column_width(i);
+
 			for (int j = c.buttons.size() - 1; j >= 0; j--) {
 				Ref<Texture> b = c.buttons[j].texture;
 				Size2 size = b->get_size() + cache.button_pressed->get_minimum_size();

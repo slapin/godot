@@ -246,13 +246,14 @@ bool CreateDialog::_is_class_disabled_by_feature_profile(const StringName &p_cla
 		if (profile->is_class_disabled(class_name)) {
 			return true;
 		}
-		class_name = ClassDB::get_parent_class(class_name);
+		class_name = ClassDB::get_parent_class_nocheck(class_name);
 	}
 
 	return false;
 }
 
 void CreateDialog::select_type(const String &p_type) {
+
 	TreeItem *to_select;
 	if (search_options_types.has(p_type)) {
 		to_select = search_options_types[p_type];
@@ -279,10 +280,6 @@ void CreateDialog::_update_search() {
 	favorite->set_disabled(true);
 
 	help_bit->set_text("");
-	/*
-	TreeItem *root = search_options->create_item();
-	_parse_fs(EditorFileSystem::get_singleton()->get_filesystem());
-*/
 
 	search_options_types.clear();
 
@@ -733,6 +730,7 @@ CreateDialog::CreateDialog() {
 	fav_vb->add_margin_child(TTR("Favorites:"), favorites, true);
 	favorites->set_hide_root(true);
 	favorites->set_hide_folding(true);
+	favorites->set_allow_reselect(true);
 	favorites->connect("cell_selected", this, "_favorite_selected");
 	favorites->connect("item_activated", this, "_favorite_activated");
 	favorites->set_drag_forwarding(this);
@@ -747,6 +745,7 @@ CreateDialog::CreateDialog() {
 	rec_vb->add_margin_child(TTR("Recent:"), recent, true);
 	recent->set_hide_root(true);
 	recent->set_hide_folding(true);
+	recent->set_allow_reselect(true);
 	recent->connect("cell_selected", this, "_history_selected");
 	recent->connect("item_activated", this, "_history_activated");
 	recent->add_constant_override("draw_guides", 1);

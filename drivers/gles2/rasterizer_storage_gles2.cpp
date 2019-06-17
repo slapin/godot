@@ -91,7 +91,7 @@ GLuint RasterizerStorageGLES2::system_fbo = 0;
 //void *glRenderbufferStorageMultisampleAPPLE;
 //void *glResolveMultisampleFramebufferAPPLE;
 #define glRenderbufferStorageMultisample glRenderbufferStorageMultisampleAPPLE
-#else
+#elif ANDROID_ENABLED
 
 #include <GLES2/gl2ext.h>
 PFNGLRENDERBUFFERSTORAGEMULTISAMPLEEXTPROC glRenderbufferStorageMultisampleEXT;
@@ -966,6 +966,15 @@ uint32_t RasterizerStorageGLES2::texture_get_texid(RID p_texture) const {
 	ERR_FAIL_COND_V(!texture, 0);
 
 	return texture->tex_id;
+}
+
+void RasterizerStorageGLES2::texture_bind(RID p_texture, uint32_t p_texture_no) {
+	Texture *texture = texture_owner.getornull(p_texture);
+
+	ERR_FAIL_COND(!texture);
+
+	glActiveTexture(GL_TEXTURE0 + p_texture_no);
+	glBindTexture(texture->target, texture->tex_id);
 }
 
 uint32_t RasterizerStorageGLES2::texture_get_width(RID p_texture) const {
@@ -4688,6 +4697,7 @@ void RasterizerStorageGLES2::_render_target_allocate(RenderTarget *rt) {
 	/* BACK FBO */
 	/* For MSAA */
 
+#ifndef JAVASCRIPT_ENABLED
 	if (rt->msaa != VS::VIEWPORT_MSAA_DISABLED && config.multisample_supported) {
 
 		rt->multisample_active = true;
@@ -4719,7 +4729,7 @@ void RasterizerStorageGLES2::_render_target_allocate(RenderTarget *rt) {
 		glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa, color_internal_format, rt->width, rt->height);
 
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rt->multisample_color);
-#else
+#elif ANDROID_ENABLED
 		// Render to a texture in android
 		glGenTextures(1, &rt->multisample_color);
 		glBindTexture(GL_TEXTURE_2D, rt->multisample_color);
@@ -4743,7 +4753,9 @@ void RasterizerStorageGLES2::_render_target_allocate(RenderTarget *rt) {
 
 		glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
-	} else {
+	} else
+#endif
+	{
 		rt->multisample_active = false;
 	}
 
@@ -5602,11 +5614,11 @@ void RasterizerStorageGLES2::initialize() {
 	//Manually load extensions for android and ios
 
 #ifdef IPHONE_ENABLED
-
+	// appears that IPhone doesn't need to dlopen TODO: test this rigorously before removing
 	//void *gles2_lib = dlopen(NULL, RTLD_LAZY);
 	//glRenderbufferStorageMultisampleAPPLE = dlsym(gles2_lib, "glRenderbufferStorageMultisampleAPPLE");
 	//glResolveMultisampleFramebufferAPPLE = dlsym(gles2_lib, "glResolveMultisampleFramebufferAPPLE");
-#else
+#elif ANDROID_ENABLED
 
 	void *gles2_lib = dlopen("libGLESv2.so", RTLD_LAZY);
 	glRenderbufferStorageMultisampleEXT = (PFNGLRENDERBUFFERSTORAGEMULTISAMPLEEXTPROC)dlsym(gles2_lib, "glRenderbufferStorageMultisampleEXT");

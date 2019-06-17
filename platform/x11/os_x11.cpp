@@ -583,6 +583,9 @@ Error OS_X11::initialize(const VideoMode &p_desired, int p_video_driver, int p_a
 
 	AudioDriverManager::initialize(p_audio_driver);
 
+	///@TODO implement a subclass for Linux and instantiate that instead
+	camera_server = memnew(CameraServer);
+
 	input = memnew(InputDefault);
 
 	window_has_focus = true; // Set focus to true at init
@@ -593,7 +596,7 @@ Error OS_X11::initialize(const VideoMode &p_desired, int p_video_driver, int p_a
 
 	power_manager = memnew(PowerX11);
 
-	if (p_desired.layered_splash) {
+	if (p_desired.layered) {
 		set_window_per_pixel_transparency_enabled(true);
 	}
 
@@ -782,6 +785,8 @@ void OS_X11::finalize() {
 	xi.state.clear();
 
 	memdelete(input);
+
+	memdelete(camera_server);
 
 	visual_server->finish();
 	memdelete(visual_server);
@@ -1017,12 +1022,12 @@ void OS_X11::set_wm_fullscreen(bool p_enabled) {
 		XFree(xsh);
 	}
 
-	if (!p_enabled && !get_borderless_window()) {
-		// put decorations back if the window wasn't suppoesed to be borderless
+	if (!p_enabled) {
+		// put back or remove decorations according to the last set borderless state
 		Hints hints;
 		Atom property;
 		hints.flags = 2;
-		hints.decorations = 1;
+		hints.decorations = current_videomode.borderless_window ? 0 : 1;
 		property = XInternAtom(x11_display, "_MOTIF_WM_HINTS", True);
 		XChangeProperty(x11_display, x11_window, property, property, 32, PropModeReplace, (unsigned char *)&hints, 5);
 	}
@@ -1531,7 +1536,7 @@ bool OS_X11::is_window_always_on_top() const {
 
 void OS_X11::set_borderless_window(bool p_borderless) {
 
-	if (current_videomode.borderless_window == p_borderless)
+	if (get_borderless_window() == p_borderless)
 		return;
 
 	if (!p_borderless && layered_window)
@@ -1551,7 +1556,24 @@ void OS_X11::set_borderless_window(bool p_borderless) {
 }
 
 bool OS_X11::get_borderless_window() {
-	return current_videomode.borderless_window;
+
+	bool borderless = current_videomode.borderless_window;
+	Atom prop = XInternAtom(x11_display, "_MOTIF_WM_HINTS", True);
+	if (prop != None) {
+
+		Atom type;
+		int format;
+		unsigned long len;
+		unsigned long remaining;
+		unsigned char *data = NULL;
+		if (XGetWindowProperty(x11_display, x11_window, prop, 0, sizeof(Hints), False, AnyPropertyType, &type, &format, &len, &remaining, &data) == Success) {
+			if (data && (format == 32) && (len >= 5)) {
+				borderless = !((Hints *)data)->decorations;
+			}
+			XFree(data);
+		}
+	}
+	return borderless;
 }
 
 void OS_X11::request_attention() {

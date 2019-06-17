@@ -723,6 +723,8 @@ void ScriptEditor::_resave_scripts(const String &p_str) {
 			se->trim_trailing_whitespace();
 		}
 
+		se->insert_final_newline();
+
 		if (convert_indent_on_save) {
 			if (use_space_indentation) {
 				se->convert_indent_to_spaces();
@@ -1078,6 +1080,8 @@ void ScriptEditor::_menu_option(int p_option) {
 				if (trim_trailing_whitespace_on_save)
 					current->trim_trailing_whitespace();
 
+				current->insert_final_newline();
+
 				if (convert_indent_on_save) {
 					if (use_space_indentation) {
 						current->convert_indent_to_spaces();
@@ -1097,7 +1101,10 @@ void ScriptEditor::_menu_option(int p_option) {
 			} break;
 			case FILE_SAVE_AS: {
 
-				current->trim_trailing_whitespace();
+				if (trim_trailing_whitespace_on_save)
+					current->trim_trailing_whitespace();
+
+				current->insert_final_newline();
 
 				if (convert_indent_on_save) {
 					if (use_space_indentation) {
@@ -1304,21 +1311,27 @@ void ScriptEditor::_theme_option(int p_option) {
 			EditorSettings::get_singleton()->load_text_editor_theme();
 		} break;
 		case THEME_SAVE: {
-			if (!EditorSettings::get_singleton()->save_text_editor_theme()) {
+			if (EditorSettings::get_singleton()->is_default_text_editor_theme()) {
+				ScriptEditor::_show_save_theme_as_dialog();
+			} else if (!EditorSettings::get_singleton()->save_text_editor_theme()) {
 				editor->show_warning(TTR("Error while saving theme"), TTR("Error saving"));
 			}
 		} break;
 		case THEME_SAVE_AS: {
-			file_dialog->set_mode(EditorFileDialog::MODE_SAVE_FILE);
-			file_dialog->set_access(EditorFileDialog::ACCESS_FILESYSTEM);
-			file_dialog_option = THEME_SAVE_AS;
-			file_dialog->clear_filters();
-			file_dialog->add_filter("*.tet");
-			file_dialog->set_current_path(EditorSettings::get_singleton()->get_text_editor_themes_dir().plus_file(EditorSettings::get_singleton()->get("text_editor/theme/color_theme")));
-			file_dialog->popup_centered_ratio();
-			file_dialog->set_title(TTR("Save Theme As..."));
+			ScriptEditor::_show_save_theme_as_dialog();
 		} break;
 	}
+}
+
+void ScriptEditor::_show_save_theme_as_dialog() {
+	file_dialog->set_mode(EditorFileDialog::MODE_SAVE_FILE);
+	file_dialog->set_access(EditorFileDialog::ACCESS_FILESYSTEM);
+	file_dialog_option = THEME_SAVE_AS;
+	file_dialog->clear_filters();
+	file_dialog->add_filter("*.tet");
+	file_dialog->set_current_path(EditorSettings::get_singleton()->get_text_editor_themes_dir().plus_file(EditorSettings::get_singleton()->get("text_editor/theme/color_theme")));
+	file_dialog->popup_centered_ratio();
+	file_dialog->set_title(TTR("Save Theme As..."));
 }
 
 void ScriptEditor::_tab_changed(int p_which) {
@@ -1969,10 +1982,11 @@ bool ScriptEditor::edit(const RES &p_resource, int p_line, int p_col, bool p_gra
 		String flags = EditorSettings::get_singleton()->get("text_editor/external/exec_flags");
 
 		List<String> args;
+		bool has_file_flag = false;
+		String script_path = ProjectSettings::get_singleton()->globalize_path(p_resource->get_path());
 
 		if (flags.size()) {
 			String project_path = ProjectSettings::get_singleton()->get_resource_path();
-			String script_path = ProjectSettings::get_singleton()->globalize_path(p_resource->get_path());
 
 			flags = flags.replacen("{line}", itos(p_line > 0 ? p_line : 0));
 			flags = flags.replacen("{col}", itos(p_col));
@@ -1994,6 +2008,9 @@ bool ScriptEditor::edit(const RES &p_resource, int p_line, int p_col, bool p_gra
 				} else if (flags[i] == '\0' || (!inside_quotes && flags[i] == ' ')) {
 
 					String arg = flags.substr(from, num_chars);
+					if (arg.find("{file}") != -1) {
+						has_file_flag = true;
+					}
 
 					// do path replacement here, else there will be issues with spaces and quotes
 					arg = arg.replacen("{project}", project_path);
@@ -2006,6 +2023,11 @@ bool ScriptEditor::edit(const RES &p_resource, int p_line, int p_col, bool p_gra
 					num_chars++;
 				}
 			}
+		}
+
+		// Default to passing script path if no {file} flag is specified.
+		if (!has_file_flag) {
+			args.push_back(script_path);
 		}
 
 		Error err = OS::get_singleton()->execute(path, args, false);
@@ -2120,6 +2142,8 @@ void ScriptEditor::save_all_scripts() {
 		if (trim_trailing_whitespace_on_save) {
 			se->trim_trailing_whitespace();
 		}
+
+		se->insert_final_newline();
 
 		if (!se->is_unsaved())
 			continue;
@@ -3428,7 +3452,8 @@ ScriptEditorPlugin::ScriptEditorPlugin(EditorNode *p_node) {
 	EditorSettings::get_singleton()->add_property_hint(PropertyInfo(Variant::INT, "text_editor/open_scripts/list_script_names_as", PROPERTY_HINT_ENUM, "Name,Parent Directory And Name,Full Path"));
 	EDITOR_DEF("text_editor/open_scripts/list_script_names_as", 0);
 	EditorSettings::get_singleton()->add_property_hint(PropertyInfo(Variant::STRING, "text_editor/external/exec_path", PROPERTY_HINT_GLOBAL_FILE));
-	EDITOR_DEF("text_editor/external/exec_flags", "");
+	EDITOR_DEF("text_editor/external/exec_flags", "{file}");
+	EditorSettings::get_singleton()->add_property_hint(PropertyInfo(Variant::STRING, "text_editor/external/exec_flags", PROPERTY_HINT_PLACEHOLDER_TEXT, "Call flags with placeholders: {project}, {file}, {col}, {line}."));
 
 	ED_SHORTCUT("script_editor/open_recent", TTR("Open Recent"), KEY_MASK_CMD | KEY_MASK_SHIFT | KEY_T);
 	ED_SHORTCUT("script_editor/clear_recent", TTR("Clear Recent Files"));

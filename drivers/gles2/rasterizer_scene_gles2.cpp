@@ -36,6 +36,7 @@
 #include "core/project_settings.h"
 #include "core/vmap.h"
 #include "rasterizer_canvas_gles2.h"
+#include "servers/camera/camera_feed.h"
 #include "servers/visual/visual_server_raster.h"
 
 #ifndef GLES_OVER_GL
@@ -767,6 +768,13 @@ void RasterizerSceneGLES2::environment_set_ambient_light(RID p_env, const Color 
 	env->ambient_color = p_color;
 	env->ambient_energy = p_energy;
 	env->ambient_sky_contribution = p_sky_contribution;
+}
+
+void RasterizerSceneGLES2::environment_set_camera_feed_id(RID p_env, int p_camera_feed_id) {
+	Environment *env = environment_owner.getornull(p_env);
+	ERR_FAIL_COND(!env);
+
+	env->camera_feed_id = p_camera_feed_id;
 }
 
 void RasterizerSceneGLES2::environment_set_dof_blur_far(RID p_env, bool p_enable, float p_distance, float p_transition, float p_amount, VS::EnvironmentDOFBlurQuality p_quality) {
@@ -2261,7 +2269,7 @@ void RasterizerSceneGLES2::_render_render_list(RenderList::Element **p_elements,
 		bool rebind_reflection = false;
 		bool rebind_lightmap = false;
 
-		if (!p_shadow) {
+		if (!p_shadow && material->shader) {
 
 			bool unshaded = material->shader->spatial.unshaded;
 
@@ -2281,7 +2289,7 @@ void RasterizerSceneGLES2::_render_render_list(RenderList::Element **p_elements,
 
 			bool depth_prepass = false;
 
-			if (!p_alpha_pass && material->shader && material->shader->spatial.depth_draw_mode == RasterizerStorageGLES2::Shader::Spatial::DEPTH_DRAW_ALPHA_PREPASS) {
+			if (!p_alpha_pass && material->shader->spatial.depth_draw_mode == RasterizerStorageGLES2::Shader::Spatial::DEPTH_DRAW_ALPHA_PREPASS) {
 				depth_prepass = true;
 			}
 
@@ -2843,6 +2851,7 @@ void RasterizerSceneGLES2::render_scene(const Transform &p_cam_transform, const 
 	// clear color
 
 	Color clear_color(0, 0, 0, 1);
+	Ref<CameraFeed> feed;
 
 	if (storage->frame.current_rt && storage->frame.current_rt->flags[RasterizerStorage::RENDER_TARGET_TRANSPARENT]) {
 		clear_color = Color(0, 0, 0, 0);
@@ -2854,6 +2863,9 @@ void RasterizerSceneGLES2::render_scene(const Transform &p_cam_transform, const 
 		}
 	} else if (env->bg_mode == VS::ENV_BG_CANVAS || env->bg_mode == VS::ENV_BG_COLOR || env->bg_mode == VS::ENV_BG_COLOR_SKY) {
 		clear_color = env->bg_color;
+		storage->frame.clear_request = false;
+	} else if (env->bg_mode == VS::ENV_BG_CAMERA_FEED) {
+		feed = CameraServer::get_singleton()->get_feed_by_id(env->camera_feed_id);
 		storage->frame.clear_request = false;
 	} else {
 		storage->frame.clear_request = false;
@@ -2891,7 +2903,66 @@ void RasterizerSceneGLES2::render_scene(const Transform &p_cam_transform, const 
 					env_radiance_tex = sky->radiance;
 				}
 			} break;
+			case VS::ENV_BG_CAMERA_FEED: {
+				if (feed.is_valid() && (feed->get_base_width() > 0) && (feed->get_base_height() > 0)) {
+					// copy our camera feed to our background
 
+					glDisable(GL_BLEND);
+					glDepthMask(GL_FALSE);
+					glDisable(GL_DEPTH_TEST);
+					glDisable(GL_CULL_FACE);
+
+					storage->shaders.copy.set_conditional(CopyShaderGLES2::USE_NO_ALPHA, true);
+					storage->shaders.copy.set_conditional(CopyShaderGLES2::USE_DISPLAY_TRANSFORM, true);
+
+					if (feed->get_datatype() == CameraFeed::FEED_RGB) {
+						RID camera_RGBA = feed->get_texture(CameraServer::FEED_RGBA_IMAGE);
+
+						VS::get_singleton()->texture_bind(camera_RGBA, 0);
+
+					} else if (feed->get_datatype() == CameraFeed::FEED_YCbCr) {
+						RID camera_YCbCr = feed->get_texture(CameraServer::FEED_YCbCr_IMAGE);
+
+						VS::get_singleton()->texture_bind(camera_YCbCr, 0);
+
+						storage->shaders.copy.set_conditional(CopyShaderGLES2::YCBCR_TO_RGB, true);
+
+					} else if (feed->get_datatype() == CameraFeed::FEED_YCbCr_Sep) {
+						RID camera_Y = feed->get_texture(CameraServer::FEED_Y_IMAGE);
+						RID camera_CbCr = feed->get_texture(CameraServer::FEED_CbCr_IMAGE);
+
+						VS::get_singleton()->texture_bind(camera_Y, 0);
+						VS::get_singleton()->texture_bind(camera_CbCr, 1);
+
+						storage->shaders.copy.set_conditional(CopyShaderGLES2::SEP_CBCR_TEXTURE, true);
+						storage->shaders.copy.set_conditional(CopyShaderGLES2::YCBCR_TO_RGB, true);
+					};
+
+					storage->shaders.copy.bind();
+					storage->shaders.copy.set_uniform(CopyShaderGLES2::DISPLAY_TRANSFORM, feed->get_transform());
+
+					storage->bind_quad_array();
+					glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+					glDisableVertexAttribArray(VS::ARRAY_VERTEX);
+					glDisableVertexAttribArray(VS::ARRAY_TEX_UV);
+					glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+					// turn off everything used
+					storage->shaders.copy.set_conditional(CopyShaderGLES2::SEP_CBCR_TEXTURE, false);
+					storage->shaders.copy.set_conditional(CopyShaderGLES2::YCBCR_TO_RGB, false);
+					storage->shaders.copy.set_conditional(CopyShaderGLES2::USE_NO_ALPHA, false);
+					storage->shaders.copy.set_conditional(CopyShaderGLES2::USE_DISPLAY_TRANSFORM, false);
+
+					//restore
+					glEnable(GL_BLEND);
+					glDepthMask(GL_TRUE);
+					glEnable(GL_DEPTH_TEST);
+					glEnable(GL_CULL_FACE);
+				} else {
+					// don't have a feed, just show greenscreen :)
+					clear_color = Color(0.0, 1.0, 0.0, 1.0);
+				}
+			} break;
 			default: {
 				// FIXME: implement other background modes
 			} break;
@@ -2919,7 +2990,7 @@ void RasterizerSceneGLES2::render_scene(const Transform &p_cam_transform, const 
 	if (storage->frame.current_rt && state.used_screen_texture) {
 		//copy screen texture
 
-		if (storage->frame.current_rt && storage->frame.current_rt->multisample_active) {
+		if (storage->frame.current_rt->multisample_active) {
 			// Resolve framebuffer to front buffer before copying
 #ifdef GLES_OVER_GL
 
@@ -2931,14 +3002,16 @@ void RasterizerSceneGLES2::render_scene(const Transform &p_cam_transform, const 
 			glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 #elif IPHONE_ENABLED
+
 			glBindFramebuffer(GL_READ_FRAMEBUFFER, storage->frame.current_rt->multisample_fbo);
 			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, storage->frame.current_rt->fbo);
 			glResolveMultisampleFramebufferAPPLE();
 
 			glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-#else
-			// In GLES2 Blit is not available, so just copy color texture manually
+#elif ANDROID_ENABLED
+
+			// In GLES2 AndroidBlit is not available, so just copy color texture manually
 			_copy_texture_to_front_buffer(storage->frame.current_rt->multisample_color);
 #endif
 		}
@@ -2972,8 +3045,17 @@ void RasterizerSceneGLES2::render_scene(const Transform &p_cam_transform, const 
 
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-#else
-		// In GLES2 Blit is not available, so just copy color texture manually
+#elif IPHONE_ENABLED
+
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, storage->frame.current_rt->multisample_fbo);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, storage->frame.current_rt->fbo);
+		glResolveMultisampleFramebufferAPPLE();
+
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+#elif ANDROID_ENABLED
+
+		// In GLES2 Android Blit is not available, so just copy color texture manually
 		_copy_texture_to_front_buffer(storage->frame.current_rt->multisample_color);
 #endif
 	}

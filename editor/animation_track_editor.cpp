@@ -1214,7 +1214,7 @@ void AnimationTrackEdit::_notification(int p_what) {
 			Color accent = get_color("accent_color", "Editor");
 			accent.a *= 0.7;
 			// Offside so the horizontal sides aren't cutoff.
-			draw_rect(Rect2(Point2(1, 0), get_size() - Size2(1, 0)), accent, false);
+			draw_rect(Rect2(Point2(1 * EDSCALE, 0), get_size() - Size2(1 * EDSCALE, 0)), accent, false);
 		}
 
 		Ref<Font> font = get_font("font", "Label");
@@ -4957,10 +4957,8 @@ float AnimationTrackEditor::snap_time(float p_value) {
 
 void AnimationTrackEditor::_show_imported_anim_warning() const {
 
-	EditorNode::get_singleton()->show_warning(TTR("This animation belongs to an imported scene, so changes to imported tracks will not be saved.\n\n"
-												  "To enable the ability to add custom tracks, navigate to the scene's import settings and set\n"
-												  "\"Animation > Storage\" to \"Files\", enable \"Animation > Keep Custom Tracks\", then re-import.\n"
-												  "Alternatively, use an import preset that imports animations to separate files."),
+	// It looks terrible on a single line but the TTR extractor doesn't support line breaks yet.
+	EditorNode::get_singleton()->show_warning(TTR("This animation belongs to an imported scene, so changes to imported tracks will not be saved.\n\nTo enable the ability to add custom tracks, navigate to the scene's import settings and set\n\"Animation > Storage\" to \"Files\", enable \"Animation > Keep Custom Tracks\", then re-import.\nAlternatively, use an import preset that imports animations to separate files."),
 			TTR("Warning: Editing imported animation"));
 }
 
