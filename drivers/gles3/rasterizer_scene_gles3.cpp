@@ -4297,7 +4297,7 @@ void RasterizerSceneGLES3::render_scene(const Transform &p_cam_transform, const 
 		use_mrt = use_mrt && !storage->frame.current_rt->flags[RasterizerStorage::RENDER_TARGET_TRANSPARENT];
 		use_mrt = use_mrt && !storage->frame.current_rt->flags[RasterizerStorage::RENDER_TARGET_NO_3D_EFFECTS];
 		use_mrt = use_mrt && state.debug_draw != VS::VIEWPORT_DEBUG_DRAW_OVERDRAW;
-		use_mrt = use_mrt && env && (env->bg_mode != VS::ENV_BG_KEEP && env->bg_mode != VS::ENV_BG_CANVAS);
+		use_mrt = use_mrt && (env->bg_mode != VS::ENV_BG_KEEP && env->bg_mode != VS::ENV_BG_CANVAS);
 
 		glViewport(0, 0, storage->frame.current_rt->width, storage->frame.current_rt->height);
 
@@ -4454,16 +4454,16 @@ void RasterizerSceneGLES3::render_scene(const Transform &p_cam_transform, const 
 						RID camera_RGBA = feed->get_texture(CameraServer::FEED_RGBA_IMAGE);
 
 						VS::get_singleton()->texture_bind(camera_RGBA, 0);
-					} else if (feed->get_datatype() == CameraFeed::FEED_YCbCr) {
-						RID camera_YCbCr = feed->get_texture(CameraServer::FEED_YCbCr_IMAGE);
+					} else if (feed->get_datatype() == CameraFeed::FEED_YCBCR) {
+						RID camera_YCbCr = feed->get_texture(CameraServer::FEED_YCBCR_IMAGE);
 
 						VS::get_singleton()->texture_bind(camera_YCbCr, 0);
 
 						storage->shaders.copy.set_conditional(CopyShaderGLES3::YCBCR_TO_SRGB, true);
 
-					} else if (feed->get_datatype() == CameraFeed::FEED_YCbCr_Sep) {
+					} else if (feed->get_datatype() == CameraFeed::FEED_YCBCR_SEP) {
 						RID camera_Y = feed->get_texture(CameraServer::FEED_Y_IMAGE);
-						RID camera_CbCr = feed->get_texture(CameraServer::FEED_CbCr_IMAGE);
+						RID camera_CbCr = feed->get_texture(CameraServer::FEED_CBCR_IMAGE);
 
 						VS::get_singleton()->texture_bind(camera_Y, 0);
 						VS::get_singleton()->texture_bind(camera_CbCr, 1);

@@ -175,9 +175,13 @@ public:
 	virtual int get_screen_dpi(int p_screen = -1) const;
 	virtual Point2 get_window_position() const;
 	virtual void set_window_position(const Point2 &p_position);
+	virtual Size2 get_max_window_size() const;
+	virtual Size2 get_min_window_size() const;
 	virtual Size2 get_window_size() const;
 	virtual Size2 get_real_window_size() const;
 	virtual Rect2 get_window_safe_area() const;
+	virtual void set_max_window_size(const Size2 &p_size);
+	virtual void set_min_window_size(const Size2 &p_size);
 	virtual void set_window_size(const Size2 &p_size);
 	virtual void set_window_fullscreen(bool p_enabled);
 	virtual bool is_window_fullscreen() const;
@@ -690,7 +694,7 @@ VARIANT_ENUM_CAST(_Thread::Priority);
 
 class _ClassDB : public Object {
 
-	GDCLASS(_ClassDB, Object)
+	GDCLASS(_ClassDB, Object);
 
 protected:
 	static void _bind_methods();
@@ -775,7 +779,7 @@ public:
 class _JSON;
 
 class JSONParseResult : public Reference {
-	GDCLASS(JSONParseResult, Reference)
+	GDCLASS(JSONParseResult, Reference);
 
 	friend class _JSON;
 
@@ -803,7 +807,7 @@ public:
 };
 
 class _JSON : public Object {
-	GDCLASS(_JSON, Object)
+	GDCLASS(_JSON, Object);
 
 protected:
 	static void _bind_methods();

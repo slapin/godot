@@ -46,7 +46,7 @@
 #ifdef TOOLS_ENABLED
 class VisualScriptEditorSignalEdit : public Object {
 
-	GDCLASS(VisualScriptEditorSignalEdit, Object)
+	GDCLASS(VisualScriptEditorSignalEdit, Object);
 
 	StringName sig;
 
@@ -186,7 +186,7 @@ public:
 
 class VisualScriptEditorVariableEdit : public Object {
 
-	GDCLASS(VisualScriptEditorVariableEdit, Object)
+	GDCLASS(VisualScriptEditorVariableEdit, Object);
 
 	StringName var;
 
@@ -3758,5 +3758,8 @@ void _VisualScriptEditor::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("add_custom_node", "name", "category", "script"), &_VisualScriptEditor::add_custom_node);
 	ClassDB::bind_method(D_METHOD("remove_custom_node", "name", "category"), &_VisualScriptEditor::remove_custom_node);
 	ADD_SIGNAL(MethodInfo("custom_nodes_updated"));
+}
+
+void VisualScriptEditor::validate() {
 }
 #endif

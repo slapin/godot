@@ -39,7 +39,8 @@ class VisualShaderNodeUniform;
 class VisualShaderNode;
 
 class VisualShader : public Shader {
-	GDCLASS(VisualShader, Shader)
+	GDCLASS(VisualShader, Shader);
+
 public:
 	enum Type {
 		TYPE_VERTEX,
@@ -163,7 +164,7 @@ VARIANT_ENUM_CAST(VisualShader::Type)
 ///
 
 class VisualShaderNode : public Resource {
-	GDCLASS(VisualShaderNode, Resource)
+	GDCLASS(VisualShaderNode, Resource);
 
 	int port_preview;
 
@@ -215,7 +216,7 @@ public:
 /////
 
 class VisualShaderNodeInput : public VisualShaderNode {
-	GDCLASS(VisualShaderNodeInput, VisualShaderNode)
+	GDCLASS(VisualShaderNodeInput, VisualShaderNode);
 
 	friend class VisualShader;
 	VisualShader::Type shader_type;
@@ -268,7 +269,8 @@ public:
 ///
 
 class VisualShaderNodeOutput : public VisualShaderNode {
-	GDCLASS(VisualShaderNodeOutput, VisualShaderNode)
+	GDCLASS(VisualShaderNodeOutput, VisualShaderNode);
+
 public:
 	friend class VisualShader;
 	VisualShader::Type shader_type;
@@ -304,7 +306,7 @@ public:
 };
 
 class VisualShaderNodeUniform : public VisualShaderNode {
-	GDCLASS(VisualShaderNodeUniform, VisualShaderNode)
+	GDCLASS(VisualShaderNodeUniform, VisualShaderNode);
 
 	String uniform_name;
 
@@ -319,7 +321,8 @@ public:
 };
 
 class VisualShaderNodeGroupBase : public VisualShaderNode {
-	GDCLASS(VisualShaderNodeGroupBase, VisualShaderNode)
+	GDCLASS(VisualShaderNodeGroupBase, VisualShaderNode);
+
 private:
 	void _apply_port_changes();
 
@@ -351,6 +354,8 @@ public:
 
 	void set_outputs(const String &p_outputs);
 	String get_outputs() const;
+
+	bool is_valid_port_name(const String &p_name) const;
 
 	void add_input_port(int p_id, int p_type, const String &p_name);
 	void remove_input_port(int p_id);
@@ -386,7 +391,7 @@ public:
 };
 
 class VisualShaderNodeExpression : public VisualShaderNodeGroupBase {
-	GDCLASS(VisualShaderNodeExpression, VisualShaderNodeGroupBase)
+	GDCLASS(VisualShaderNodeExpression, VisualShaderNodeGroupBase);
 
 private:
 	String expression;

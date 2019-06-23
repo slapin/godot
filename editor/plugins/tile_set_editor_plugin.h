@@ -31,7 +31,6 @@
 #ifndef TILE_SET_EDITOR_PLUGIN_H
 #define TILE_SET_EDITOR_PLUGIN_H
 
-#include "editor/editor_name_dialog.h"
 #include "editor/editor_node.h"
 #include "scene/2d/sprite.h"
 #include "scene/resources/concave_polygon_shape_2d.h"
@@ -46,7 +45,7 @@ class TileSetEditor : public HSplitContainer {
 	friend class TileSetEditorPlugin;
 	friend class TilesetEditorContext;
 
-	GDCLASS(TileSetEditor, HSplitContainer)
+	GDCLASS(TileSetEditor, HSplitContainer);
 
 	enum TextureToolButtons {
 		TOOL_TILESET_ADD_TEXTURE,

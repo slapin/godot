@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  editor_name_dialog.h                                                 */
+/*  png_driver_common.h                                                  */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,30 +28,21 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef EDITOR_NAME_DIALOG_H
-#define EDITOR_NAME_DIALOG_H
+#ifndef PNG_DRIVER_COMMON_H
+#define PNG_DRIVER_COMMON_H
 
-#include "scene/gui/dialogs.h"
-#include "scene/gui/line_edit.h"
+#include "core/image.h"
+#include "core/pool_vector.h"
 
-class EditorNameDialog : public ConfirmationDialog {
+namespace PNGDriverCommon {
 
-	GDCLASS(EditorNameDialog, ConfirmationDialog);
+// Attempt to load png from buffer (p_source, p_size) into p_image
+Error png_to_image(const uint8_t *p_source, size_t p_size, Ref<Image> p_image);
 
-	VBoxContainer *makevb;
-	LineEdit *name;
+// Append p_image, as a png, to p_buffer.
+// Contents of p_buffer is unspecified if error returned.
+Error image_to_png(const Ref<Image> &p_image, PoolVector<uint8_t> &p_buffer);
 
-	void _line_gui_input(const Ref<InputEvent> &p_event);
+} // namespace PNGDriverCommon
 
-protected:
-	static void _bind_methods();
-	virtual void ok_pressed();
-	virtual void _post_popup();
-
-public:
-	LineEdit *get_line_edit() { return name; }
-
-	EditorNameDialog();
-};
-
-#endif // EDITOR_NAME_DIALOG_H
+#endif

@@ -587,6 +587,26 @@ FindReplaceBar::FindReplaceBar() {
 
 /*** CODE EDITOR ****/
 
+// This function should be used to handle shortcuts that could otherwise
+// be handled too late if they weren't handled here.
+void CodeTextEditor::_input(const Ref<InputEvent> &event) {
+
+	const Ref<InputEventKey> key_event = event;
+	if (!key_event.is_valid() || !key_event->is_pressed())
+		return;
+
+	if (ED_IS_SHORTCUT("script_text_editor/move_up", key_event)) {
+		move_lines_up();
+		accept_event();
+		return;
+	}
+	if (ED_IS_SHORTCUT("script_text_editor/move_down", key_event)) {
+		move_lines_down();
+		accept_event();
+		return;
+	}
+}
+
 void CodeTextEditor::_text_editor_gui_input(const Ref<InputEvent> &p_event) {
 
 	Ref<InputEventMouseButton> mb = p_event;
@@ -1197,6 +1217,11 @@ void CodeTextEditor::goto_line_selection(int p_line, int p_begin, int p_end) {
 	text_editor->select(p_line, p_begin, p_line, p_end);
 }
 
+void CodeTextEditor::goto_line_centered(int p_line) {
+	goto_line(p_line);
+	text_editor->call_deferred("center_viewport_to_cursor");
+}
+
 void CodeTextEditor::set_executing_line(int p_line) {
 	text_editor->set_executing_line(p_line);
 }
@@ -1330,9 +1355,12 @@ void CodeTextEditor::_on_settings_change() {
 }
 
 void CodeTextEditor::_text_changed_idle_timeout() {
-
 	_validate_script();
 	emit_signal("validate_script");
+}
+
+void CodeTextEditor::validate_script() {
+	idle->start();
 }
 
 void CodeTextEditor::_warning_label_gui_input(const Ref<InputEvent> &p_event) {
@@ -1371,6 +1399,9 @@ void CodeTextEditor::_notification(int p_what) {
 		case NOTIFICATION_ENTER_TREE: {
 			warning_button->set_icon(get_icon("NodeWarning", "EditorIcons"));
 			add_constant_override("separation", 4 * EDSCALE);
+		} break;
+		case NOTIFICATION_VISIBILITY_CHANGED: {
+			set_process_input(is_visible_in_tree());
 		} break;
 		default:
 			break;
@@ -1451,6 +1482,7 @@ void CodeTextEditor::remove_all_bookmarks() {
 
 void CodeTextEditor::_bind_methods() {
 
+	ClassDB::bind_method(D_METHOD("_input"), &CodeTextEditor::_input);
 	ClassDB::bind_method("_text_editor_gui_input", &CodeTextEditor::_text_editor_gui_input);
 	ClassDB::bind_method("_line_col_changed", &CodeTextEditor::_line_col_changed);
 	ClassDB::bind_method("_text_changed", &CodeTextEditor::_text_changed);

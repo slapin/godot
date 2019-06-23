@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <class name="AStar" inherits="Reference" category="Core" version="3.2">
 	<brief_description>
-		AStar class representation that uses vectors as edges.
+		AStar class representation that uses 3d-vectors as edges.
 	</brief_description>
 	<description>
 		A* (A star) is a computer algorithm that is widely used in pathfinding and graph traversal, the process of plotting an efficiently directed path between multiple points. It enjoys widespread use due to its performance and accuracy. Godot's A* implementation make use of vectors as points.

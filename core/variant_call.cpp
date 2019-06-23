@@ -285,6 +285,8 @@ struct _VariantCall {
 	VCALL_LOCALMEM0R(String, get_file);
 	VCALL_LOCALMEM0R(String, xml_escape);
 	VCALL_LOCALMEM0R(String, xml_unescape);
+	VCALL_LOCALMEM0R(String, http_escape);
+	VCALL_LOCALMEM0R(String, http_unescape);
 	VCALL_LOCALMEM0R(String, c_escape);
 	VCALL_LOCALMEM0R(String, c_unescape);
 	VCALL_LOCALMEM0R(String, json_escape);
@@ -1497,7 +1499,7 @@ void register_variant_methods() {
 	ADDFUNC1R(STRING, INT, String, casecmp_to, STRING, "to", varray());
 	ADDFUNC1R(STRING, INT, String, nocasecmp_to, STRING, "to", varray());
 	ADDFUNC0R(STRING, INT, String, length, varray());
-	ADDFUNC2R(STRING, STRING, String, substr, INT, "from", INT, "len", varray());
+	ADDFUNC2R(STRING, STRING, String, substr, INT, "from", INT, "len", varray(-1));
 
 	ADDFUNC2R(STRING, INT, String, find, STRING, "what", INT, "from", varray(0));
 
@@ -1550,6 +1552,8 @@ void register_variant_methods() {
 	ADDFUNC0R(STRING, STRING, String, get_file, varray());
 	ADDFUNC0R(STRING, STRING, String, xml_escape, varray());
 	ADDFUNC0R(STRING, STRING, String, xml_unescape, varray());
+	ADDFUNC0R(STRING, STRING, String, http_escape, varray());
+	ADDFUNC0R(STRING, STRING, String, http_unescape, varray());
 	ADDFUNC0R(STRING, STRING, String, c_escape, varray());
 	ADDFUNC0R(STRING, STRING, String, c_unescape, varray());
 	ADDFUNC0R(STRING, STRING, String, json_escape, varray());

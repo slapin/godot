@@ -75,11 +75,7 @@ def get_opts():
 
 def get_flags():
 
-    return [
-        ('builtin_freetype', False),
-        ('builtin_libpng', False),
-        ('builtin_zlib', False),
-    ]
+    return []
 
 
 def configure(env):
@@ -216,7 +212,7 @@ def configure(env):
         env.ParseConfig('pkg-config freetype2 --cflags --libs')
 
     if not env['builtin_libpng']:
-        env.ParseConfig('pkg-config libpng --cflags --libs')
+        env.ParseConfig('pkg-config libpng16 --cflags --libs')
 
     if not env['builtin_bullet']:
         # We need at least version 2.89
