@@ -184,7 +184,7 @@ Node *EditorInterface::get_edited_scene_root() {
 Array EditorInterface::get_open_scenes() const {
 
 	Array ret;
-	Vector<EditorData::EditedScene> scenes = EditorNode::get_singleton()->get_editor_data().get_edited_scenes();
+	Vector<EditorData::EditedScene> scenes = EditorNode::get_editor_data().get_edited_scenes();
 
 	int scns_amount = scenes.size();
 	for (int idx_scn = 0; idx_scn < scns_amount; idx_scn++) {
@@ -200,7 +200,7 @@ ScriptEditor *EditorInterface::get_script_editor() {
 }
 
 void EditorInterface::select_file(const String &p_file) {
-	return EditorNode::get_singleton()->get_filesystem_dock()->select_file(p_file);
+	EditorNode::get_singleton()->get_filesystem_dock()->select_file(p_file);
 }
 
 String EditorInterface::get_selected_path() const {
@@ -220,7 +220,7 @@ EditorSelection *EditorInterface::get_selection() {
 	return EditorNode::get_singleton()->get_editor_selection();
 }
 
-EditorSettings *EditorInterface::get_editor_settings() {
+Ref<EditorSettings> EditorInterface::get_editor_settings() {
 	return EditorSettings::get_singleton();
 }
 

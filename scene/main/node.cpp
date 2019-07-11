@@ -71,6 +71,8 @@ void Node::_notification(int p_notification) {
 
 		} break;
 		case NOTIFICATION_ENTER_TREE: {
+			ERR_FAIL_COND(!get_viewport());
+			ERR_FAIL_COND(!get_tree());
 
 			if (data.pause_mode == PAUSE_MODE_INHERIT) {
 
@@ -94,6 +96,8 @@ void Node::_notification(int p_notification) {
 
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
+			ERR_FAIL_COND(!get_viewport());
+			ERR_FAIL_COND(!get_tree());
 
 			get_tree()->node_count--;
 			orphan_node_count++;
@@ -840,6 +844,8 @@ bool Node::is_processing_internal() const {
 void Node::set_process_priority(int p_priority) {
 	data.process_priority = p_priority;
 
+	ERR_FAIL_COND(!data.tree);
+
 	if (is_processing())
 		data.tree->make_group_changed("idle_process");
 
@@ -1393,7 +1399,7 @@ Node *Node::get_node(const NodePath &p_path) const {
 	Node *node = get_node_or_null(p_path);
 	if (!node) {
 		ERR_EXPLAIN("Node not found: " + p_path);
-		ERR_FAIL_COND_V(!node, NULL);
+		ERR_FAIL_V(NULL);
 	}
 	return node;
 }
@@ -1753,7 +1759,7 @@ bool Node::has_persistent_groups() const {
 
 	return false;
 }
-void Node::_print_tree_pretty(const String prefix, const bool last) {
+void Node::_print_tree_pretty(const String &prefix, const bool last) {
 
 	String new_prefix = last ? String::utf8(" ┖╴") : String::utf8(" ┠╴");
 	print_line(prefix + new_prefix + String(get_name()));
@@ -2477,21 +2483,18 @@ bool Node::has_node_and_resource(const NodePath &p_path) const {
 
 	if (!has_node(p_path))
 		return false;
-	Node *node = get_node(p_path);
+	RES res;
+	Vector<StringName> leftover_path;
+	Node *node = get_node_and_resource(p_path, res, leftover_path, false);
 
-	bool result = false;
-
-	node->get_indexed(p_path.get_subnames(), &result);
-
-	return result;
+	return (node && res.is_valid());
 }
 
 Array Node::_get_node_and_resource(const NodePath &p_path) {
 
-	Node *node;
 	RES res;
 	Vector<StringName> leftover_path;
-	node = get_node_and_resource(p_path, res, leftover_path);
+	Node *node = get_node_and_resource(p_path, res, leftover_path, false);
 	Array result;
 
 	if (node)
@@ -2521,7 +2524,7 @@ Node *Node::get_node_and_resource(const NodePath &p_path, RES &r_res, Vector<Str
 
 		int j = 0;
 		// If not p_last_is_property, we shouldn't consider the last one as part of the resource
-		for (; j < p_path.get_subname_count() - p_last_is_property; j++) {
+		for (; j < p_path.get_subname_count() - (int)p_last_is_property; j++) {
 			RES new_res = j == 0 ? node->get(p_path.get_subname(j)) : r_res->get(p_path.get_subname(j));
 
 			if (new_res.is_null()) {

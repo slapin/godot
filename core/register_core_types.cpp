@@ -190,6 +190,8 @@ void register_core_types() {
 
 	ClassDB::register_class<JSONParseResult>();
 
+	ClassDB::register_virtual_class<ResourceImporter>();
+
 	ip = IP::create();
 
 	_geometry = memnew(_Geometry);
@@ -205,6 +207,8 @@ void register_core_types() {
 
 void register_core_settings() {
 	//since in register core types, globals may not e present
+	GLOBAL_DEF("network/limits/tcp/connect_timeout_seconds", (30));
+	ProjectSettings::get_singleton()->set_custom_property_info("network/limits/tcp/connect_timeout_seconds", PropertyInfo(Variant::INT, "network/limits/tcp/connect_timeout_seconds", PROPERTY_HINT_RANGE, "1,1800,1"));
 	GLOBAL_DEF_RST("network/limits/packet_peer_stream/max_buffer_po2", (16));
 	ProjectSettings::get_singleton()->set_custom_property_info("network/limits/packet_peer_stream/max_buffer_po2", PropertyInfo(Variant::INT, "network/limits/packet_peer_stream/max_buffer_po2", PROPERTY_HINT_RANGE, "0,64,1,or_greater"));
 }
@@ -273,6 +277,7 @@ void unregister_core_types() {
 
 	ResourceLoader::finalize();
 
+	ClassDB::cleanup_defaults();
 	ObjectDB::cleanup();
 
 	unregister_variant_methods();

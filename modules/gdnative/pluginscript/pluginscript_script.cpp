@@ -229,6 +229,8 @@ void PluginScript::set_source_code(const String &p_code) {
 }
 
 Error PluginScript::reload(bool p_keep_state) {
+	ERR_FAIL_COND_V(!_language, ERR_UNCONFIGURED);
+
 	_language->lock();
 	ERR_FAIL_COND_V(!p_keep_state && _instances.size(), ERR_ALREADY_IN_USE);
 	_language->unlock();
@@ -284,7 +286,7 @@ Error PluginScript::reload(bool p_keep_state) {
 
 	Dictionary *members = (Dictionary *)&manifest.member_lines;
 	for (const Variant *key = members->next(); key != NULL; key = members->next(key)) {
-		_member_lines[*key] = (*members)[key];
+		_member_lines[*key] = (*members)[*key];
 	}
 	Array *methods = (Array *)&manifest.methods;
 	for (int i = 0; i < methods->size(); ++i) {
@@ -473,6 +475,8 @@ MultiplayerAPI::RPCMode PluginScript::get_rset_mode(const StringName &p_variable
 
 PluginScript::PluginScript() :
 		_data(NULL),
+		_desc(NULL),
+		_language(NULL),
 		_tool(false),
 		_valid(false),
 		_script_list(this) {
@@ -490,11 +494,15 @@ void PluginScript::init(PluginScriptLanguage *language) {
 }
 
 PluginScript::~PluginScript() {
-	_desc->finish(_data);
+	if (_desc && _data) {
+		_desc->finish(_data);
+	}
 
 #ifdef DEBUG_ENABLED
-	_language->lock();
-	_language->_script_list.remove(&_script_list);
-	_language->unlock();
+	if (_language) {
+		_language->lock();
+		_language->_script_list.remove(&_script_list);
+		_language->unlock();
+	}
 #endif
 }

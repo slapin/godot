@@ -97,8 +97,6 @@ private:
 
 	void _draw();
 
-	void stroke_rect(Rect2 rect, Color color);
-
 private:
 	Transform2D _world_to_view;
 
@@ -142,7 +140,7 @@ class CurvePreviewGenerator : public EditorResourcePreviewGenerator {
 
 public:
 	virtual bool handles(const String &p_type) const;
-	virtual Ref<Texture> generate(const Ref<Resource> &p_from, const Size2 p_size) const;
+	virtual Ref<Texture> generate(const Ref<Resource> &p_from, const Size2 &p_size) const;
 };
 
 #endif // CURVE_EDITOR_PLUGIN_H

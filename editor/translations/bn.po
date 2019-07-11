@@ -474,6 +474,15 @@ msgstr ""
 msgid "Warning: Editing imported animation"
 msgstr ""
 
+#: editor/animation_track_editor.cpp editor/plugins/script_text_editor.cpp
+#: scene/gui/line_edit.cpp scene/gui/text_edit.cpp
+msgid "Select All"
+msgstr "সবগুলি বাছাই করুন"
+
+#: editor/animation_track_editor.cpp
+msgid "Select None"
+msgstr "কোনোটাই নির্বাচন করবেন না"
+
 #: editor/animation_track_editor.cpp
 msgid "Only show tracks from nodes selected in tree."
 msgstr ""
@@ -656,6 +665,10 @@ msgstr "লাইন-এ যান"
 msgid "Line Number:"
 msgstr "লাইন নাম্বার:"
 
+#: editor/code_editor.cpp
+msgid "Found %d match(es)."
+msgstr ""
+
 #: editor/code_editor.cpp editor/editor_help.cpp
 msgid "No Matches"
 msgstr "কোনো মিল নেই"
@@ -705,7 +718,7 @@ msgstr "সংকুচিত করুন (জুম্ আউট)"
 msgid "Reset Zoom"
 msgstr "সম্প্রসারন/সংকোচন অপসারণ করুন (রিসেট জুম্)"
 
-#: editor/code_editor.cpp modules/mono/editor/mono_bottom_panel.cpp
+#: editor/code_editor.cpp
 #, fuzzy
 msgid "Warnings"
 msgstr "সতর্কতা"
@@ -817,6 +830,11 @@ msgstr "বন্ধ করুন"
 #: editor/connections_dialog.cpp
 msgid "Connect"
 msgstr "সংযোগ"
+
+#: editor/connections_dialog.cpp
+#, fuzzy
+msgid "Signal:"
+msgstr "সিগন্যালস/সংকেতসমূহ:"
 
 #: editor/connections_dialog.cpp
 msgid "Connect '%s' to '%s'"
@@ -993,7 +1011,8 @@ msgid "Owners Of:"
 msgstr "স্বত্বাধিকারীসমূহ:"
 
 #: editor/dependency_editor.cpp
-msgid "Remove selected files from the project? (no undo)"
+#, fuzzy
+msgid "Remove selected files from the project? (Can't be restored)"
 msgstr "নির্বাচিত ফাইলসমূহ প্রকল্প হতে অপসারণ করবেন? (অফেরৎযোগ্য)"
 
 #: editor/dependency_editor.cpp
@@ -1375,7 +1394,7 @@ msgstr ""
 
 #: editor/editor_autoload_settings.cpp
 #, fuzzy
-msgid "Must not collide with an existing buit-in type name."
+msgid "Must not collide with an existing built-in type name."
 msgstr ""
 "অগ্রহনযোগ্য নাম। নামটি অবশ্যই বিদ্যমান পূর্বনির্মিত ধরণের নামের সাথে পরম্পরবিরোধী "
 "হতে পারবে না।"
@@ -1560,6 +1579,10 @@ msgstr "স্বনির্মিত রিলিস (release) প্যাক
 msgid "Template file not found:"
 msgstr "টেমপ্লেট ফাইল পাওয়া যায়নি:\n"
 
+#: editor/editor_export.cpp
+msgid "On 32-bit exports the embedded PCK cannot be bigger than 4 GiB."
+msgstr ""
+
 #: editor/editor_feature_profile.cpp
 #, fuzzy
 msgid "3D Editor"
@@ -1592,7 +1615,7 @@ msgstr "মোড (Mode) সরান"
 
 #: editor/editor_feature_profile.cpp
 #, fuzzy
-msgid "Filesystem Dock"
+msgid "FileSystem and Import Docks"
 msgstr "ফাইলসিস্টেম"
 
 #: editor/editor_feature_profile.cpp
@@ -1654,7 +1677,7 @@ msgstr ""
 
 #: editor/editor_feature_profile.cpp
 msgid ""
-"Profile '%s' already exists. Remote it first before importing, import "
+"Profile '%s' already exists. Remove it first before importing, import "
 "aborted."
 msgstr ""
 
@@ -1669,7 +1692,7 @@ msgstr ""
 
 #: editor/editor_feature_profile.cpp
 #, fuzzy
-msgid "Current Profile"
+msgid "Current Profile:"
 msgstr "বর্তমান দৃশ্য"
 
 #: editor/editor_feature_profile.cpp
@@ -1694,13 +1717,8 @@ msgstr "এক্সপোর্ট"
 
 #: editor/editor_feature_profile.cpp
 #, fuzzy
-msgid "Available Profiles"
+msgid "Available Profiles:"
 msgstr "উপস্থিত নোডসমূহ:"
-
-#: editor/editor_feature_profile.cpp
-#, fuzzy
-msgid "Enabled Classes"
-msgstr "ক্লাসের অনুসন্ধান করুন"
 
 #: editor/editor_feature_profile.cpp
 #, fuzzy
@@ -2849,8 +2867,32 @@ msgid "Editor Layout"
 msgstr "এডিটরের লেআউট/নকশা"
 
 #: editor/editor_node.cpp
+#, fuzzy
+msgid "Take Screenshot"
+msgstr "অর্থপূর্ন!"
+
+#: editor/editor_node.cpp
+#, fuzzy
+msgid "Screenshots are stored in the Editor Data/Settings Folder."
+msgstr "এডিটরের সেটিংস"
+
+#: editor/editor_node.cpp
+msgid "Automatically Open Screenshots"
+msgstr ""
+
+#: editor/editor_node.cpp
+#, fuzzy
+msgid "Open in an external image editor."
+msgstr "এডিটরে খুলুন"
+
+#: editor/editor_node.cpp
 msgid "Toggle Fullscreen"
 msgstr "পূর্ণ-পর্দা অদলবদল/টগল করুন"
+
+#: editor/editor_node.cpp
+#, fuzzy
+msgid "Toggle System Console"
+msgstr "CanvasItem দৃশ্যমানতা টগল করুন"
 
 #: editor/editor_node.cpp
 #, fuzzy
@@ -2966,15 +3008,18 @@ msgid "Spins when the editor window redraws."
 msgstr "এডিটরের পুন-অঙ্কনে এটি ঘূর্ণন করে!"
 
 #: editor/editor_node.cpp
-msgid "Update Always"
-msgstr "সর্বদা হাল-নাগাদ করুন"
+#, fuzzy
+msgid "Update Continuously"
+msgstr "অবিচ্ছিন্ন/নিরবচ্ছিন্ন"
 
 #: editor/editor_node.cpp
-msgid "Update Changes"
+#, fuzzy
+msgid "Update When Changed"
 msgstr "পরিবর্তনসমূহ হাল-নাগাদ করুন"
 
 #: editor/editor_node.cpp
-msgid "Disable Update Spinner"
+#, fuzzy
+msgid "Hide Update Spinner"
 msgstr "হাল-নাগাদকারী ঘূর্ণক নিষ্ক্রিয় করুন"
 
 #: editor/editor_node.cpp
@@ -3180,7 +3225,7 @@ msgstr "সময়:"
 msgid "Calls"
 msgstr "ডাকুন (Call)"
 
-#: editor/editor_properties.cpp
+#: editor/editor_properties.cpp editor/script_create_dialog.cpp
 msgid "On"
 msgstr "চালু"
 
@@ -3288,6 +3333,11 @@ msgid "Page: "
 msgstr ""
 
 #: editor/editor_properties_array_dict.cpp
+#: editor/plugins/theme_editor_plugin.cpp
+msgid "Remove Item"
+msgstr "বস্তু অপসারণ করুন"
+
+#: editor/editor_properties_array_dict.cpp
 #, fuzzy
 msgid "New Key:"
 msgstr "নতুন নাম:"
@@ -3300,11 +3350,6 @@ msgstr "নতুন নাম:"
 #: editor/editor_properties_array_dict.cpp
 msgid "Add Key/Value Pair"
 msgstr ""
-
-#: editor/editor_properties_array_dict.cpp
-#: editor/plugins/theme_editor_plugin.cpp
-msgid "Remove Item"
-msgstr "বস্তু অপসারণ করুন"
 
 #: editor/editor_run_native.cpp
 msgid ""
@@ -3589,7 +3634,7 @@ msgstr "ফেবরিট/প্রিয়-সমূহ:"
 
 #: editor/filesystem_dock.cpp
 msgid "Cannot navigate to '%s' as it has not been found in the file system!"
-msgstr "'% s' তে নেভিগেট করা যাবে না কারণ এটি ফাইল সিস্টেমে পাওয়া যায়নি!"
+msgstr "'%s' তে নেভিগেট করা যাবে না কারণ এটি ফাইল সিস্টেমে পাওয়া যায়নি!"
 
 #: editor/filesystem_dock.cpp
 #, fuzzy
@@ -3872,6 +3917,7 @@ msgid "Nodes not in Group"
 msgstr "গ্রুপ/দলে যোগ করুন"
 
 #: editor/groups_editor.cpp editor/scene_tree_dock.cpp
+#: editor/scene_tree_editor.cpp
 #, fuzzy
 msgid "Filter nodes"
 msgstr "ফিল্টারসমূহ"
@@ -3978,11 +4024,11 @@ msgstr "সংরক্ষিত হচ্ছে..."
 
 #: editor/import_dock.cpp
 msgid "Set as Default for '%s'"
-msgstr "'% s' এর জন্য ডিফল্ট হিসাবে সেট করুন"
+msgstr "'%s' এর জন্য ডিফল্ট হিসাবে সেট করুন"
 
 #: editor/import_dock.cpp
 msgid "Clear Default for '%s'"
-msgstr "'% s' এর জন্য ডিফল্ট ক্লিয়ার  করুন"
+msgstr "'%s' এর জন্য ডিফল্ট ক্লিয়ার  করুন"
 
 #: editor/import_dock.cpp
 #, fuzzy
@@ -5600,6 +5646,14 @@ msgid "Load Emission Mask"
 msgstr "Emission Mask লোড করুন"
 
 #: editor/plugins/cpu_particles_2d_editor_plugin.cpp
+#: editor/plugins/cpu_particles_editor_plugin.cpp
+#: editor/plugins/particles_2d_editor_plugin.cpp
+#: editor/plugins/particles_editor_plugin.cpp
+#, fuzzy
+msgid "Restart"
+msgstr "পুনরারম্ভ (সেঃ):"
+
+#: editor/plugins/cpu_particles_2d_editor_plugin.cpp
 #: editor/plugins/particles_2d_editor_plugin.cpp
 msgid "Clear Emission Mask"
 msgstr "Emission Mask পরিস্কার করুন"
@@ -6578,8 +6632,18 @@ msgid "Find Next"
 msgstr "পরবর্তী খুঁজুন"
 
 #: editor/plugins/script_editor_plugin.cpp
+#, fuzzy
+msgid "Filter scripts"
+msgstr "ফিল্টারসমূহ"
+
+#: editor/plugins/script_editor_plugin.cpp
 msgid "Toggle alphabetical sorting of the method list."
 msgstr ""
+
+#: editor/plugins/script_editor_plugin.cpp
+#, fuzzy
+msgid "Filter methods"
+msgstr "ফিল্টারসমূহ"
 
 #: editor/plugins/script_editor_plugin.cpp
 #, fuzzy
@@ -6829,19 +6893,23 @@ msgid "Syntax Highlighter"
 msgstr ""
 
 #: editor/plugins/script_text_editor.cpp
+msgid "Go To"
+msgstr ""
+
+#: editor/plugins/script_text_editor.cpp
 #: editor/plugins/shader_editor_plugin.cpp editor/plugins/text_editor.cpp
 msgid "Bookmarks"
 msgstr ""
+
+#: editor/plugins/script_text_editor.cpp
+#, fuzzy
+msgid "Breakpoints"
+msgstr "বিন্দু অপসারণ করুন"
 
 #: editor/plugins/script_text_editor.cpp scene/gui/line_edit.cpp
 #: scene/gui/text_edit.cpp
 msgid "Cut"
 msgstr "কর্তন/কাট করুন"
-
-#: editor/plugins/script_text_editor.cpp scene/gui/line_edit.cpp
-#: scene/gui/text_edit.cpp
-msgid "Select All"
-msgstr "সবগুলি বাছাই করুন"
 
 #: editor/plugins/script_text_editor.cpp
 #, fuzzy
@@ -8403,7 +8471,7 @@ msgstr ""
 #: editor/plugins/visual_shader_editor_plugin.cpp
 #, fuzzy
 msgid "Set Input Default Port"
-msgstr "'% s' এর জন্য ডিফল্ট হিসাবে সেট করুন"
+msgstr "'%s' এর জন্য ডিফল্ট হিসাবে সেট করুন"
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 #, fuzzy
@@ -8537,51 +8605,7 @@ msgid "Boolean uniform."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'camera' input parameter for all shader modes."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'inv_camera' input parameter for all shader modes."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'inv_projection' input parameter for all shader modes."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'normal' input parameter for all shader modes."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'projection' input parameter for all shader modes."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'time' input parameter for all shader modes."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'viewport_size' input parameter for all shader modes."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'world' input parameter for all shader modes."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'alpha' input parameter for all shader modes."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'color' input parameter for all shader modes."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'texture_pixel_size' input parameter for all shader modes."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'uv' input parameter for all shader modes."
+msgid "'%s' input parameter for all shader modes."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8590,203 +8614,27 @@ msgid "Input parameter."
 msgstr "ধারক/বাহক পর্যন্ত বিস্তৃত করুন"
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'alpha' input parameter for vertex and fragment shader modes."
+msgid "'%s' input parameter for vertex and fragment shader modes."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'binormal' input parameter for vertex and fragment shader modes."
+msgid "'%s' input parameter for fragment and light shader modes."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'color' input parameter for vertex and fragment shader modes."
+msgid "'%s' input parameter for fragment shader mode."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'fragcoord' input parameter for fragment and light shader modes."
+msgid "'%s' input parameter for light shader mode."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'point_coord' input parameter for fragment shader mode."
+msgid "'%s' input parameter for vertex shader mode."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'screen_uv' input parameter for fragment shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'side' input parameter for fragment shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'tangent' input parameter for vertex and fragment shader modes."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'uv' input parameter for vertex and fragment shader modes."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'uv2' input parameter for vertex and fragment shader modes."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'vertex' input parameter for vertex and fragment shader modes."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'view' input parameter for fragment and light shader modes."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'albedo' input parameter for light shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'attenuation' input parameter for light shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'diffuse' input parameter for light shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'light' input parameter for light shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'light_color' input parameter for light shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'roughness' input parameter for light shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'specular' input parameter for light shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'transmission' input parameter for light shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'modelview' input parameter for vertex shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'point_size' input parameter for vertex shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'tangent' input parameter for vertex and fragment shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'light_pass' input parameter for vertex and fragment shader modes."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'point_coord' input parameter for fragment and light shader modes."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'screen_pixel_size' input parameter for fragment shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'screen_uv' input parameter for fragment and light shader modes."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'light_alpha' input parameter for light shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'light_height' input parameter for light shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'light_uv' input parameter for light shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'light_vec' input parameter for light shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'normal' input parameter for light shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'shadow_color' input parameter for light shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'extra' input parameter for vertex shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'projection' input parameter for vertex shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'vertex' input parameter for vertex shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'world' input parameter for vertex shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'active' input parameter for vertex shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'alpha' input parameter for vertex shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'color' input parameter for vertex shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'custom' input parameter for vertex shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'custom_alpha' input parameter for vertex shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'delta' input parameter for vertex shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'emission_transform' input parameter for vertex shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'index' input parameter for vertex shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'lifetime' input parameter for vertex shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'restart' input parameter for vertex shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'time' input parameter for vertex shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'transform' input parameter for vertex shader mode."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "'velocity' input parameter for vertex shader mode."
+msgid "'%s' input parameter for vertex and fragment shader mode."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -9973,7 +9821,7 @@ msgstr "প্রপার্টি:"
 
 #: editor/project_settings_editor.cpp
 msgid "Setting '%s' is internal, and it can't be deleted."
-msgstr "'% s' সেটিংটি অভ্যন্তরীণ, এবং এটি মোছা যাবে না।"
+msgstr "'%s' সেটিংটি অভ্যন্তরীণ, এবং এটি মোছা যাবে না।"
 
 #: editor/project_settings_editor.cpp
 #, fuzzy
@@ -10540,6 +10388,11 @@ msgid "Add Child Node"
 msgstr "শীষ্য নোড তৈরি করুন"
 
 #: editor/scene_tree_dock.cpp
+#, fuzzy
+msgid "Expand/Collapse All"
+msgstr "কলাপ্স করুন"
+
+#: editor/scene_tree_dock.cpp
 msgid "Change Type"
 msgstr "ধরণ পরিবর্তন করুন"
 
@@ -10571,7 +10424,8 @@ msgid "Delete (No Confirm)"
 msgstr "অপসারণ করুন (নিশ্চয়তাকরণ নেই)"
 
 #: editor/scene_tree_dock.cpp
-msgid "Add/Create a New Node"
+#, fuzzy
+msgid "Add/Create a New Node."
 msgstr "অপসারণ করুন (নিশ্চয়তাকরণ নেই)"
 
 #: editor/scene_tree_dock.cpp
@@ -10855,7 +10709,7 @@ msgstr "ফ্রেমসমূহ স্তূপ করুন"
 msgid "Pick one or more items from the list to display the graph."
 msgstr "গ্রাফ প্রদর্শন করতে তালিকা থেকে এক বা একাধিক আইটেম বাছাই করুন।"
 
-#: editor/script_editor_debugger.cpp modules/mono/editor/mono_bottom_panel.cpp
+#: editor/script_editor_debugger.cpp
 msgid "Errors"
 msgstr "সমস্যাসমূহ"
 
@@ -11290,62 +11144,6 @@ msgstr "ইন্সট্যান্স:"
 #: modules/mono/csharp_script.cpp
 msgid "Class name can't be a reserved keyword"
 msgstr ""
-
-#: modules/mono/editor/godotsharp_editor.cpp
-#, fuzzy
-msgid "Generating solution..."
-msgstr "ওকট্রী (octree) গঠনবিন্যাস তৈরি করা হচ্ছে"
-
-#: modules/mono/editor/godotsharp_editor.cpp
-msgid "Generating C# project..."
-msgstr ""
-
-#: modules/mono/editor/godotsharp_editor.cpp
-#, fuzzy
-msgid "Failed to create solution."
-msgstr "প্রান্তরেখা তৈরি করা সম্ভব হয়নি!"
-
-#: modules/mono/editor/godotsharp_editor.cpp
-#, fuzzy
-msgid "Failed to save solution."
-msgstr "রিসোর্স লোড ব্যর্থ হয়েছে।"
-
-#: modules/mono/editor/godotsharp_editor.cpp
-#, fuzzy
-msgid "Done"
-msgstr "সম্পন্ন হয়েছে!"
-
-#: modules/mono/editor/godotsharp_editor.cpp
-#, fuzzy
-msgid "Failed to create C# project."
-msgstr "রিসোর্স লোড ব্যর্থ হয়েছে।"
-
-#: modules/mono/editor/godotsharp_editor.cpp
-msgid "Mono"
-msgstr "মনো"
-
-#: modules/mono/editor/godotsharp_editor.cpp
-msgid "About C# support"
-msgstr ""
-
-#: modules/mono/editor/godotsharp_editor.cpp
-#, fuzzy
-msgid "Create C# solution"
-msgstr "প্রান্তরেখা তৈরি করুন"
-
-#: modules/mono/editor/mono_bottom_panel.cpp
-msgid "Builds"
-msgstr ""
-
-#: modules/mono/editor/mono_bottom_panel.cpp
-#, fuzzy
-msgid "Build Project"
-msgstr "নতুন প্রকল্প"
-
-#: modules/mono/editor/mono_bottom_panel.cpp
-#, fuzzy
-msgid "View log"
-msgstr "ফাইল"
 
 #: modules/mono/mono_gd/gd_mono_utils.cpp
 msgid "End of inner exception stack trace"
@@ -11980,8 +11778,9 @@ msgid "Invalid splash screen image dimensions (should be 620x300)."
 msgstr "স্প্ল্যাশ পর্দার (splash screen) ছবির অগ্রহনযোগ্য মাত্রা (৬২০x৩০০ হতে হবে)।"
 
 #: scene/2d/animated_sprite.cpp
+#, fuzzy
 msgid ""
-"A SpriteFrames resource must be created or set in the 'Frames' property in "
+"A SpriteFrames resource must be created or set in the \"Frames\" property in "
 "order for AnimatedSprite to display frames."
 msgstr ""
 "AnimatedSprite দ্বারা ফ্রেম দেখাতে SpriteFrames রিসোর্স অবশ্যই তৈরি করতে হবে "
@@ -12041,8 +11840,9 @@ msgid ""
 msgstr ""
 
 #: scene/2d/light_2d.cpp
+#, fuzzy
 msgid ""
-"A texture with the shape of the light must be supplied to the 'texture' "
+"A texture with the shape of the light must be supplied to the \"Texture\" "
 "property."
 msgstr ""
 "অবশ্যই লাইটের আকৃতি সহ একটি গঠন 'texture' এর বৈশিষ্ট্যে হিসেবে প্রদান করতে হবে।"
@@ -12054,7 +11854,8 @@ msgstr ""
 "Occluder এর প্রভাব ফেলতে একটি occluder বহুভুজ নির্ধারণ করা (বা, আঁকা) আবশ্যক।"
 
 #: scene/2d/light_occluder_2d.cpp
-msgid "The occluder polygon for this occluder is empty. Please draw a polygon!"
+#, fuzzy
+msgid "The occluder polygon for this occluder is empty. Please draw a polygon."
 msgstr "এই occluder এর জন্য occluder পলিগনটি খালি। অনুগ্রহ করে একটি পলিগন আঁকুন!"
 
 #: scene/2d/navigation_polygon.cpp
@@ -12126,16 +11927,28 @@ msgid ""
 "This bone lacks a proper REST pose. Go to the Skeleton2D node and set one."
 msgstr ""
 
-#: scene/2d/visibility_notifier_2d.cpp
+#: scene/2d/tile_map.cpp
+#, fuzzy
 msgid ""
-"VisibilityEnable2D works best when used with the edited scene root directly "
+"TileMap with Use Parent on needs a parent CollisionObject2D to give shapes "
+"to. Please use it as a child of Area2D, StaticBody2D, RigidBody2D, "
+"KinematicBody2D, etc. to give them a shape."
+msgstr ""
+"CollisionShape2D শুধুমাত্র CollisionObject2D হতে সৃষ্ট নোডের সংঘর্ষের আকৃতি প্রদান "
+"করে। Area2D, StaticBody2D, RigidBody2D, KinematicBody2D, ইত্যাদিকে আকার দিতে "
+"অনুগ্রহ করে তা শুধুমাত্র তাদের অংশ হিসেবে ব্যবহার করুন।"
+
+#: scene/2d/visibility_notifier_2d.cpp
+#, fuzzy
+msgid ""
+"VisibilityEnabler2D works best when used with the edited scene root directly "
 "as parent."
 msgstr ""
 "VisibilityEnable2D সর্বোত্তম কার্যকর হয় যখন সম্পাদিত দৃশ্য মূল দৃশ্য হিসেবে সরাসরি "
 "ব্যবহৃত হয়।"
 
 #: scene/3d/arvr_nodes.cpp
-msgid "ARVRCamera must have an ARVROrigin node as its parent"
+msgid "ARVRCamera must have an ARVROrigin node as its parent."
 msgstr ""
 
 #: scene/3d/arvr_nodes.cpp
@@ -12221,9 +12034,10 @@ msgstr ""
 "শুধুমাত্র তাদের অংশ হিসেবে ব্যবহার করুন।"
 
 #: scene/3d/collision_shape.cpp
+#, fuzzy
 msgid ""
 "A shape must be provided for CollisionShape to function. Please create a "
-"shape resource for it!"
+"shape resource for it."
 msgstr ""
 "সফল্ভাবে কাজ করতে CollisionShape এর একটি আকৃতি প্রয়োজন। অনুগ্রহ করে তার জন্য একটি "
 "আকৃতি তৈরি করুন!"
@@ -12253,6 +12067,10 @@ msgstr "ছবিসমূহ ব্লিটিং (Blitting) করা হচ�
 msgid ""
 "GIProbes are not supported by the GLES2 video driver.\n"
 "Use a BakedLightmap instead."
+msgstr ""
+
+#: scene/3d/light.cpp
+msgid "A SpotLight with an angle wider than 90 degrees cannot cast shadows."
 msgstr ""
 
 #: scene/3d/navigation_mesh.cpp
@@ -12294,8 +12112,8 @@ msgstr "PathFollow2D একমাত্র Path2D এর অংশ হিসে�
 
 #: scene/3d/path.cpp
 msgid ""
-"PathFollow ROTATION_ORIENTED requires \"Up Vector\" enabled in its parent "
-"Path's Curve resource."
+"PathFollow's ROTATION_ORIENTED requires \"Up Vector\" to be enabled in its "
+"parent Path's Curve resource."
 msgstr ""
 
 #: scene/3d/physics_body.cpp
@@ -12306,7 +12124,10 @@ msgid ""
 msgstr ""
 
 #: scene/3d/remote_transform.cpp
-msgid "Path property must point to a valid Spatial node to work."
+#, fuzzy
+msgid ""
+"The \"Remote Path\" property must point to a valid Spatial or Spatial-"
+"derived node to work."
 msgstr "Path এর দিক অবশ্যই একটি কার্যকর Spatial নোডের এর দিকে নির্দেশ করাতে হবে।"
 
 #: scene/3d/soft_body.cpp
@@ -12321,8 +12142,9 @@ msgid ""
 msgstr ""
 
 #: scene/3d/sprite_3d.cpp
+#, fuzzy
 msgid ""
-"A SpriteFrames resource must be created or set in the 'Frames' property in "
+"A SpriteFrames resource must be created or set in the \"Frames\" property in "
 "order for AnimatedSprite3D to display frames."
 msgstr ""
 "AnimatedSprite3D দ্বারা ফ্রেম দেখাতে SpriteFrames রিসোর্স অবশ্যই তৈরি করতে হবে "
@@ -12335,7 +12157,9 @@ msgid ""
 msgstr ""
 
 #: scene/3d/world_environment.cpp
-msgid "WorldEnvironment needs an Environment resource."
+msgid ""
+"WorldEnvironment requires its \"Environment\" property to contain an "
+"Environment to have a visible effect."
 msgstr ""
 
 #: scene/3d/world_environment.cpp
@@ -12375,7 +12199,7 @@ msgid "Nothing connected to input '%s' of node '%s'."
 msgstr "'%s' এর সাথে '%s' সংযুক্ত করুন"
 
 #: scene/animation/animation_tree.cpp
-msgid "A root AnimationNode for the graph is not set."
+msgid "No root AnimationNode for the graph is set."
 msgstr ""
 
 #: scene/animation/animation_tree.cpp
@@ -12390,7 +12214,7 @@ msgstr ""
 
 #: scene/animation/animation_tree.cpp
 #, fuzzy
-msgid "AnimationPlayer root is not a valid node."
+msgid "The AnimationPlayer root node is not a valid node."
 msgstr "অ্যানিমেশনের তালিকাটি অকার্যকর।"
 
 #: scene/animation/animation_tree_player.cpp
@@ -12402,9 +12226,12 @@ msgid "Pick a color from the screen."
 msgstr ""
 
 #: scene/gui/color_picker.cpp
-#, fuzzy
-msgid "Raw Mode"
-msgstr "প্যান মোড"
+msgid "HSV"
+msgstr ""
+
+#: scene/gui/color_picker.cpp
+msgid "Raw"
+msgstr ""
 
 #: scene/gui/color_picker.cpp
 msgid "Switch between hexadecimal and code values."
@@ -12416,10 +12243,15 @@ msgstr ""
 
 #: scene/gui/container.cpp
 msgid ""
-"Container by itself serves no purpose unless a script configures it's "
+"Container by itself serves no purpose unless a script configures its "
 "children placement behavior.\n"
-"If you don't intend to add a script, then please use a plain 'Control' node "
-"instead."
+"If you don't intend to add a script, use a plain Control node instead."
+msgstr ""
+
+#: scene/gui/control.cpp
+msgid ""
+"The Hint Tooltip won't be displayed as the control's Mouse Filter is set to "
+"\"Ignore\". To solve this, set the Mouse Filter to \"Stop\" or \"Pass\"."
 msgstr ""
 
 #: scene/gui/dialogs.cpp
@@ -12431,23 +12263,24 @@ msgid "Please Confirm..."
 msgstr "অনুগ্রহ করে নিশ্চিত করুন..."
 
 #: scene/gui/popup.cpp
+#, fuzzy
 msgid ""
 "Popups will hide by default unless you call popup() or any of the popup*() "
-"functions. Making them visible for editing is fine though, but they will "
-"hide upon running."
+"functions. Making them visible for editing is fine, but they will hide upon "
+"running."
 msgstr ""
 "সাধারণত popups লুকিয়ে যাবে, যদি আপনি popup() বা popup*() এর যেকোনো ফাংশন "
 "ব্যবহার না করেন। যদিও সম্পাদনের কাজে তা গ্রহনযোগ্য, কিন্তু চালনার সময় তা লুকিয়ে "
 "যাবে।"
 
 #: scene/gui/range.cpp
-msgid "If exp_edit is true min_value must be > 0."
+msgid "If \"Exp Edit\" is enabled, \"Min Value\" must be greater than 0."
 msgstr ""
 
 #: scene/gui/scroll_container.cpp
 msgid ""
 "ScrollContainer is intended to work with a single child control.\n"
-"Use a container as child (VBox,HBox,etc), or a Control and set the custom "
+"Use a container as child (VBox, HBox, etc.), or a Control and set the custom "
 "minimum size manually."
 msgstr ""
 
@@ -12496,6 +12329,11 @@ msgstr "ইনপুট যোগ করুন"
 
 #: scene/resources/visual_shader_nodes.cpp
 #, fuzzy
+msgid "Invalid source for preview."
+msgstr "অকার্যকর উৎস!"
+
+#: scene/resources/visual_shader_nodes.cpp
+#, fuzzy
 msgid "Invalid source for shader."
 msgstr "অকার্যকর উৎস!"
 
@@ -12514,6 +12352,52 @@ msgstr ""
 #: servers/visual/shader_language.cpp
 msgid "Constants cannot be modified."
 msgstr ""
+
+#, fuzzy
+#~ msgid "Generating solution..."
+#~ msgstr "ওকট্রী (octree) গঠনবিন্যাস তৈরি করা হচ্ছে"
+
+#, fuzzy
+#~ msgid "Failed to create solution."
+#~ msgstr "প্রান্তরেখা তৈরি করা সম্ভব হয়নি!"
+
+#, fuzzy
+#~ msgid "Failed to save solution."
+#~ msgstr "রিসোর্স লোড ব্যর্থ হয়েছে।"
+
+#, fuzzy
+#~ msgid "Done"
+#~ msgstr "সম্পন্ন হয়েছে!"
+
+#, fuzzy
+#~ msgid "Failed to create C# project."
+#~ msgstr "রিসোর্স লোড ব্যর্থ হয়েছে।"
+
+#~ msgid "Mono"
+#~ msgstr "মনো"
+
+#, fuzzy
+#~ msgid "Create C# solution"
+#~ msgstr "প্রান্তরেখা তৈরি করুন"
+
+#, fuzzy
+#~ msgid "Build Project"
+#~ msgstr "নতুন প্রকল্প"
+
+#, fuzzy
+#~ msgid "View log"
+#~ msgstr "ফাইল"
+
+#, fuzzy
+#~ msgid "Enabled Classes"
+#~ msgstr "ক্লাসের অনুসন্ধান করুন"
+
+#~ msgid "Update Always"
+#~ msgstr "সর্বদা হাল-নাগাদ করুন"
+
+#, fuzzy
+#~ msgid "Raw Mode"
+#~ msgstr "প্যান মোড"
 
 #~ msgid "Path to Node:"
 #~ msgstr "নোডের পথ:"
@@ -13084,9 +12968,6 @@ msgstr ""
 
 #~ msgid "Toggle Spatial Visible"
 #~ msgstr "Spatial দৃশ্যমানতা টগল করুন"
-
-#~ msgid "Toggle CanvasItem Visible"
-#~ msgstr "CanvasItem দৃশ্যমানতা টগল করুন"
 
 #~ msgid "Condition"
 #~ msgstr "শর্ত (Condition)"
@@ -14012,9 +13893,6 @@ msgstr ""
 
 #~ msgid "Images:"
 #~ msgstr "ছবিসমূহ:"
-
-#~ msgid "Select None"
-#~ msgstr "কোনোটাই নির্বাচন করবেন না"
 
 #~ msgid "Group"
 #~ msgstr "গ্রুপ"

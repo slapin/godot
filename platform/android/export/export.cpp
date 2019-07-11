@@ -594,7 +594,7 @@ class EditorExportPlatformAndroid : public EditorExportPlatform {
 			if (abi_index != -1) {
 				exported = true;
 				String abi = abis[abi_index];
-				String dst_path = "lib/" + abi + "/" + p_so.path.get_file();
+				String dst_path = String("lib").plus_file(abi).plus_file(p_so.path.get_file());
 				Vector<uint8_t> array = FileAccess::get_file_as_array(p_so.path);
 				Error store_err = store_in_apk(ed, dst_path, array);
 				ERR_FAIL_COND_V(store_err, store_err);
@@ -664,6 +664,8 @@ class EditorExportPlatformAndroid : public EditorExportPlatform {
 		bool screen_support_normal = p_preset->get("screen/support_normal");
 		bool screen_support_large = p_preset->get("screen/support_large");
 		bool screen_support_xlarge = p_preset->get("screen/support_xlarge");
+
+		int xr_mode_index = p_preset->get("graphics/xr_mode");
 
 		Vector<String> perms;
 
@@ -820,6 +822,20 @@ class EditorExportPlatformAndroid : public EditorExportPlatform {
 						if (tname == "uses-feature" && attrname == "glEsVersion") {
 
 							encode_uint32(min_gles3 ? 0x00030000 : 0x00020000, &p_manifest.write[iofs + 16]);
+						}
+
+						if (tname == "meta-data" && attrname == "name" && string_table[attr_value] == "xr_mode_metadata_name") {
+							// Update the meta-data 'android:name' attribute based on the selected XR mode.
+							if (xr_mode_index == 1 /* XRMode.OVR */) {
+								string_table.write[attr_value] = "com.samsung.android.vr.application.mode";
+							}
+						}
+
+						if (tname == "meta-data" && attrname == "value" && string_table[attr_value] == "xr_mode_metadata_value") {
+							// Update the meta-data 'android:value' attribute based on the selected XR mode.
+							if (xr_mode_index == 1 /* XRMode.OVR */) {
+								string_table.write[attr_value] = "vr_only";
+							}
 						}
 
 						iofs += 20;
@@ -1139,6 +1155,7 @@ public:
 
 	virtual void get_export_options(List<ExportOption> *r_options) {
 
+		r_options->push_back(ExportOption(PropertyInfo(Variant::INT, "graphics/xr_mode", PROPERTY_HINT_ENUM, "Regular,Oculus Mobile VR"), 0));
 		r_options->push_back(ExportOption(PropertyInfo(Variant::BOOL, "graphics/32_bits_framebuffer"), true));
 		r_options->push_back(ExportOption(PropertyInfo(Variant::BOOL, "one_click_deploy/clear_previous_install"), true));
 		r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "custom_package/debug", PROPERTY_HINT_GLOBAL_FILE, "*.apk"), ""));
@@ -2069,6 +2086,14 @@ public:
 					store_in_apk(&ed, launcher_icons[i].export_path, data);
 				}
 			}
+		}
+
+		int xr_mode_index = p_preset->get("graphics/xr_mode");
+		if (xr_mode_index == 1 /* XRMode.OVR */) {
+			cl.push_back("--xr_mode_ovr");
+		} else {
+			// XRMode.REGULAR is the default.
+			cl.push_back("--xr_mode_regular");
 		}
 
 		if (use_32_fb)

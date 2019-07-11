@@ -125,7 +125,7 @@ bool GDScriptParser::_enter_indent_block(BlockNode *p_block) {
 	}
 }
 
-bool GDScriptParser::_parse_arguments(Node *p_parent, Vector<Node *> &p_args, bool p_static, bool p_can_codecomplete) {
+bool GDScriptParser::_parse_arguments(Node *p_parent, Vector<Node *> &p_args, bool p_static, bool p_can_codecomplete, bool p_parsing_constant) {
 
 	if (tokenizer->get_token() == GDScriptTokenizer::TK_PARENTHESIS_CLOSE) {
 		tokenizer->advance();
@@ -149,7 +149,7 @@ bool GDScriptParser::_parse_arguments(Node *p_parent, Vector<Node *> &p_args, bo
 				return false;
 			}
 
-			Node *arg = _parse_expression(p_parent, p_static);
+			Node *arg = _parse_expression(p_parent, p_static, false, p_parsing_constant);
 			if (!arg) {
 				return false;
 			}
@@ -463,7 +463,7 @@ GDScriptParser::Node *GDScriptParser::_parse_expression(Node *p_parent, bool p_s
 			}
 
 			if (!path.is_abs_path() && base_path != "")
-				path = base_path + "/" + path;
+				path = base_path.plus_file(path);
 			path = path.replace("///", "//").simplify_path();
 			if (path == self_path) {
 
@@ -639,7 +639,7 @@ GDScriptParser::Node *GDScriptParser::_parse_expression(Node *p_parent, bool p_s
 					id->name = identifier;
 					op->arguments.push_back(id);
 
-					if (!_parse_arguments(op, op->arguments, p_static, true))
+					if (!_parse_arguments(op, op->arguments, p_static, true, p_parsing_constant))
 						return NULL;
 
 					expr = op;
@@ -731,7 +731,7 @@ GDScriptParser::Node *GDScriptParser::_parse_expression(Node *p_parent, bool p_s
 				completion_node = op;
 			}
 			if (!replaced) {
-				if (!_parse_arguments(op, op->arguments, p_static, true))
+				if (!_parse_arguments(op, op->arguments, p_static, true, p_parsing_constant))
 					return NULL;
 				expr = op;
 			}
@@ -826,11 +826,12 @@ GDScriptParser::Node *GDScriptParser::_parse_expression(Node *p_parent, bool p_s
 					}
 
 					// Check parents for the constant
-					if (!bfn && cln->extends_file != StringName()) {
-						Ref<GDScript> parent = ResourceLoader::load(cln->extends_file);
-						if (parent.is_valid() && parent->is_valid()) {
+					if (!bfn) {
+						// Using current_class instead of cln here, since cln is const*
+						_determine_inheritance(current_class, false);
+						if (cln->base_type.has_type && cln->base_type.kind == DataType::GDSCRIPT && cln->base_type.script_type->is_valid()) {
 							Map<StringName, Variant> parent_constants;
-							parent->get_constants(&parent_constants);
+							current_class->base_type.script_type->get_constants(&parent_constants);
 							if (parent_constants.has(identifier)) {
 								ConstantNode *constant = alloc_node<ConstantNode>();
 								constant->value = parent_constants[identifier];
@@ -847,24 +848,11 @@ GDScriptParser::Node *GDScriptParser::_parse_expression(Node *p_parent, bool p_s
 				if (current_function) {
 					int arg_idx = current_function->arguments.find(identifier);
 					if (arg_idx != -1) {
-						switch (tokenizer->get_token()) {
-							case GDScriptTokenizer::TK_OP_ASSIGN_ADD:
-							case GDScriptTokenizer::TK_OP_ASSIGN_BIT_AND:
-							case GDScriptTokenizer::TK_OP_ASSIGN_BIT_OR:
-							case GDScriptTokenizer::TK_OP_ASSIGN_BIT_XOR:
-							case GDScriptTokenizer::TK_OP_ASSIGN_DIV:
-							case GDScriptTokenizer::TK_OP_ASSIGN_MOD:
-							case GDScriptTokenizer::TK_OP_ASSIGN_MUL:
-							case GDScriptTokenizer::TK_OP_ASSIGN_SHIFT_LEFT:
-							case GDScriptTokenizer::TK_OP_ASSIGN_SHIFT_RIGHT:
-							case GDScriptTokenizer::TK_OP_ASSIGN_SUB:
-							case GDScriptTokenizer::TK_OP_ASSIGN: {
-								// Assignment is not really usage
-								current_function->arguments_usage.write[arg_idx] = current_function->arguments_usage[arg_idx] - 1;
-							} break;
-							default: {
-								current_function->arguments_usage.write[arg_idx] = current_function->arguments_usage[arg_idx] + 1;
-							}
+						if (tokenizer->get_token() == GDScriptTokenizer::TK_OP_ASSIGN) {
+							// Assignment is not really usage
+							current_function->arguments_usage.write[arg_idx] = current_function->arguments_usage[arg_idx] - 1;
+						} else {
+							current_function->arguments_usage.write[arg_idx] = current_function->arguments_usage[arg_idx] + 1;
 						}
 					}
 				}
@@ -1125,7 +1113,7 @@ GDScriptParser::Node *GDScriptParser::_parse_expression(Node *p_parent, bool p_s
 				}
 			} else {
 				tokenizer->advance();
-				if (!_parse_arguments(op, op->arguments, p_static)) {
+				if (!_parse_arguments(op, op->arguments, p_static, false, p_parsing_constant)) {
 					return NULL;
 				}
 			}
@@ -1150,7 +1138,7 @@ GDScriptParser::Node *GDScriptParser::_parse_expression(Node *p_parent, bool p_s
 
 		if (!expr) {
 			ERR_EXPLAIN("GDScriptParser bug, couldn't figure out what expression is...");
-			ERR_FAIL_COND_V(!expr, NULL);
+			ERR_FAIL_V(NULL);
 		}
 
 		/******************/
@@ -1177,21 +1165,13 @@ GDScriptParser::Node *GDScriptParser::_parse_expression(Node *p_parent, bool p_s
 					tokenizer->advance();
 
 					IdentifierNode *id = alloc_node<IdentifierNode>();
-					if (tokenizer->get_token() == GDScriptTokenizer::TK_BUILT_IN_FUNC) {
-						//small hack so built in funcs don't obfuscate methods
-
-						id->name = GDScriptFunctions::get_func_name(tokenizer->get_token_built_in_func());
-						tokenizer->advance();
-
-					} else {
-						StringName identifier;
-						if (_get_completable_identifier(COMPLETION_METHOD, identifier)) {
-							completion_node = op;
-							//indexing stuff
-						}
-
-						id->name = identifier;
+					StringName identifier;
+					if (_get_completable_identifier(COMPLETION_METHOD, identifier)) {
+						completion_node = op;
+						//indexing stuff
 					}
+
+					id->name = identifier;
 
 					op->arguments.push_back(expr); // call what
 					op->arguments.push_back(id); // call func
@@ -1201,7 +1181,7 @@ GDScriptParser::Node *GDScriptParser::_parse_expression(Node *p_parent, bool p_s
 						_make_completable_call(0);
 						completion_node = op;
 					}
-					if (!_parse_arguments(op, op->arguments, p_static, true))
+					if (!_parse_arguments(op, op->arguments, p_static, true, p_parsing_constant))
 						return NULL;
 					expr = op;
 
@@ -1493,7 +1473,7 @@ GDScriptParser::Node *GDScriptParser::_parse_expression(Node *p_parent, bool p_s
 		if (next_op == -1) {
 
 			_set_error("Yet another parser bug....");
-			ERR_FAIL_COND_V(next_op == -1, NULL);
+			ERR_FAIL_V(NULL);
 		}
 
 		// OK! create operator..
@@ -5097,6 +5077,9 @@ void GDScriptParser::_parse_class(ClassNode *p_class) {
 
 						if (tokenizer->get_token() == GDScriptTokenizer::TK_COMMA) {
 							tokenizer->advance();
+						} else if (tokenizer->is_token_literal(0, true)) {
+							_set_error("Unexpected identifier");
+							return;
 						}
 
 						if (enum_name != "") {
@@ -5171,9 +5154,11 @@ void GDScriptParser::_parse_class(ClassNode *p_class) {
 	}
 }
 
-void GDScriptParser::_determine_inheritance(ClassNode *p_class) {
+void GDScriptParser::_determine_inheritance(ClassNode *p_class, bool p_recursive) {
 
-	if (p_class->extends_used) {
+	if (p_class->base_type.has_type) {
+		// Already determined
+	} else if (p_class->extends_used) {
 		//do inheritance
 		String path = p_class->extends_file;
 
@@ -5368,9 +5353,11 @@ void GDScriptParser::_determine_inheritance(ClassNode *p_class) {
 		p_class->base_type.native_type = "Reference";
 	}
 
-	// Recursively determine subclasses
-	for (int i = 0; i < p_class->subclasses.size(); i++) {
-		_determine_inheritance(p_class->subclasses[i]);
+	if (p_recursive) {
+		// Recursively determine subclasses
+		for (int i = 0; i < p_class->subclasses.size(); i++) {
+			_determine_inheritance(p_class->subclasses[i], p_recursive);
+		}
 	}
 }
 
@@ -5944,11 +5931,8 @@ bool GDScriptParser::_is_type_compatible(const DataType &p_container, const Data
 
 	if (p_container.kind == DataType::BUILTIN && p_container.builtin_type == Variant::OBJECT) {
 		// Object built-in is a special case, it's compatible with any object and with null
-		if (p_expression.kind == DataType::BUILTIN && p_expression.builtin_type == Variant::NIL) {
-			return true;
-		}
 		if (p_expression.kind == DataType::BUILTIN) {
-			return false;
+			return p_expression.builtin_type == Variant::NIL;
 		}
 		// If it's not a built-in, must be an object
 		return true;

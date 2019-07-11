@@ -65,7 +65,7 @@ private:
 protected:
 	static NetSocket *_create_func();
 
-	bool _can_use_ip(const IP_Address p_ip, const bool p_for_bind) const;
+	bool _can_use_ip(const IP_Address &p_ip, const bool p_for_bind) const;
 
 public:
 	static void make_default();
@@ -77,7 +77,7 @@ public:
 	virtual void close();
 	virtual Error bind(IP_Address p_addr, uint16_t p_port);
 	virtual Error listen(int p_max_pending);
-	virtual Error connect_to_host(IP_Address p_addr, uint16_t p_port);
+	virtual Error connect_to_host(IP_Address p_host, uint16_t p_port);
 	virtual Error poll(PollType p_type, int timeout) const;
 	virtual Error recv(uint8_t *p_buffer, int p_len, int &r_read);
 	virtual Error recvfrom(uint8_t *p_buffer, int p_len, int &r_read, IP_Address &r_ip, uint16_t &r_port);

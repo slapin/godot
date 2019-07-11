@@ -1073,7 +1073,7 @@ int GDScriptCompiler::_parse_expression(CodeGen &codegen, const GDScriptParser::
 						int set_index;
 						bool named = false;
 
-						if (static_cast<const GDScriptParser::OperatorNode *>(op)->op == GDScriptParser::OperatorNode::OP_INDEX_NAMED) {
+						if (op->op == GDScriptParser::OperatorNode::OP_INDEX_NAMED) {
 
 							set_index = codegen.get_name_map_pos(static_cast<const GDScriptParser::IdentifierNode *>(op->arguments[1])->name);
 							named = true;
@@ -1259,8 +1259,6 @@ int GDScriptCompiler::_parse_expression(CodeGen &codegen, const GDScriptParser::
 			ERR_FAIL_V(-1); //unreachable code
 		} break;
 	}
-
-	ERR_FAIL_V(-1); //unreachable code
 }
 
 Error GDScriptCompiler::_parse_block(CodeGen &codegen, const GDScriptParser::BlockNode *p_block, int p_stack_level, int p_break_addr, int p_continue_addr) {

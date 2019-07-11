@@ -48,6 +48,14 @@ void Popup::_notification(int p_what) {
 		update_configuration_warning();
 	}
 
+	if (p_what == NOTIFICATION_EXIT_TREE) {
+		if (popped_up) {
+			popped_up = false;
+			notification(NOTIFICATION_POPUP_HIDE);
+			emit_signal("popup_hide");
+		}
+	}
+
 	if (p_what == NOTIFICATION_ENTER_TREE) {
 //small helper to make editing of these easier in editor
 #ifdef TOOLS_ENABLED
@@ -141,7 +149,7 @@ void Popup::popup_centered(const Size2 &p_size) {
 	rect.size = p_size == Size2() ? get_size() : p_size;
 	rect.position = ((window_size - rect.size) / 2.0).floor();
 
-	popup(rect);
+	_popup(rect, true);
 }
 
 void Popup::popup_centered_ratio(float p_screen_ratio) {
@@ -151,18 +159,29 @@ void Popup::popup_centered_ratio(float p_screen_ratio) {
 	rect.size = (window_size * p_screen_ratio).floor();
 	rect.position = ((window_size - rect.size) / 2.0).floor();
 
-	popup(rect);
+	_popup(rect, true);
 }
 
 void Popup::popup(const Rect2 &p_bounds) {
+
+	_popup(p_bounds);
+}
+
+void Popup::_popup(const Rect2 &p_bounds, const bool p_centered) {
 
 	emit_signal("about_to_show");
 	show_modal(exclusive);
 
 	// Fit the popup into the optionally provided bounds.
 	if (!p_bounds.has_no_area()) {
-		set_position(p_bounds.position);
 		set_size(p_bounds.size);
+
+		// check if p_bounds.size was using an outdated cached values
+		if (p_centered && p_bounds.size != get_size()) {
+			set_position(p_bounds.position - ((get_size() - p_bounds.size) / 2.0).floor());
+		} else {
+			set_position(p_bounds.position);
+		}
 	}
 	_fix_size();
 
@@ -215,7 +234,7 @@ Popup::Popup() {
 String Popup::get_configuration_warning() const {
 
 	if (is_visible_in_tree()) {
-		return TTR("Popups will hide by default unless you call popup() or any of the popup*() functions. Making them visible for editing is fine though, but they will hide upon running.");
+		return TTR("Popups will hide by default unless you call popup() or any of the popup*() functions. Making them visible for editing is fine, but they will hide upon running.");
 	}
 
 	return String();

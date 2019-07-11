@@ -60,7 +60,7 @@ void VisualInstance::_notification(int p_what) {
 			if (skeleton)
 				VisualServer::get_singleton()->instance_attach_skeleton( instance, skeleton->get_skeleton() );
 			*/
-
+			ERR_FAIL_COND(get_world().is_null());
 			VisualServer::get_singleton()->instance_set_scenario(instance, get_world()->get_scenario());
 			_update_visibility();
 
@@ -326,6 +326,7 @@ void GeometryInstance::_bind_methods() {
 	BIND_ENUM_CONSTANT(SHADOW_CASTING_SETTING_SHADOWS_ONLY);
 
 	BIND_ENUM_CONSTANT(FLAG_USE_BAKED_LIGHT);
+	BIND_ENUM_CONSTANT(FLAG_DRAW_NEXT_FRAME_IF_VISIBLE);
 	BIND_ENUM_CONSTANT(FLAG_MAX);
 }
 

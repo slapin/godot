@@ -160,7 +160,13 @@ class VisualShaderEditor : public VBoxContainer {
 	void _edit_port_default_input(Object *p_button, int p_node, int p_port);
 	void _port_edited();
 
+	int to_node;
+	int to_slot;
+	int from_node;
+	int from_slot;
+
 	void _connection_to_empty(const String &p_from, int p_from_slot, const Vector2 &p_release_position);
+	void _connection_from_empty(const String &p_to, int p_to_slot, const Vector2 &p_release_position);
 
 	void _line_edit_changed(const String &p_text, Object *line_edit, int p_node_id);
 	void _line_edit_focus_out(Object *line_edit, int p_node_id);
@@ -176,12 +182,12 @@ class VisualShaderEditor : public VBoxContainer {
 
 	void _input_select_item(Ref<VisualShaderNodeInput> input, String name);
 
-	void _add_input_port(int p_node, int p_port, int p_type, const String &p_name);
+	void _add_input_port(int p_node, int p_port, int p_port_type, const String &p_name);
 	void _remove_input_port(int p_node, int p_port);
 	void _change_input_port_type(int p_type, int p_node, int p_port);
 	void _change_input_port_name(const String &p_text, Object *line_edit, int p_node, int p_port);
 
-	void _add_output_port(int p_node, int p_port, int p_type, const String &p_name);
+	void _add_output_port(int p_node, int p_port, int p_port_type, const String &p_name);
 	void _remove_output_port(int p_node, int p_port);
 	void _change_output_port_type(int p_type, int p_node, int p_port);
 	void _change_output_port_name(const String &p_text, Object *line_edit, int p_node, int p_port);
@@ -192,19 +198,20 @@ class VisualShaderEditor : public VBoxContainer {
 	void _node_resized(const Vector2 &p_new_size, int p_type, int p_node);
 
 	void _preview_select_port(int p_node, int p_port);
-	void _graph_gui_input(const Ref<InputEvent> p_event);
+	void _graph_gui_input(const Ref<InputEvent> &p_event);
 
 	void _member_filter_changed(const String &p_text);
 	void _sbox_input(const Ref<InputEvent> &p_ie);
 	void _member_selected();
 	void _member_unselected();
 	void _member_create();
+	void _member_cancel();
 
 	Variant get_drag_data_fw(const Point2 &p_point, Control *p_from);
 	bool can_drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from) const;
 	void drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from);
 
-	bool _is_available(int p_flags);
+	bool _is_available(int p_mode);
 	void _update_created_node(GraphNode *node);
 
 protected:
@@ -293,6 +300,15 @@ public:
 	virtual Size2 get_minimum_size() const;
 	void setup(const Ref<VisualShader> &p_shader, VisualShader::Type p_type, int p_node, int p_port);
 	VisualShaderNodePortPreview();
+};
+
+class VisualShaderConversionPlugin : public EditorResourceConversionPlugin {
+	GDCLASS(VisualShaderConversionPlugin, EditorResourceConversionPlugin);
+
+public:
+	virtual String converts_to() const;
+	virtual bool handles(const Ref<Resource> &p_resource) const;
+	virtual Ref<Resource> convert(const Ref<Resource> &p_resource) const;
 };
 
 #endif // VISUAL_SHADER_EDITOR_PLUGIN_H

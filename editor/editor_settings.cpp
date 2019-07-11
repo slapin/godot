@@ -107,7 +107,7 @@ bool EditorSettings::_set_only(const StringName &p_name, const Variant &p_value)
 		}
 
 		if (save_changed_setting) {
-			if (props[p_name].save != true) {
+			if (!props[p_name].save) {
 				props[p_name].save = true;
 				changed = true;
 			}
@@ -354,9 +354,9 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	hints["interface/theme/preset"] = PropertyInfo(Variant::STRING, "interface/theme/preset", PROPERTY_HINT_ENUM, "Default,Alien,Arc,Godot 2,Grey,Light,Solarized (Dark),Solarized (Light),Custom", PROPERTY_USAGE_DEFAULT);
 	_initial_set("interface/theme/icon_and_font_color", 0);
 	hints["interface/theme/icon_and_font_color"] = PropertyInfo(Variant::INT, "interface/theme/icon_and_font_color", PROPERTY_HINT_ENUM, "Auto,Dark,Light", PROPERTY_USAGE_DEFAULT);
-	_initial_set("interface/theme/base_color", Color::html("#323b4f"));
+	_initial_set("interface/theme/base_color", Color(0.2, 0.23, 0.31));
 	hints["interface/theme/base_color"] = PropertyInfo(Variant::COLOR, "interface/theme/base_color", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT);
-	_initial_set("interface/theme/accent_color", Color::html("#699ce8"));
+	_initial_set("interface/theme/accent_color", Color(0.41, 0.61, 0.91));
 	hints["interface/theme/accent_color"] = PropertyInfo(Variant::COLOR, "interface/theme/accent_color", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT);
 	_initial_set("interface/theme/contrast", 0.25);
 	hints["interface/theme/contrast"] = PropertyInfo(Variant::REAL, "interface/theme/contrast", PROPERTY_HINT_RANGE, "0.01, 1, 0.01");
@@ -505,10 +505,10 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	_initial_set("editors/grid_map/pick_distance", 5000.0);
 
 	// 3D
-	_initial_set("editors/3d/primary_grid_color", Color::html("909090"));
+	_initial_set("editors/3d/primary_grid_color", Color(0.56, 0.56, 0.56));
 	hints["editors/3d/primary_grid_color"] = PropertyInfo(Variant::COLOR, "editors/3d/primary_grid_color", PROPERTY_HINT_COLOR_NO_ALPHA, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED);
 
-	_initial_set("editors/3d/secondary_grid_color", Color::html("606060"));
+	_initial_set("editors/3d/secondary_grid_color", Color(0.38, 0.38, 0.38));
 	hints["editors/3d/secondary_grid_color"] = PropertyInfo(Variant::COLOR, "editors/3d/secondary_grid_color", PROPERTY_HINT_COLOR_NO_ALPHA, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED);
 
 	_initial_set("editors/3d/grid_size", 50);
@@ -573,6 +573,7 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	_initial_set("editors/2d/bone_outline_color", Color(0.35, 0.35, 0.35));
 	_initial_set("editors/2d/bone_outline_size", 2);
 	_initial_set("editors/2d/viewport_border_color", Color(0.4, 0.4, 1.0, 0.4));
+	_initial_set("editors/2d/constrain_editor_view", true);
 	_initial_set("editors/2d/warped_mouse_panning", true);
 	_initial_set("editors/2d/simple_panning", false);
 	_initial_set("editors/2d/scroll_to_pan", false);
@@ -647,32 +648,32 @@ void EditorSettings::_load_default_text_editor_theme() {
 
 	bool dark_theme = is_dark_theme();
 
-	_initial_set("text_editor/highlighting/symbol_color", Color::html("badfff"));
-	_initial_set("text_editor/highlighting/keyword_color", Color::html("ffffb3"));
-	_initial_set("text_editor/highlighting/base_type_color", Color::html("a4ffd4"));
-	_initial_set("text_editor/highlighting/engine_type_color", Color::html("83d3ff"));
-	_initial_set("text_editor/highlighting/comment_color", Color::html("676767"));
-	_initial_set("text_editor/highlighting/string_color", Color::html("ef6ebe"));
-	_initial_set("text_editor/highlighting/background_color", dark_theme ? Color::html("3b000000") : Color::html("#323b4f"));
-	_initial_set("text_editor/highlighting/completion_background_color", Color::html("2C2A32"));
-	_initial_set("text_editor/highlighting/completion_selected_color", Color::html("434244"));
-	_initial_set("text_editor/highlighting/completion_existing_color", Color::html("21dfdfdf"));
-	_initial_set("text_editor/highlighting/completion_scroll_color", Color::html("ffffff"));
-	_initial_set("text_editor/highlighting/completion_font_color", Color::html("aaaaaa"));
-	_initial_set("text_editor/highlighting/text_color", Color::html("aaaaaa"));
-	_initial_set("text_editor/highlighting/line_number_color", Color::html("66aaaaaa"));
-	_initial_set("text_editor/highlighting/safe_line_number_color", Color::html("99aac8aa"));
-	_initial_set("text_editor/highlighting/caret_color", Color::html("aaaaaa"));
-	_initial_set("text_editor/highlighting/caret_background_color", Color::html("000000"));
-	_initial_set("text_editor/highlighting/text_selected_color", Color::html("000000"));
-	_initial_set("text_editor/highlighting/selection_color", Color::html("5a699ce8"));
+	_initial_set("text_editor/highlighting/symbol_color", Color(0.73, 0.87, 1.0));
+	_initial_set("text_editor/highlighting/keyword_color", Color(1.0, 1.0, 0.7));
+	_initial_set("text_editor/highlighting/base_type_color", Color(0.64, 1.0, 0.83));
+	_initial_set("text_editor/highlighting/engine_type_color", Color(0.51, 0.83, 1.0));
+	_initial_set("text_editor/highlighting/comment_color", Color(0.4, 0.4, 0.4));
+	_initial_set("text_editor/highlighting/string_color", Color(0.94, 0.43, 0.75));
+	_initial_set("text_editor/highlighting/background_color", dark_theme ? Color(0.0, 0.0, 0.0, 0.23) : Color(0.2, 0.23, 0.31));
+	_initial_set("text_editor/highlighting/completion_background_color", Color(0.17, 0.16, 0.2));
+	_initial_set("text_editor/highlighting/completion_selected_color", Color(0.26, 0.26, 0.27));
+	_initial_set("text_editor/highlighting/completion_existing_color", Color(0.13, 0.87, 0.87, 0.87));
+	_initial_set("text_editor/highlighting/completion_scroll_color", Color(1, 1, 1));
+	_initial_set("text_editor/highlighting/completion_font_color", Color(0.67, 0.67, 0.67));
+	_initial_set("text_editor/highlighting/text_color", Color(0.67, 0.67, 0.67));
+	_initial_set("text_editor/highlighting/line_number_color", Color(0.67, 0.67, 0.67, 0.4));
+	_initial_set("text_editor/highlighting/safe_line_number_color", Color(0.67, 0.78, 0.67, 0.6));
+	_initial_set("text_editor/highlighting/caret_color", Color(0.67, 0.67, 0.67));
+	_initial_set("text_editor/highlighting/caret_background_color", Color(0, 0, 0));
+	_initial_set("text_editor/highlighting/text_selected_color", Color(0, 0, 0));
+	_initial_set("text_editor/highlighting/selection_color", Color(0.41, 0.61, 0.91, 0.35));
 	_initial_set("text_editor/highlighting/brace_mismatch_color", Color(1, 0.2, 0.2));
 	_initial_set("text_editor/highlighting/current_line_color", Color(0.3, 0.5, 0.8, 0.15));
 	_initial_set("text_editor/highlighting/line_length_guideline_color", Color(0.3, 0.5, 0.8, 0.1));
 	_initial_set("text_editor/highlighting/word_highlighted_color", Color(0.8, 0.9, 0.9, 0.15));
-	_initial_set("text_editor/highlighting/number_color", Color::html("EB9532"));
-	_initial_set("text_editor/highlighting/function_color", Color::html("66a2ce"));
-	_initial_set("text_editor/highlighting/member_variable_color", Color::html("e64e59"));
+	_initial_set("text_editor/highlighting/number_color", Color(0.92, 0.58, 0.2));
+	_initial_set("text_editor/highlighting/function_color", Color(0.4, 0.64, 0.81));
+	_initial_set("text_editor/highlighting/member_variable_color", Color(0.9, 0.31, 0.35));
 	_initial_set("text_editor/highlighting/mark_color", Color(1.0, 0.4, 0.4, 0.4));
 	_initial_set("text_editor/highlighting/bookmark_color", Color(0.08, 0.49, 0.98));
 	_initial_set("text_editor/highlighting/breakpoint_color", Color(0.8, 0.8, 0.4, 0.2));
@@ -691,7 +692,7 @@ bool EditorSettings::_save_text_editor_theme(String p_file) {
 	keys.sort();
 
 	for (const List<String>::Element *E = keys.front(); E; E = E->next()) {
-		String key = E->get();
+		const String &key = E->get();
 		if (key.begins_with("text_editor/highlighting/") && key.find("color") >= 0) {
 			cf->set_value(theme_section, key.replace("text_editor/highlighting/", ""), ((Color)props[key].variant).to_html());
 		}
@@ -699,10 +700,7 @@ bool EditorSettings::_save_text_editor_theme(String p_file) {
 
 	Error err = cf->save(p_file);
 
-	if (err == OK) {
-		return true;
-	}
-	return false;
+	return err == OK;
 }
 
 bool EditorSettings::_is_default_text_editor_theme(String p_theme_name) {
@@ -940,7 +938,7 @@ fail:
 		Vector<String> list = extra_config->get_value("init_projects", "list");
 		for (int i = 0; i < list.size(); i++) {
 
-			list.write[i] = exe_path + "/" + list[i];
+			list.write[i] = exe_path.plus_file(list[i]);
 		};
 		extra_config->set_value("init_projects", "list", list);
 	};
@@ -1475,6 +1473,10 @@ void EditorSettings::get_shortcut_list(List<String> *r_shortcuts) {
 
 Ref<ShortCut> ED_GET_SHORTCUT(const String &p_path) {
 
+	if (!EditorSettings::get_singleton()) {
+		return NULL;
+	}
+
 	Ref<ShortCut> sc = EditorSettings::get_singleton()->get_shortcut(p_path);
 	if (!sc.is_valid()) {
 		ERR_EXPLAIN("Used ED_GET_SHORTCUT with invalid shortcut: " + p_path);
@@ -1508,6 +1510,15 @@ Ref<ShortCut> ED_SHORTCUT(const String &p_path, const String &p_name, uint32_t p
 		ie->set_alt(bool(p_keycode & KEY_MASK_ALT));
 		ie->set_control(bool(p_keycode & KEY_MASK_CTRL));
 		ie->set_metakey(bool(p_keycode & KEY_MASK_META));
+	}
+
+	if (!EditorSettings::get_singleton()) {
+		Ref<ShortCut> sc;
+		sc.instance();
+		sc->set_name(p_name);
+		sc->set_shortcut(ie);
+		sc->set_meta("original", ie);
+		return sc;
 	}
 
 	Ref<ShortCut> sc = EditorSettings::get_singleton()->get_shortcut(p_path);
@@ -1568,6 +1579,8 @@ void EditorSettings::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_recent_dirs"), &EditorSettings::get_recent_dirs);
 
 	ADD_SIGNAL(MethodInfo("settings_changed"));
+
+	BIND_CONSTANT(NOTIFICATION_EDITOR_SETTINGS_CHANGED);
 }
 
 EditorSettings::EditorSettings() {

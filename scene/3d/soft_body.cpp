@@ -73,7 +73,7 @@ void SoftBodyVisualServerHandler::open() {
 }
 
 void SoftBodyVisualServerHandler::close() {
-	write_buffer = PoolVector<uint8_t>::Write();
+	write_buffer.release();
 }
 
 void SoftBodyVisualServerHandler::commit_changes() {
@@ -699,7 +699,6 @@ bool SoftBody::is_ray_pickable() const {
 }
 
 SoftBody::SoftBody() :
-		MeshInstance(),
 		physics_rid(PhysicsServer::get_singleton()->soft_body_create()),
 		mesh_owner(false),
 		collision_mask(1),
@@ -713,6 +712,7 @@ SoftBody::SoftBody() :
 }
 
 SoftBody::~SoftBody() {
+	PhysicsServer::get_singleton()->free(physics_rid);
 }
 
 void SoftBody::reset_softbody_pin() {

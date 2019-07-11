@@ -51,10 +51,7 @@ int VisualScriptFunctionCall::get_output_sequence_port_count() const {
 
 bool VisualScriptFunctionCall::has_input_sequence_port() const {
 
-	if ((method_cache.flags & METHOD_FLAG_CONST && call_mode != CALL_MODE_INSTANCE) || (call_mode == CALL_MODE_BASIC_TYPE && Variant::is_method_const(basic_type, function)))
-		return false;
-	else
-		return true;
+	return !((method_cache.flags & METHOD_FLAG_CONST && call_mode != CALL_MODE_INSTANCE) || (call_mode == CALL_MODE_BASIC_TYPE && Variant::is_method_const(basic_type, function)));
 }
 #ifdef TOOLS_ENABLED
 
@@ -573,7 +570,6 @@ void VisualScriptFunctionCall::_validate_property(PropertyInfo &property) const 
 			Node *bnode = _get_base_node();
 			if (bnode) {
 				property.hint_string = bnode->get_path(); //convert to loong string
-			} else {
 			}
 		}
 	}
@@ -949,7 +945,7 @@ int VisualScriptPropertySet::get_output_sequence_port_count() const {
 
 bool VisualScriptPropertySet::has_input_sequence_port() const {
 
-	return call_mode != CALL_MODE_BASIC_TYPE ? true : false;
+	return call_mode != CALL_MODE_BASIC_TYPE;
 }
 
 Node *VisualScriptPropertySet::_get_base_node() const {
@@ -1038,8 +1034,6 @@ PropertyInfo VisualScriptPropertySet::get_input_value_port_info(int p_idx) const
 			pi.name = (call_mode == CALL_MODE_INSTANCE ? String("instance") : Variant::get_type_name(basic_type).to_lower());
 			_adjust_input_index(pi);
 			return pi;
-		} else {
-			p_idx--;
 		}
 	}
 
@@ -1355,7 +1349,6 @@ void VisualScriptPropertySet::_validate_property(PropertyInfo &property) const {
 			Node *bnode = _get_base_node();
 			if (bnode) {
 				property.hint_string = bnode->get_path(); //convert to loong string
-			} else {
 			}
 		}
 	}
@@ -1797,8 +1790,6 @@ PropertyInfo VisualScriptPropertyGet::get_input_value_port_info(int p_idx) const
 			pi.type = (call_mode == CALL_MODE_INSTANCE ? Variant::OBJECT : basic_type);
 			pi.name = (call_mode == CALL_MODE_INSTANCE ? String("instance") : Variant::get_type_name(basic_type).to_lower());
 			return pi;
-		} else {
-			p_idx--;
 		}
 	}
 	return PropertyInfo();
@@ -2076,7 +2067,6 @@ void VisualScriptPropertyGet::_validate_property(PropertyInfo &property) const {
 			Node *bnode = _get_base_node();
 			if (bnode) {
 				property.hint_string = bnode->get_path(); //convert to loong string
-			} else {
 			}
 		}
 	}

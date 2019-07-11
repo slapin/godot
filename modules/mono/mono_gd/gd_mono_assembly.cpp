@@ -67,11 +67,22 @@ void GDMonoAssembly::fill_search_dirs(Vector<String> &r_search_dirs, const Strin
 		r_search_dirs.push_back(GodotSharpDirs::get_res_temp_assemblies_dir());
 	}
 
-	r_search_dirs.push_back(GodotSharpDirs::get_res_assemblies_dir());
+	if (p_custom_config.empty()) {
+		r_search_dirs.push_back(GodotSharpDirs::get_res_assemblies_dir());
+	} else {
+		String api_config = p_custom_config == "Release" ? "Release" : "Debug";
+		r_search_dirs.push_back(GodotSharpDirs::get_res_assemblies_base_dir().plus_file(api_config));
+	}
+
+	r_search_dirs.push_back(GodotSharpDirs::get_res_assemblies_base_dir());
 	r_search_dirs.push_back(OS::get_singleton()->get_resource_dir());
 	r_search_dirs.push_back(OS::get_singleton()->get_executable_path().get_base_dir());
+
 #ifdef TOOLS_ENABLED
 	r_search_dirs.push_back(GodotSharpDirs::get_data_editor_tools_dir());
+
+	// For GodotTools to find the api assemblies
+	r_search_dirs.push_back(GodotSharpDirs::get_data_editor_prebuilt_api_dir().plus_file("Debug"));
 #endif
 }
 
@@ -270,7 +281,18 @@ Error GDMonoAssembly::load(bool p_refonly) {
 	Vector<uint8_t> data = FileAccess::get_file_as_array(path);
 	ERR_FAIL_COND_V(data.empty(), ERR_FILE_CANT_READ);
 
-	String image_filename = ProjectSettings::get_singleton()->globalize_path(path);
+	String image_filename;
+
+#ifdef ANDROID_ENABLED
+	if (path.begins_with("res://")) {
+		image_filename = path.substr(6, path.length());
+	} else {
+		image_filename = ProjectSettings::get_singleton()->globalize_path(path);
+	}
+#else
+	// FIXME: globalize_path does not work on exported games
+	image_filename = ProjectSettings::get_singleton()->globalize_path(path);
+#endif
 
 	MonoImageOpenStatus status = MONO_IMAGE_OK;
 

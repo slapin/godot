@@ -119,7 +119,7 @@ public:
 
 	void set_spatial_node(Spatial *p_node);
 	Spatial *get_spatial_node() const { return spatial_node; }
-	EditorSpatialGizmoPlugin *get_plugin() const { return gizmo_plugin; }
+	Ref<EditorSpatialGizmoPlugin> get_plugin() const { return gizmo_plugin; }
 	Vector3 get_handle_pos(int p_idx) const;
 	bool intersect_frustum(const Camera *p_camera, const Vector<Plane> &p_frustum);
 	bool intersect_ray(Camera *p_camera, const Point2 &p_point, Vector3 &r_pos, Vector3 &r_normal, int *r_gizmo_handle = NULL, bool p_sec_first = false);
@@ -133,7 +133,7 @@ public:
 	virtual bool is_editable() const;
 
 	void set_hidden(bool p_hidden);
-	void set_plugin(EditorSpatialGizmoPlugin *p_gizmo);
+	void set_plugin(EditorSpatialGizmoPlugin *p_plugin);
 
 	EditorSpatialGizmo();
 	~EditorSpatialGizmo();
@@ -376,7 +376,7 @@ private:
 	Point2i _get_warped_mouse_motion(const Ref<InputEventMouseMotion> &p_ev_mouse_motion) const;
 
 	Vector3 _get_instance_position(const Point2 &p_pos) const;
-	static AABB _calculate_spatial_bounds(const Spatial *p_parent, const AABB p_bounds);
+	static AABB _calculate_spatial_bounds(const Spatial *p_parent, const AABB &p_bounds);
 	void _create_preview(const Vector<String> &files) const;
 	void _remove_preview();
 	bool _cyclical_dependency_exists(const String &p_target_scene_path, Node *p_desired_node);

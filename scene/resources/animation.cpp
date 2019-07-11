@@ -403,7 +403,7 @@ bool Animation::_get(const StringName &p_name, Variant &r_ret) const {
 					w[idx++] = scale.z;
 				}
 
-				w = PoolVector<real_t>::Write();
+				w.release();
 				r_ret = keys;
 				return true;
 
@@ -438,8 +438,8 @@ bool Animation::_get(const StringName &p_name, Variant &r_ret) const {
 					idx++;
 				}
 
-				wti = PoolVector<float>::Write();
-				wtr = PoolVector<float>::Write();
+				wti.release();
+				wtr.release();
 
 				d["times"] = key_times;
 				d["transitions"] = key_transitions;
@@ -478,8 +478,8 @@ bool Animation::_get(const StringName &p_name, Variant &r_ret) const {
 					idx++;
 				}
 
-				wti = PoolVector<float>::Write();
-				wtr = PoolVector<float>::Write();
+				wti.release();
+				wtr.release();
 
 				d["times"] = key_times;
 				d["transitions"] = key_transitions;
@@ -523,8 +523,8 @@ bool Animation::_get(const StringName &p_name, Variant &r_ret) const {
 					idx++;
 				}
 
-				wti = PoolVector<float>::Write();
-				wpo = PoolVector<float>::Write();
+				wti.release();
+				wpo.release();
 
 				d["times"] = key_times;
 				d["points"] = key_points;
@@ -562,7 +562,7 @@ bool Animation::_get(const StringName &p_name, Variant &r_ret) const {
 					idx++;
 				}
 
-				wti = PoolVector<float>::Write();
+				wti.release();
 
 				d["times"] = key_times;
 				d["clips"] = clips;
@@ -595,8 +595,8 @@ bool Animation::_get(const StringName &p_name, Variant &r_ret) const {
 					wcl[i] = vls[i].value;
 				}
 
-				wti = PoolVector<float>::Write();
-				wcl = PoolVector<String>::Write();
+				wti.release();
+				wcl.release();
 
 				d["times"] = key_times;
 				d["clips"] = clips;
@@ -863,7 +863,7 @@ Error Animation::transform_track_get_key(int p_track, int p_key, Vector3 *r_loc,
 	return OK;
 }
 
-int Animation::transform_track_insert_key(int p_track, float p_time, const Vector3 p_loc, const Quat &p_rot, const Vector3 &p_scale) {
+int Animation::transform_track_insert_key(int p_track, float p_time, const Vector3 &p_loc, const Quat &p_rot, const Vector3 &p_scale) {
 
 	ERR_FAIL_INDEX_V(p_track, tracks.size(), -1);
 	Track *t = tracks[p_track];
@@ -1815,7 +1815,7 @@ T Animation::_interpolate(const Vector<TKey<T> > &p_keys, float p_time, Interpol
 				next = idx;
 			}
 
-		} else if (idx < 0) {
+		} else {
 
 			// only allow extending first key to anim start if looping
 			if (loop)

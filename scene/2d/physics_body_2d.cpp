@@ -963,7 +963,7 @@ String RigidBody2D::get_configuration_warning() const {
 
 	if ((get_mode() == MODE_RIGID || get_mode() == MODE_CHARACTER) && (ABS(t.elements[0].length() - 1.0) > 0.05 || ABS(t.elements[1].length() - 1.0) > 0.05)) {
 		if (warning != String()) {
-			warning += "\n";
+			warning += "\n\n";
 		}
 		warning += TTR("Size changes to RigidBody2D (in character or rigid modes) will be overridden by the physics engine when running.\nChange the size in children collision shapes instead.");
 	}
@@ -1541,7 +1541,7 @@ Vector2 KinematicCollision2D::get_remainder() const {
 	return collision.remainder;
 }
 Object *KinematicCollision2D::get_local_shape() const {
-	ERR_FAIL_COND_V(!owner, NULL);
+	if (!owner) return NULL;
 	uint32_t ownerid = owner->shape_find_owner(collision.local_shape);
 	return owner->shape_owner_get_owner(ownerid);
 }

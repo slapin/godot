@@ -66,7 +66,7 @@ def configure(env):
             env.Prepend(CCFLAGS=['-O2'])
         else: #optimize for size
             env.Prepend(CCFLAGS=['-Os'])
-        env.Prepend(CPPFLAGS=['-DDEBUG_ENABLED'])
+        env.Prepend(CPPDEFINES=['DEBUG_ENABLED'])
 
         if (env["debug_symbols"] == "yes"):
             env.Prepend(CCFLAGS=['-g1'])
@@ -75,7 +75,7 @@ def configure(env):
 
     elif (env["target"] == "debug"):
         env.Prepend(CCFLAGS=['-g3'])
-        env.Prepend(CPPFLAGS=['-DDEBUG_ENABLED', '-DDEBUG_MEMORY_ENABLED'])
+        env.Prepend(CPPDEFINES=['DEBUG_ENABLED', 'DEBUG_MEMORY_ENABLED'])
         env.Append(LINKFLAGS=['-rdynamic'])
 
     ## Architecture
@@ -95,7 +95,7 @@ def configure(env):
             env["CC"] = "clang"
             env["CXX"] = "clang++"
             env["LINK"] = "clang++"
-        env.Append(CPPFLAGS=['-DTYPED_METHOD_BIND'])
+        env.Append(CPPDEFINES=['TYPED_METHOD_BIND'])
         env.extra_suffix = ".llvm" + env.extra_suffix
 
 
@@ -196,8 +196,8 @@ def configure(env):
         # mbedTLS does not provide a pkgconfig config yet. See https://github.com/ARMmbed/mbedtls/issues/228
         env.Append(LIBS=['mbedtls', 'mbedcrypto', 'mbedx509'])
 
-    if not env['builtin_libwebsockets']:
-        env.ParseConfig('pkg-config libwebsockets --cflags --libs')
+    if not env['builtin_wslay']:
+        env.ParseConfig('pkg-config libwslay --cflags --libs')
 
     if not env['builtin_miniupnpc']:
         # No pkgconfig file so far, hardcode default paths.
@@ -216,7 +216,7 @@ def configure(env):
         env.ParseConfig('pkg-config zlib --cflags --libs')
 
     env.Prepend(CPPPATH=['#platform/server'])
-    env.Append(CPPFLAGS=['-DSERVER_ENABLED', '-DUNIX_ENABLED'])
+    env.Append(CPPDEFINES=['SERVER_ENABLED', 'UNIX_ENABLED'])
 
     if (platform.system() == "Darwin"):
         env.Append(LINKFLAGS=['-framework', 'Cocoa', '-framework', 'Carbon', '-lz', '-framework', 'IOKit'])

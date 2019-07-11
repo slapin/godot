@@ -37,13 +37,11 @@
 #include <limits.h>
 #include <stdio.h>
 
-#define _S(a) ((int32_t)a)
-#define ERR_FAIL_ADD_OF(a, b, err) ERR_FAIL_COND_V(_S(b) < 0 || _S(a) < 0 || _S(a) > INT_MAX - _S(b), err)
-#define ERR_FAIL_MUL_OF(a, b, err) ERR_FAIL_COND_V(_S(a) < 0 || _S(b) <= 0 || _S(a) > INT_MAX / _S(b), err)
-
 void EncodedObjectAsID::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_object_id", "id"), &EncodedObjectAsID::set_object_id);
 	ClassDB::bind_method(D_METHOD("get_object_id"), &EncodedObjectAsID::get_object_id);
+
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "object_id"), "set_object_id", "get_object_id");
 }
 
 void EncodedObjectAsID::set_object_id(ObjectID p_id) {
@@ -58,6 +56,10 @@ ObjectID EncodedObjectAsID::get_object_id() const {
 EncodedObjectAsID::EncodedObjectAsID() :
 		id(0) {
 }
+
+#define _S(a) ((int32_t)a)
+#define ERR_FAIL_ADD_OF(a, b, err) ERR_FAIL_COND_V(_S(b) < 0 || _S(a) < 0 || _S(a) > INT_MAX - _S(b), err)
+#define ERR_FAIL_MUL_OF(a, b, err) ERR_FAIL_COND_V(_S(a) < 0 || _S(b) <= 0 || _S(a) > INT_MAX / _S(b), err)
 
 #define ENCODE_MASK 0xFF
 #define ENCODE_FLAG_64 1 << 16
@@ -556,8 +558,6 @@ Error decode_variant(Variant &r_variant, const uint8_t *p_buffer, int p_len, int
 
 					w[i] = buf[i];
 				}
-
-				w = PoolVector<uint8_t>::Write();
 			}
 
 			r_variant = data;
@@ -588,8 +588,6 @@ Error decode_variant(Variant &r_variant, const uint8_t *p_buffer, int p_len, int
 
 					w[i] = decode_uint32(&buf[i * 4]);
 				}
-
-				w = PoolVector<int>::Write();
 			}
 			r_variant = Variant(data);
 			if (r_len) {
@@ -616,8 +614,6 @@ Error decode_variant(Variant &r_variant, const uint8_t *p_buffer, int p_len, int
 
 					w[i] = decode_float(&buf[i * 4]);
 				}
-
-				w = PoolVector<float>::Write();
 			}
 			r_variant = data;
 
@@ -681,8 +677,6 @@ Error decode_variant(Variant &r_variant, const uint8_t *p_buffer, int p_len, int
 
 				if (r_len)
 					(*r_len) += adv;
-				len -= adv;
-				buf += adv;
 			}
 
 			r_variant = varray;
@@ -719,8 +713,6 @@ Error decode_variant(Variant &r_variant, const uint8_t *p_buffer, int p_len, int
 
 				if (r_len)
 					(*r_len) += adv;
-				len -= adv;
-				buf += adv;
 			}
 
 			r_variant = varray;
@@ -758,8 +750,6 @@ Error decode_variant(Variant &r_variant, const uint8_t *p_buffer, int p_len, int
 
 				if (r_len)
 					(*r_len) += adv;
-				len -= adv;
-				buf += adv;
 			}
 
 			r_variant = carray;
@@ -1092,7 +1082,6 @@ Error encode_variant(const Variant &p_variant, uint8_t *r_buffer, int &r_len, bo
 				if (!obj) {
 					if (buf) {
 						encode_uint32(0, buf);
-						buf += 4;
 					}
 					r_len += 4;
 

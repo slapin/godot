@@ -31,15 +31,13 @@
 #include "ustring.h"
 
 #include "core/color.h"
+#include "core/math/crypto_core.h"
 #include "core/math/math_funcs.h"
 #include "core/os/memory.h"
 #include "core/print_string.h"
 #include "core/translation.h"
 #include "core/ucaps.h"
 #include "core/variant.h"
-
-#include "thirdparty/misc/md5.h"
-#include "thirdparty/misc/sha256.h"
 
 #include <wchar.h>
 
@@ -481,8 +479,6 @@ signed char String::nocasecmp_to(const String &p_str) const {
 		this_str++;
 		that_str++;
 	}
-
-	return 0; //should never reach anyway
 }
 
 signed char String::casecmp_to(const String &p_str) const {
@@ -513,8 +509,6 @@ signed char String::casecmp_to(const String &p_str) const {
 		this_str++;
 		that_str++;
 	}
-
-	return 0; //should never reach anyway
 }
 
 signed char String::naturalnocasecmp_to(const String &p_str) const {
@@ -731,8 +725,6 @@ String String::get_slicec(CharType p_splitter, int p_slice) const {
 
 		i++;
 	}
-
-	return String(); //no find!
 }
 
 Vector<String> String::split_spaces() const {
@@ -786,7 +778,7 @@ Vector<String> String::split(const String &p_splitter, bool p_allow_empty, int p
 		if (p_allow_empty || (end > from)) {
 			if (p_maxsplit <= 0)
 				ret.push_back(substr(from, end - from));
-			else if (p_maxsplit > 0) {
+			else {
 
 				// Put rest of the string and leave cycle.
 				if (p_maxsplit == ret.size()) {
@@ -2260,54 +2252,63 @@ uint64_t String::hash64() const {
 String String::md5_text() const {
 
 	CharString cs = utf8();
-	MD5_CTX ctx;
-	MD5Init(&ctx);
-	MD5Update(&ctx, (unsigned char *)cs.ptr(), cs.length());
-	MD5Final(&ctx);
-	return String::md5(ctx.digest);
+	unsigned char hash[16];
+	CryptoCore::md5((unsigned char *)cs.ptr(), cs.length(), hash);
+	return String::hex_encode_buffer(hash, 16);
+}
+
+String String::sha1_text() const {
+	CharString cs = utf8();
+	unsigned char hash[20];
+	CryptoCore::sha1((unsigned char *)cs.ptr(), cs.length(), hash);
+	return String::hex_encode_buffer(hash, 20);
 }
 
 String String::sha256_text() const {
 	CharString cs = utf8();
 	unsigned char hash[32];
-	sha256_context ctx;
-	sha256_init(&ctx);
-	sha256_hash(&ctx, (unsigned char *)cs.ptr(), cs.length());
-	sha256_done(&ctx, hash);
+	CryptoCore::sha256((unsigned char *)cs.ptr(), cs.length(), hash);
 	return String::hex_encode_buffer(hash, 32);
 }
 
 Vector<uint8_t> String::md5_buffer() const {
 
 	CharString cs = utf8();
-	MD5_CTX ctx;
-	MD5Init(&ctx);
-	MD5Update(&ctx, (unsigned char *)cs.ptr(), cs.length());
-	MD5Final(&ctx);
+	unsigned char hash[16];
+	CryptoCore::md5((unsigned char *)cs.ptr(), cs.length(), hash);
 
 	Vector<uint8_t> ret;
 	ret.resize(16);
 	for (int i = 0; i < 16; i++) {
-		ret.write[i] = ctx.digest[i];
-	};
-
+		ret.write[i] = hash[i];
+	}
 	return ret;
 };
+
+Vector<uint8_t> String::sha1_buffer() const {
+	CharString cs = utf8();
+	unsigned char hash[20];
+	CryptoCore::sha1((unsigned char *)cs.ptr(), cs.length(), hash);
+
+	Vector<uint8_t> ret;
+	ret.resize(20);
+	for (int i = 0; i < 20; i++) {
+		ret.write[i] = hash[i];
+	}
+
+	return ret;
+}
 
 Vector<uint8_t> String::sha256_buffer() const {
 	CharString cs = utf8();
 	unsigned char hash[32];
-	sha256_context ctx;
-	sha256_init(&ctx);
-	sha256_hash(&ctx, (unsigned char *)cs.ptr(), cs.length());
-	sha256_done(&ctx, hash);
+	CryptoCore::sha256((unsigned char *)cs.ptr(), cs.length(), hash);
 
 	Vector<uint8_t> ret;
 	ret.resize(32);
 	for (int i = 0; i < 32; i++) {
 		ret.write[i] = hash[i];
 	}
-
 	return ret;
 }
 
@@ -3337,7 +3338,7 @@ String String::http_unescape() const {
 			if ((ord1 >= '0' && ord1 <= '9') || (ord1 >= 'A' && ord1 <= 'Z')) {
 				CharType ord2 = ord_at(i + 2);
 				if ((ord2 >= '0' && ord2 <= '9') || (ord2 >= 'A' && ord2 <= 'Z')) {
-					char bytes[2] = { (char)ord1, (char)ord2 };
+					char bytes[3] = { (char)ord1, (char)ord2, 0 };
 					res += (char)strtol(bytes, NULL, 16);
 					i += 2;
 				}
@@ -3799,11 +3800,7 @@ bool String::is_valid_filename() const {
 		return false;
 	}
 
-	if (find(":") != -1 || find("/") != -1 || find("\\") != -1 || find("?") != -1 || find("*") != -1 || find("\"") != -1 || find("|") != -1 || find("%") != -1 || find("<") != -1 || find(">") != -1) {
-		return false;
-	} else {
-		return true;
-	}
+	return !(find(":") != -1 || find("/") != -1 || find("\\") != -1 || find("?") != -1 || find("*") != -1 || find("\"") != -1 || find("|") != -1 || find("%") != -1 || find("<") != -1 || find(">") != -1);
 }
 
 bool String::is_valid_ip_address() const {
@@ -3941,7 +3938,6 @@ String String::percent_decode() const {
 			uint8_t a = LOWERCASE(cs[i + 1]);
 			uint8_t b = LOWERCASE(cs[i + 2]);
 
-			c = 0;
 			if (a >= '0' && a <= '9')
 				c = (a - '0') << 4;
 			else if (a >= 'a' && a <= 'f')

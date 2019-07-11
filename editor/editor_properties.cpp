@@ -29,6 +29,7 @@
 /*************************************************************************/
 
 #include "editor_properties.h"
+
 #include "editor/editor_resource_preview.h"
 #include "editor_node.h"
 #include "editor_properties_array_dict.h"
@@ -207,7 +208,13 @@ EditorPropertyTextEnum::EditorPropertyTextEnum() {
 
 void EditorPropertyPath::_path_selected(const String &p_path) {
 
-	emit_changed(get_edited_property(), p_path);
+	String final_path = p_path;
+	if (final_path.is_abs_path()) {
+		String res_path = OS::get_singleton()->get_resource_dir() + "/";
+		final_path = res_path.path_to_file(final_path);
+	}
+
+	emit_changed(get_edited_property(), final_path);
 	update_property();
 }
 void EditorPropertyPath::_path_pressed() {
@@ -220,6 +227,13 @@ void EditorPropertyPath::_path_pressed() {
 	}
 
 	String full_path = get_edited_object()->get(get_edited_property());
+	if (full_path.is_rel_path()) {
+
+		if (!DirAccess::exists(full_path.get_base_dir())) {
+			DirAccessRef da(DirAccess::create(DirAccess::ACCESS_FILESYSTEM));
+			da->make_dir_recursive(full_path.get_base_dir());
+		}
+	}
 
 	dialog->clear_filters();
 
@@ -925,6 +939,9 @@ void EditorPropertyEasing::_drag_easing(const Ref<InputEvent> &p_ev) {
 		preset->set_global_position(easing_draw->get_global_transform().xform(mb->get_position()));
 		preset->popup();
 	}
+	if (mb.is_valid() && mb->is_doubleclick() && mb->get_button_index() == BUTTON_LEFT) {
+		_setup_spin();
+	}
 
 	Ref<InputEventMouseMotion> mm = p_ev;
 
@@ -963,7 +980,6 @@ void EditorPropertyEasing::_draw_easing() {
 	Size2 s = easing_draw->get_size();
 	Rect2 r(Point2(), s);
 	r = r.grow(3);
-	//get_stylebox("normal", "LineEdit")->draw(ci, r);
 
 	int points = 48;
 
@@ -1006,6 +1022,31 @@ void EditorPropertyEasing::_set_preset(int p_preset) {
 	easing_draw->update();
 }
 
+void EditorPropertyEasing::_setup_spin() {
+	setting = true;
+	spin->setup_and_show();
+	spin->get_line_edit()->set_text(rtos(get_edited_object()->get(get_edited_property())));
+	setting = false;
+	spin->show();
+}
+
+void EditorPropertyEasing::_spin_value_changed(double p_value) {
+	if (setting)
+		return;
+
+	// 0 is a singularity, but both positive and negative values
+	// are otherwise allowed. Enforce 0+ as workaround.
+	if (Math::is_zero_approx(p_value)) {
+		p_value = 0.00001;
+	}
+	emit_changed(get_edited_property(), p_value);
+	_spin_focus_exited();
+}
+
+void EditorPropertyEasing::_spin_focus_exited() {
+	spin->hide();
+}
+
 void EditorPropertyEasing::setup(bool p_full, bool p_flip) {
 
 	flip = p_flip;
@@ -1028,9 +1069,6 @@ void EditorPropertyEasing::_notification(int p_what) {
 			}
 			easing_draw->set_custom_minimum_size(Size2(0, get_font("font", "Label")->get_height() * 2));
 		} break;
-		case NOTIFICATION_RESIZED: {
-
-		} break;
 	}
 }
 
@@ -1039,6 +1077,9 @@ void EditorPropertyEasing::_bind_methods() {
 	ClassDB::bind_method("_draw_easing", &EditorPropertyEasing::_draw_easing);
 	ClassDB::bind_method("_drag_easing", &EditorPropertyEasing::_drag_easing);
 	ClassDB::bind_method("_set_preset", &EditorPropertyEasing::_set_preset);
+
+	ClassDB::bind_method("_spin_value_changed", &EditorPropertyEasing::_spin_value_changed);
+	ClassDB::bind_method("_spin_focus_exited", &EditorPropertyEasing::_spin_focus_exited);
 }
 
 EditorPropertyEasing::EditorPropertyEasing() {
@@ -1052,6 +1093,19 @@ EditorPropertyEasing::EditorPropertyEasing() {
 	preset = memnew(PopupMenu);
 	add_child(preset);
 	preset->connect("id_pressed", this, "_set_preset");
+
+	spin = memnew(EditorSpinSlider);
+	spin->set_flat(true);
+	spin->set_min(-100);
+	spin->set_max(100);
+	spin->set_step(0);
+	spin->set_hide_slider(true);
+	spin->set_allow_lesser(true);
+	spin->set_allow_greater(true);
+	spin->connect("value_changed", this, "_spin_value_changed");
+	spin->get_line_edit()->connect("focus_exited", this, "_spin_focus_exited");
+	spin->hide();
+	add_child(spin);
 
 	flip = false;
 	full = false;
@@ -2303,7 +2357,7 @@ void EditorPropertyResource::_update_menu_items() {
 			}
 
 			for (Set<String>::Element *F = valid_inheritors.front(); F; F = F->next()) {
-				String t = F->get();
+				const String &t = F->get();
 
 				bool is_custom_resource = false;
 				Ref<Texture> icon;
@@ -2469,8 +2523,8 @@ void EditorPropertyResource::_fold_other_editors(Object *p_self) {
 	if (!res.is_valid())
 		return;
 	bool use_editor = false;
-	for (int i = 0; i < EditorNode::get_singleton()->get_editor_data().get_editor_plugin_count(); i++) {
-		EditorPlugin *ep = EditorNode::get_singleton()->get_editor_data().get_editor_plugin(i);
+	for (int i = 0; i < EditorNode::get_editor_data().get_editor_plugin_count(); i++) {
+		EditorPlugin *ep = EditorNode::get_editor_data().get_editor_plugin(i);
 		if (ep->handles(res.ptr())) {
 			use_editor = true;
 		}
@@ -2516,7 +2570,7 @@ void EditorPropertyResource::update_property() {
 				sub_inspector->set_keying(is_keying());
 				sub_inspector->set_read_only(is_read_only());
 				sub_inspector->set_use_folding(is_using_folding());
-				sub_inspector->set_undo_redo(EditorNode::get_singleton()->get_undo_redo());
+				sub_inspector->set_undo_redo(EditorNode::get_undo_redo());
 
 				sub_inspector_vbox = memnew(VBoxContainer);
 				add_child(sub_inspector_vbox);
@@ -2526,8 +2580,8 @@ void EditorPropertyResource::update_property() {
 				assign->set_pressed(true);
 
 				bool use_editor = false;
-				for (int i = 0; i < EditorNode::get_singleton()->get_editor_data().get_editor_plugin_count(); i++) {
-					EditorPlugin *ep = EditorNode::get_singleton()->get_editor_data().get_editor_plugin(i);
+				for (int i = 0; i < EditorNode::get_editor_data().get_editor_plugin_count(); i++) {
+					EditorPlugin *ep = EditorNode::get_editor_data().get_editor_plugin(i);
 					if (ep->handles(res.ptr())) {
 						use_editor = true;
 					}
@@ -2808,6 +2862,7 @@ EditorPropertyResource::EditorPropertyResource() {
 	assign->set_drag_forwarding(this);
 	assign->connect("draw", this, "_button_draw");
 	hbc->add_child(assign);
+	add_focusable(assign);
 
 	preview = memnew(TextureRect);
 	preview->set_expand(true);
@@ -2828,6 +2883,7 @@ EditorPropertyResource::EditorPropertyResource() {
 	edit->connect("pressed", this, "_update_menu");
 	hbc->add_child(edit);
 	edit->connect("gui_input", this, "_button_input");
+	add_focusable(edit);
 
 	file = NULL;
 	scene_tree = NULL;

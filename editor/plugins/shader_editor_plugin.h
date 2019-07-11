@@ -53,7 +53,7 @@ protected:
 	static void _bind_methods();
 	virtual void _load_theme_settings();
 
-	virtual void _code_complete_script(const String &p_code, List<String> *r_options);
+	virtual void _code_complete_script(const String &p_code, List<ScriptCodeCompletionOption> *r_options);
 
 public:
 	virtual void _validate_script();
@@ -99,6 +99,7 @@ class ShaderEditor : public PanelContainer {
 
 	MenuButton *edit_menu;
 	MenuButton *search_menu;
+	MenuButton *bookmarks_menu;
 	MenuButton *settings_menu;
 	PopupMenu *context_menu;
 	uint64_t idle;
@@ -123,6 +124,9 @@ protected:
 	static void _bind_methods();
 	void _make_context_menu(bool p_selection);
 	void _text_edit_gui_input(const Ref<InputEvent> &ev);
+
+	void _update_bookmark_list();
+	void _bookmark_item_pressed(int p_idx);
 
 public:
 	void apply_shaders();

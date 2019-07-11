@@ -31,12 +31,10 @@
 #ifndef CAMERAIOS_H
 #define CAMERAIOS_H
 
-///@TODO this is a near duplicate of CameraOSX, we should find a way to combine those to minimise code duplication!!!!
-// If you fix something here, make sure you fix it there as wel!
-
 #include "servers/camera_server.h"
 
 class CameraIOS : public CameraServer {
+private:
 public:
 	CameraIOS();
 	~CameraIOS();

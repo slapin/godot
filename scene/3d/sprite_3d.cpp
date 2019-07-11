@@ -163,6 +163,7 @@ float SpriteBase3D::get_opacity() const {
 
 void SpriteBase3D::set_axis(Vector3::Axis p_axis) {
 
+	ERR_FAIL_INDEX(p_axis, 3);
 	axis = p_axis;
 	_queue_update();
 }
@@ -253,7 +254,7 @@ Ref<TriangleMesh> SpriteBase3D::generate_triangle_mesh() const {
 		facesw[j] = vtx;
 	}
 
-	facesw = PoolVector<Vector3>::Write();
+	facesw.release();
 
 	triangle_mesh = Ref<TriangleMesh>(memnew(TriangleMesh));
 	triangle_mesh->create(faces);
@@ -1060,7 +1061,7 @@ StringName AnimatedSprite3D::get_animation() const {
 String AnimatedSprite3D::get_configuration_warning() const {
 
 	if (frames.is_null()) {
-		return TTR("A SpriteFrames resource must be created or set in the 'Frames' property in order for AnimatedSprite3D to display frames.");
+		return TTR("A SpriteFrames resource must be created or set in the \"Frames\" property in order for AnimatedSprite3D to display frames.");
 	}
 
 	return String();

@@ -495,8 +495,8 @@ void Image::convert(Format p_new_format) {
 		case FORMAT_RGBA8 | (FORMAT_RGB8 << 8): _convert<3, true, 3, false, false, false>(width, height, rptr, wptr); break;
 	}
 
-	r = PoolVector<uint8_t>::Read();
-	w = PoolVector<uint8_t>::Write();
+	r.release();
+	w.release();
 
 	bool gen_mipmaps = mipmaps;
 
@@ -1091,8 +1091,8 @@ void Image::resize(int p_width, int p_height, Interpolation p_interpolation) {
 		} break;
 	}
 
-	r = PoolVector<uint8_t>::Read();
-	w = PoolVector<uint8_t>::Write();
+	r.release();
+	w.release();
 
 	if (interpolate_mipmaps) {
 		dst._copy_internals_from(dst2);
@@ -1372,6 +1372,7 @@ void Image::shrink_x2() {
 
 		int new_size = data.size() - ofs;
 		new_img.resize(new_size);
+		ERR_FAIL_COND(new_img.size() == 0);
 
 		{
 			PoolVector<uint8_t>::Write w = new_img.write();
@@ -1391,6 +1392,7 @@ void Image::shrink_x2() {
 		ERR_FAIL_COND(!_can_modify(format));
 		int ps = get_format_pixel_size(format);
 		new_img.resize((width / 2) * (height / 2) * ps);
+		ERR_FAIL_COND(new_img.size() == 0);
 
 		{
 			PoolVector<uint8_t>::Write w = new_img.write();
@@ -1464,7 +1466,10 @@ Error Image::generate_mipmaps(bool p_renormalize) {
 		ERR_FAIL_V(ERR_UNAVAILABLE);
 	}
 
-	ERR_FAIL_COND_V(width == 0 || height == 0, ERR_UNCONFIGURED);
+	if (width == 0 || height == 0) {
+		ERR_EXPLAIN("Cannot generate mipmaps with width or height equal to 0.");
+		ERR_FAIL_V(ERR_UNCONFIGURED);
+	}
 
 	int mmcount;
 
@@ -2389,7 +2394,7 @@ void Image::lock() {
 
 void Image::unlock() {
 
-	write_lock = PoolVector<uint8_t>::Write();
+	write_lock.release();
 }
 
 Color Image::get_pixelv(const Point2 &p_src) const {
@@ -2402,7 +2407,7 @@ Color Image::get_pixel(int p_x, int p_y) const {
 #ifdef DEBUG_ENABLED
 	if (!ptr) {
 		ERR_EXPLAIN("Image must be locked with 'lock()' before using get_pixel()");
-		ERR_FAIL_COND_V(!ptr, Color());
+		ERR_FAIL_V(Color());
 	}
 
 	ERR_FAIL_INDEX_V(p_x, width, Color());
@@ -2532,7 +2537,7 @@ Color Image::get_pixel(int p_x, int p_y) const {
 }
 
 void Image::set_pixelv(const Point2 &p_dst, const Color &p_color) {
-	return set_pixel(p_dst.x, p_dst.y, p_color);
+	set_pixel(p_dst.x, p_dst.y, p_color);
 }
 
 void Image::set_pixel(int p_x, int p_y, const Color &p_color) {
@@ -2541,7 +2546,7 @@ void Image::set_pixel(int p_x, int p_y, const Color &p_color) {
 #ifdef DEBUG_ENABLED
 	if (!ptr) {
 		ERR_EXPLAIN("Image must be locked with 'lock()' before using set_pixel()");
-		ERR_FAIL_COND(!ptr);
+		ERR_FAIL();
 	}
 
 	ERR_FAIL_INDEX(p_x, width);

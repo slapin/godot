@@ -100,10 +100,7 @@ bool DirAccessUnix::dir_exists(String p_dir) {
 	struct stat flags;
 	bool success = (stat(p_dir.utf8().get_data(), &flags) == 0);
 
-	if (success && S_ISDIR(flags.st_mode))
-		return true;
-
-	return false;
+	return (success && S_ISDIR(flags.st_mode));
 }
 
 uint64_t DirAccessUnix::get_modified_time(String p_file) {
@@ -316,7 +313,7 @@ Error DirAccessUnix::change_dir(String p_dir) {
 	// try_dir is the directory we are trying to change into
 	String try_dir = "";
 	if (p_dir.is_rel_path()) {
-		String next_dir = current_dir + "/" + p_dir;
+		String next_dir = current_dir.plus_file(p_dir);
 		next_dir = next_dir.simplify_path();
 		try_dir = next_dir;
 	} else {

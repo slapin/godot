@@ -198,7 +198,8 @@ public:
 		SOURCE_TEXTURE,
 		SOURCE_SCREEN,
 		SOURCE_2D_TEXTURE,
-		SOURCE_2D_NORMAL
+		SOURCE_2D_NORMAL,
+		SOURCE_DEPTH
 	};
 
 	enum TextureType {
@@ -699,7 +700,7 @@ public:
 
 	virtual String generate_code(Shader::Mode p_mode, VisualShader::Type p_type, int p_id, const String *p_input_vars, const String *p_output_vars, bool p_for_preview = false) const; //if no output is connected, the output var passed will be empty. if no input is connected and input is NIL, the input var passed will be empty
 
-	void set_function(Function p_op);
+	void set_function(Function p_func);
 	Function get_function() const;
 
 	virtual Vector<StringName> get_editable_properties() const;
@@ -740,7 +741,7 @@ public:
 
 	virtual String generate_code(Shader::Mode p_mode, VisualShader::Type p_type, int p_id, const String *p_input_vars, const String *p_output_vars, bool p_for_preview = false) const; //if no output is connected, the output var passed will be empty. if no input is connected and input is NIL, the input var passed will be empty
 
-	void set_function(Function p_op);
+	void set_function(Function p_func);
 	Function get_function() const;
 
 	virtual Vector<StringName> get_editable_properties() const;
@@ -895,7 +896,7 @@ public:
 
 	virtual String generate_code(Shader::Mode p_mode, VisualShader::Type p_type, int p_id, const String *p_input_vars, const String *p_output_vars, bool p_for_preview = false) const; //if no output is connected, the output var passed will be empty. if no input is connected and input is NIL, the input var passed will be empty
 
-	void set_function(Function p_op);
+	void set_function(Function p_func);
 	Function get_function() const;
 
 	virtual Vector<StringName> get_editable_properties() const;
@@ -935,7 +936,7 @@ public:
 
 	virtual String generate_code(Shader::Mode p_mode, VisualShader::Type p_type, int p_id, const String *p_input_vars, const String *p_output_vars, bool p_for_preview = false) const; //if no output is connected, the output var passed will be empty. if no input is connected and input is NIL, the input var passed will be empty
 
-	void set_function(Function p_op);
+	void set_function(Function p_func);
 	Function get_function() const;
 
 	virtual Vector<StringName> get_editable_properties() const;

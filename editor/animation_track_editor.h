@@ -332,7 +332,7 @@ class AnimationTrackEditor : public VBoxContainer {
 
 	void _update_scroll(double);
 	void _update_step(double p_new_step);
-	void _update_length(double p_new_step);
+	void _update_length(double p_new_len);
 	void _dropped_track(int p_from_track, int p_to_track);
 
 	void _add_track(int p_type);
@@ -439,9 +439,9 @@ class AnimationTrackEditor : public VBoxContainer {
 	SpinBox *optimize_max_angle;
 
 	ConfirmationDialog *cleanup_dialog;
-	CheckButton *cleanup_keys;
-	CheckButton *cleanup_tracks;
-	CheckButton *cleanup_all;
+	CheckBox *cleanup_keys;
+	CheckBox *cleanup_tracks;
+	CheckBox *cleanup_all;
 
 	ConfirmationDialog *scale_dialog;
 	SpinBox *scale;

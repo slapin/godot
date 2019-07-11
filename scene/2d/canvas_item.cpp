@@ -759,7 +759,7 @@ void CanvasItem::draw_multiline_colors(const Vector<Point2> &p_points, const Vec
 	VisualServer::get_singleton()->canvas_item_add_multiline(canvas_item, p_points, p_colors, p_width, p_antialiased);
 }
 
-void CanvasItem::draw_rect(const Rect2 &p_rect, const Color &p_color, bool p_filled) {
+void CanvasItem::draw_rect(const Rect2 &p_rect, const Color &p_color, bool p_filled, float p_width, bool p_antialiased) {
 
 	if (!drawing) {
 		ERR_EXPLAIN("Drawing is only allowed inside NOTIFICATION_DRAW, _draw() function or 'draw' signal.");
@@ -767,13 +767,53 @@ void CanvasItem::draw_rect(const Rect2 &p_rect, const Color &p_color, bool p_fil
 	}
 
 	if (p_filled) {
+		if (p_width != 1.0) {
+			WARN_PRINT("The draw_rect() \"width\" argument has no effect when \"filled\" is \"true\".");
+		}
+
+		if (p_antialiased) {
+			WARN_PRINT("The draw_rect() \"antialiased\" argument has no effect when \"filled\" is \"true\".");
+		}
 
 		VisualServer::get_singleton()->canvas_item_add_rect(canvas_item, p_rect, p_color);
 	} else {
-		VisualServer::get_singleton()->canvas_item_add_line(canvas_item, p_rect.position, p_rect.position + Size2(p_rect.size.width, 0), p_color);
-		VisualServer::get_singleton()->canvas_item_add_line(canvas_item, p_rect.position, p_rect.position + Size2(0, p_rect.size.height), p_color);
-		VisualServer::get_singleton()->canvas_item_add_line(canvas_item, p_rect.position + Point2(0, p_rect.size.height), p_rect.position + p_rect.size, p_color);
-		VisualServer::get_singleton()->canvas_item_add_line(canvas_item, p_rect.position + Point2(p_rect.size.width, 0), p_rect.position + p_rect.size, p_color);
+		// Thick lines are offset depending on their width to avoid partial overlapping.
+		// Thin lines don't require an offset, so don't apply one in this case
+		float offset;
+		if (p_width >= 2) {
+			offset = p_width / 2.0;
+		} else {
+			offset = 0.0;
+		}
+
+		VisualServer::get_singleton()->canvas_item_add_line(
+				canvas_item,
+				p_rect.position + Point2(-offset, 0),
+				p_rect.position + Size2(p_rect.size.width + offset, 0),
+				p_color,
+				p_width,
+				p_antialiased);
+		VisualServer::get_singleton()->canvas_item_add_line(
+				canvas_item,
+				p_rect.position + Point2(0, offset),
+				p_rect.position + Size2(0, p_rect.size.height - offset),
+				p_color,
+				p_width,
+				p_antialiased);
+		VisualServer::get_singleton()->canvas_item_add_line(
+				canvas_item,
+				p_rect.position + Point2(-offset, p_rect.size.height),
+				p_rect.position + Size2(p_rect.size.width + offset, p_rect.size.height),
+				p_color,
+				p_width,
+				p_antialiased);
+		VisualServer::get_singleton()->canvas_item_add_line(
+				canvas_item,
+				p_rect.position + Point2(p_rect.size.width, offset),
+				p_rect.position + Size2(p_rect.size.width, p_rect.size.height - offset),
+				p_color,
+				p_width,
+				p_antialiased);
 	}
 }
 
@@ -928,6 +968,9 @@ float CanvasItem::draw_char(const Ref<Font> &p_font, const Point2 &p_pos, const 
 	ERR_FAIL_COND_V(p_char.length() != 1, 0);
 	ERR_FAIL_COND_V(p_font.is_null(), 0);
 
+	if (p_font->has_outline()) {
+		p_font->draw_char(canvas_item, p_pos, p_char[0], p_next.c_str()[0], Color(1, 1, 1), true);
+	}
 	return p_font->draw_char(canvas_item, p_pos, p_char[0], p_next.c_str()[0], p_modulate);
 }
 
@@ -1074,6 +1117,7 @@ Vector2 CanvasItem::make_canvas_position_local(const Vector2 &screen_point) cons
 
 Ref<InputEvent> CanvasItem::make_input_local(const Ref<InputEvent> &p_event) const {
 
+	ERR_FAIL_COND_V(p_event.is_null(), p_event);
 	ERR_FAIL_COND_V(!is_inside_tree(), p_event);
 
 	return p_event->xformed_by((get_canvas_transform() * get_global_transform()).affine_inverse());
@@ -1157,7 +1201,7 @@ void CanvasItem::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("draw_polyline_colors", "points", "colors", "width", "antialiased"), &CanvasItem::draw_polyline_colors, DEFVAL(1.0), DEFVAL(false));
 	ClassDB::bind_method(D_METHOD("draw_multiline", "points", "color", "width", "antialiased"), &CanvasItem::draw_multiline, DEFVAL(1.0), DEFVAL(false));
 	ClassDB::bind_method(D_METHOD("draw_multiline_colors", "points", "colors", "width", "antialiased"), &CanvasItem::draw_multiline_colors, DEFVAL(1.0), DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("draw_rect", "rect", "color", "filled"), &CanvasItem::draw_rect, DEFVAL(true));
+	ClassDB::bind_method(D_METHOD("draw_rect", "rect", "color", "filled", "width", "antialiased"), &CanvasItem::draw_rect, DEFVAL(true), DEFVAL(1.0), DEFVAL(false));
 	ClassDB::bind_method(D_METHOD("draw_circle", "position", "radius", "color"), &CanvasItem::draw_circle);
 	ClassDB::bind_method(D_METHOD("draw_texture", "texture", "position", "modulate", "normal_map"), &CanvasItem::draw_texture, DEFVAL(Color(1, 1, 1, 1)), DEFVAL(Variant()));
 	ClassDB::bind_method(D_METHOD("draw_texture_rect", "texture", "rect", "tile", "modulate", "transpose", "normal_map"), &CanvasItem::draw_texture_rect, DEFVAL(Color(1, 1, 1)), DEFVAL(false), DEFVAL(Variant()));

@@ -305,8 +305,10 @@ public:
 	uint32_t hash() const; /* hash the string */
 	uint64_t hash64() const; /* hash the string */
 	String md5_text() const;
+	String sha1_text() const;
 	String sha256_text() const;
 	Vector<uint8_t> md5_buffer() const;
+	Vector<uint8_t> sha1_buffer() const;
 	Vector<uint8_t> sha256_buffer() const;
 
 	_FORCE_INLINE_ bool empty() const { return length() == 0; }
@@ -404,8 +406,6 @@ _FORCE_INLINE_ bool is_str_less(const L *l_ptr, const R *r_ptr) {
 		l_ptr++;
 		r_ptr++;
 	}
-
-	CRASH_COND(true); // unreachable
 }
 
 /* end of namespace */

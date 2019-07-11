@@ -1487,8 +1487,10 @@ uint32_t CubeMap::get_flags() const {
 
 void CubeMap::set_side(Side p_side, const Ref<Image> &p_image) {
 
+	ERR_FAIL_COND(p_image.is_null());
 	ERR_FAIL_COND(p_image->empty());
 	ERR_FAIL_INDEX(p_side, 6);
+
 	if (!_is_valid()) {
 		format = p_image->get_format();
 		w = p_image->get_width();
@@ -1502,6 +1504,7 @@ void CubeMap::set_side(Side p_side, const Ref<Image> &p_image) {
 
 Ref<Image> CubeMap::get_side(Side p_side) const {
 
+	ERR_FAIL_INDEX_V(p_side, 6, Ref<Image>());
 	if (!valid[p_side])
 		return Ref<Image>();
 	return VS::get_singleton()->texture_get_data(cubemap, VS::CubeMapSide(p_side));

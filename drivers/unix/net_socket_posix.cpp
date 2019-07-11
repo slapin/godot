@@ -55,10 +55,6 @@
 
 #include <netinet/tcp.h>
 
-#if defined(__APPLE__)
-#define MSG_NOSIGNAL SO_NOSIGPIPE
-#endif
-
 // BSD calls this flag IPV6_JOIN_GROUP
 #if !defined(IPV6_ADD_MEMBERSHIP) && defined(IPV6_JOIN_GROUP)
 #define IPV6_ADD_MEMBERSHIP IPV6_JOIN_GROUP
@@ -87,10 +83,6 @@
 #define SOCK_IOCTL ioctlsocket
 #define SOCK_CLOSE closesocket
 
-// Windows doesn't have this flag
-#ifndef MSG_NOSIGNAL
-#define MSG_NOSIGNAL 0
-#endif
 // Workaround missing flag in MinGW
 #if defined(__MINGW32__) && !defined(SIO_UDP_NETRESET)
 #define SIO_UDP_NETRESET _WSAIOW(IOC_VENDOR, 15)
@@ -220,7 +212,7 @@ NetSocketPosix::NetError NetSocketPosix::_get_socket_error() {
 #pragma GCC diagnostic pop
 #endif
 
-bool NetSocketPosix::_can_use_ip(const IP_Address p_ip, const bool p_for_bind) const {
+bool NetSocketPosix::_can_use_ip(const IP_Address &p_ip, const bool p_for_bind) const {
 
 	if (p_for_bind && !(p_ip.is_valid() || p_ip.is_wildcard())) {
 		return false;
@@ -229,10 +221,7 @@ bool NetSocketPosix::_can_use_ip(const IP_Address p_ip, const bool p_for_bind) c
 	}
 	// Check if socket support this IP type.
 	IP::Type type = p_ip.is_ipv4() ? IP::TYPE_IPV4 : IP::TYPE_IPV6;
-	if (_ip_type != IP::TYPE_ANY && !p_ip.is_wildcard() && _ip_type != type) {
-		return false;
-	}
-	return true;
+	return !(_ip_type != IP::TYPE_ANY && !p_ip.is_wildcard() && _ip_type != type);
 }
 
 _FORCE_INLINE_ Error NetSocketPosix::_change_multicast_group(IP_Address p_ip, String p_if_name, bool p_add) {
@@ -343,6 +332,13 @@ Error NetSocketPosix::open(Type p_sock_type, IP::Type &ip_type) {
 			// This feature seems not to be supported on wine.
 			print_verbose("Unable to turn off UDP WSAENETRESET behaviour on Windows");
 		}
+	}
+#endif
+#if defined(SO_NOSIGPIPE)
+	// Disable SIGPIPE (should only be relevant to stream sockets, but seems to affect UDP too on iOS)
+	int par = 1;
+	if (setsockopt(_sock, SOL_SOCKET, SO_NOSIGPIPE, SOCK_CBUF(&par), sizeof(int)) != 0) {
+		print_verbose("Unable to turn off SIGPIPE on socket");
 	}
 #endif
 	return OK;
@@ -549,8 +545,10 @@ Error NetSocketPosix::send(const uint8_t *p_buffer, int p_len, int &r_sent) {
 	ERR_FAIL_COND_V(!is_open(), ERR_UNCONFIGURED);
 
 	int flags = 0;
+#ifdef MSG_NOSIGNAL
 	if (_is_stream)
 		flags = MSG_NOSIGNAL;
+#endif
 	r_sent = ::send(_sock, SOCK_CBUF(p_buffer), p_len, flags);
 
 	if (r_sent < 0) {
@@ -686,10 +684,10 @@ Ref<NetSocket> NetSocketPosix::accept(IP_Address &r_ip, uint16_t &r_port) {
 	return Ref<NetSocket>(ns);
 }
 
-Error NetSocketPosix::join_multicast_group(const IP_Address &p_ip, String p_if_name) {
-	return _change_multicast_group(p_ip, p_if_name, true);
+Error NetSocketPosix::join_multicast_group(const IP_Address &p_multi_address, String p_if_name) {
+	return _change_multicast_group(p_multi_address, p_if_name, true);
 }
 
-Error NetSocketPosix::leave_multicast_group(const IP_Address &p_ip, String p_if_name) {
-	return _change_multicast_group(p_ip, p_if_name, false);
+Error NetSocketPosix::leave_multicast_group(const IP_Address &p_multi_address, String p_if_name) {
+	return _change_multicast_group(p_multi_address, p_if_name, false);
 }

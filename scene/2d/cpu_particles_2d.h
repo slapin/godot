@@ -153,6 +153,7 @@ private:
 
 	////////
 
+	Vector2 direction;
 	float spread;
 	float flatness;
 
@@ -234,6 +235,9 @@ public:
 
 	///////////////////
 
+	void set_direction(Vector2 p_direction);
+	Vector2 get_direction() const;
+
 	void set_spread(float p_spread);
 	float get_spread() const;
 
@@ -252,7 +256,7 @@ public:
 	void set_color(const Color &p_color);
 	Color get_color() const;
 
-	void set_color_ramp(const Ref<Gradient> &p_texture);
+	void set_color_ramp(const Ref<Gradient> &p_ramp);
 	Ref<Gradient> get_color_ramp() const;
 
 	void set_particle_flag(Flags p_flag, bool p_enable);
