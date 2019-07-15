@@ -65,7 +65,7 @@ env_detour.Append(CPPFLAGS=["-DNDEBUG", "-DTILE_CACHE"])
 # for Wno-error=class-memaccess
 if using_gcc(env):
     gcc_version = get_compiler_version(env)
-    if gcc_version != None and gcc_version[0] >= '8':
+    if gcc_version != None and gcc_version[0] >= '8' and not env["platform"] == "windows":
         env_detour.Append(CPPFLAGS=["-Wno-error=class-memaccess", "-Wno-error=shadow=local"])
 
 # Godot source files
