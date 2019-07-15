@@ -466,8 +466,8 @@ bool DetourNavigationMesh::build_tile(const Transform &xform,
 		if (!geometries[idx].is_valid())
 			continue;
 		AABB mesh_aabb = geometries[idx]->get_aabb();
-		Transform xform = base * xforms[idx];
-		mesh_aabb = xform.xform(mesh_aabb);
+		Transform mxform = base * xforms[idx];
+		mesh_aabb = mxform.xform(mesh_aabb);
 		if (!mesh_aabb.intersects_inclusive(expbox) &&
 				!expbox.encloses(mesh_aabb)) {
 			continue;
@@ -477,7 +477,7 @@ bool DetourNavigationMesh::build_tile(const Transform &xform,
 		// Add PhysicsBodies?
 		Ref<Mesh> mdata = geometries[idx];
 		// FIXME
-		add_meshdata(mdata, xform, points, indices);
+		add_meshdata(mdata, mxform, points, indices);
 	}
 // print_line(String() + "points: " + itos(points.size()) + " indices: " +
 // itos(indices.size()) + " tile_size: " + itos(mesh->tile_size));
