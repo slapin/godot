@@ -122,20 +122,20 @@ Use UI font variant if available, because it has tight vertical metrics and good
 ## freetype
 
 - Upstream: https://www.freetype.org
-- Version: 2.10.0
+- Version: 2.10.1
 - License: FreeType License (BSD-like)
 
 Files extracted from upstream source:
 
-- the src/ folder, stripped of the `Jamfile` files
-- the include/ folder
+- the `src/` folder, stripped of the `Jamfile` files and the `tools` subfolder
+- the `include/` folder
 - `docs/{FTL.TXT,LICENSE.TXT}`
 
 
 ## glad
 
 - Upstream: https://github.com/Dav1dde/glad
-- Version: 0.1.29
+- Version: 0.1.31
 - License: MIT
 
 The files we package are automatically generated.
@@ -268,7 +268,7 @@ changes are marked with `// -- GODOT --` comments.
 - Version: 1.1.0
 - License: MIT
 
-File extracted from upstream releaze tarball:
+File extracted from upstream release tarball:
 
 - All `*.c` and `*.h` in `lib/` and `lib/includes/`
 - `wslay.h` has a small Godot addition to fix MSVC build.
@@ -277,10 +277,10 @@ File extracted from upstream releaze tarball:
 ## mbedtls
 
 - Upstream: https://tls.mbed.org/
-- Version: 2.16.0
+- Version: 2.16.2
 - License: Apache 2.0
 
-File extracted from upstream release tarball `mbedtls-2.16.0-apache.tgz`:
+File extracted from upstream release tarball (`-apache.tgz` variant):
 - All `*.h` from `include/mbedtls/` to `thirdparty/mbedtls/include/mbedtls/`
 - All `*.c` from `library/` to `thirdparty/mbedtls/library/`
 - Applied the patch in `thirdparty/mbedtls/1453.diff` (PR 1453).
@@ -391,7 +391,7 @@ Collection of single-file libraries used in Godot components.
   * License: Public Domain (Unlicense) or MIT
 - `stb_vorbis.c`
   * Upstream: https://github.com/nothings/stb
-  * Version: 1.15
+  * Version: 1.16
   * License: Public Domain (Unlicense) or MIT
 
 
@@ -426,8 +426,8 @@ Files extracted from upstream source:
 
 ## pcre2
 
-- Upstream: http://www.pcre.org/
-- Version: 10.32
+- Upstream: http://www.pcre.org
+- Version: 10.33
 - License: BSD-3-Clause
 
 Files extracted from upstream source:
@@ -511,7 +511,7 @@ folder.
 ## xatlas
 
 - Upstream: https://github.com/jpcy/xatlas
-- Version: git (b8ec29b, 2018)
+- Version: git (b7d7bb, 2019)
 - License: MIT
 
 Files extracted from upstream source:

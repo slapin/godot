@@ -165,12 +165,12 @@ License: Expat and Bitstream Vera Fonts Copyright
 
 Files: ./thirdparty/freetype/
 Comment: The FreeType Project
-Copyright: 1996-2018, David Turner, Robert Wilhelm, and Werner Lemberg.
+Copyright: 1996-2019, David Turner, Robert Wilhelm, and Werner Lemberg.
 License: FTL
 
 Files: ./thirdparty/glad/
 Comment: glad
-Copyright: 2013-2018, David Herberth
+Copyright: 2013-2019, David Herberth
 License: Expat
 
 Files: ./thirdparty/jpeg_compressor/
@@ -301,7 +301,7 @@ License: BSD-3-clause
 Files: ./thirdparty/misc/stb_truetype.h
  ./thirdparty/misc/stb_vorbis.c
 Comment: stb libraries
-Copyright: 2007-2017, Sean Barrett
+Copyright: 2007-2019, Sean Barrett
 License: public-domain
 
 Files: ./thirdparty/misc/triangulator.cpp
@@ -330,8 +330,8 @@ License: BSD-3-clause
 
 Files: ./thirdparty/pcre2/
 Comment: PCRE2
-Copyright: 1997-2018, University of Cambridge,
- 2009-2018, Zoltan Herczeg
+Copyright: 1997-2019, University of Cambridge,
+ 2009-2019, Zoltan Herczeg
 License: BSD-3-clause
 
 Files: ./thirdparty/pvrtccompressor/
@@ -351,7 +351,7 @@ License: Expat
 
 Files: ./thirdparty/tinyexr/
 Comment: TinyEXR
-Copyright: 2014-2018, Syoyo Fujita
+Copyright: 2014-2019, Syoyo Fujita
   2002, Industrial Light & Magic, a division of Lucas Digital Ltd. LLC
 License: BSD-3-clause
 
