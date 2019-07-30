@@ -142,6 +142,31 @@ msgid "Anim Change Call"
 msgstr ""
 
 #: editor/animation_track_editor.cpp
+#, fuzzy
+msgid "Anim Multi Change Keyframe Time"
+msgstr "שינוי זמן פריים-מפתח אנימציה"
+
+#: editor/animation_track_editor.cpp
+#, fuzzy
+msgid "Anim Multi Change Transition"
+msgstr "שינוי מיקום אנימציה"
+
+#: editor/animation_track_editor.cpp
+#, fuzzy
+msgid "Anim Multi Change Transform"
+msgstr "שינוי מיקום אנימציה"
+
+#: editor/animation_track_editor.cpp
+#, fuzzy
+msgid "Anim Multi Change Keyframe Value"
+msgstr "שינוי ערך קיפריים אנימציה"
+
+#: editor/animation_track_editor.cpp
+#, fuzzy
+msgid "Anim Multi Change Call"
+msgstr "שינוי מיקום אנימציה"
+
+#: editor/animation_track_editor.cpp
 msgid "Change Animation Length"
 msgstr "שנה אורך אנימציה"
 
@@ -1168,7 +1193,6 @@ msgid "Success!"
 msgstr "הצלחה!"
 
 #: editor/editor_asset_installer.cpp editor/editor_node.cpp
-#: editor/plugins/asset_library_editor_plugin.cpp
 msgid "Install"
 msgstr "התקנה"
 
@@ -1734,7 +1758,7 @@ msgstr "הצגה במנהל הקבצים"
 msgid "New Folder..."
 msgstr "תיקייה חדשה…"
 
-#: editor/editor_file_dialog.cpp scene/gui/file_dialog.cpp
+#: editor/editor_file_dialog.cpp
 msgid "Refresh"
 msgstr "רענון"
 
@@ -1785,7 +1809,7 @@ msgstr "התקדמות קדימה"
 msgid "Go Up"
 msgstr "עלייה למעלה"
 
-#: editor/editor_file_dialog.cpp scene/gui/file_dialog.cpp
+#: editor/editor_file_dialog.cpp
 msgid "Toggle Hidden Files"
 msgstr "החלפת מצב תצוגה לקבצים מוסתרים"
 
@@ -1811,27 +1835,32 @@ msgstr "העברת מועדף למטה"
 
 #: editor/editor_file_dialog.cpp
 #, fuzzy
-msgid "Previous Folder"
-msgstr "המישור הקודם"
+msgid "Go to previous folder."
+msgstr "מעבר לתיקייה שמעל"
 
 #: editor/editor_file_dialog.cpp
 #, fuzzy
-msgid "Next Folder"
-msgstr "יצירת תיקייה"
+msgid "Go to next folder."
+msgstr "מעבר לתיקייה שמעל"
 
 #: editor/editor_file_dialog.cpp scene/gui/file_dialog.cpp
 #, fuzzy
 msgid "Go to parent folder."
 msgstr "מעבר לתיקייה שמעל"
 
+#: editor/editor_file_dialog.cpp scene/gui/file_dialog.cpp
+#, fuzzy
+msgid "Refresh files."
+msgstr "חיפוש במחלקות"
+
 #: editor/editor_file_dialog.cpp
 #, fuzzy
 msgid "(Un)favorite current folder."
 msgstr "לא ניתן ליצור תיקייה."
 
-#: editor/editor_file_dialog.cpp
+#: editor/editor_file_dialog.cpp scene/gui/file_dialog.cpp
 #, fuzzy
-msgid "Toggle visibility of hidden files."
+msgid "Toggle the visibility of hidden files."
 msgstr "החלפת מצב תצוגה לקבצים מוסתרים"
 
 #: editor/editor_file_dialog.cpp editor/filesystem_dock.cpp
@@ -2539,6 +2568,11 @@ msgid "Go to previously opened scene."
 msgstr "מעבר לסצנה שנפתחה קודם לכן."
 
 #: editor/editor_node.cpp
+#, fuzzy
+msgid "Copy Text"
+msgstr "העתקת נתיב"
+
+#: editor/editor_node.cpp
 msgid "Next tab"
 msgstr "הלשונית הבאה"
 
@@ -2734,15 +2768,6 @@ msgstr "שמירת סצנה"
 #, fuzzy
 msgid "Screenshots are stored in the Editor Data/Settings Folder."
 msgstr "הגדרות עורך"
-
-#: editor/editor_node.cpp
-msgid "Automatically Open Screenshots"
-msgstr ""
-
-#: editor/editor_node.cpp
-#, fuzzy
-msgid "Open in an external image editor."
-msgstr "פתיחת העורך הבא"
 
 #: editor/editor_node.cpp
 msgid "Toggle Fullscreen"
@@ -3069,6 +3094,11 @@ msgstr "זמן"
 #: editor/editor_profiler.cpp
 msgid "Calls"
 msgstr "קריאות"
+
+#: editor/editor_properties.cpp
+#, fuzzy
+msgid "Edit Text:"
+msgstr "חברים"
 
 #: editor/editor_properties.cpp editor/script_create_dialog.cpp
 msgid "On"
@@ -4781,6 +4811,11 @@ msgid "Idle"
 msgstr ""
 
 #: editor/plugins/asset_library_editor_plugin.cpp
+#, fuzzy
+msgid "Install..."
+msgstr "התקנה"
+
+#: editor/plugins/asset_library_editor_plugin.cpp
 msgid "Retry"
 msgstr ""
 
@@ -4810,7 +4845,6 @@ msgid "Last"
 msgstr ""
 
 #: editor/plugins/asset_library_editor_plugin.cpp
-#: modules/gdnative/gdnative_library_editor_plugin.cpp
 msgid "All"
 msgstr ""
 
@@ -4824,8 +4858,9 @@ msgid "Sort:"
 msgstr ""
 
 #: editor/plugins/asset_library_editor_plugin.cpp
-msgid "Reverse"
-msgstr ""
+#, fuzzy
+msgid "Reverse sorting."
+msgstr "מוגשת בקשה…"
 
 #: editor/plugins/asset_library_editor_plugin.cpp
 #: editor/project_settings_editor.cpp
@@ -4899,31 +4934,35 @@ msgid "Rotation Step:"
 msgstr ""
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
-msgid "Move vertical guide"
+msgid "Move Vertical Guide"
 msgstr ""
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
-msgid "Create new vertical guide"
+#, fuzzy
+msgid "Create Vertical Guide"
+msgstr "יצירת תיקייה"
+
+#: editor/plugins/canvas_item_editor_plugin.cpp
+#, fuzzy
+msgid "Remove Vertical Guide"
+msgstr "הסרת מפתחות שגויים"
+
+#: editor/plugins/canvas_item_editor_plugin.cpp
+msgid "Move Horizontal Guide"
 msgstr ""
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
-msgid "Remove vertical guide"
-msgstr ""
+#, fuzzy
+msgid "Create Horizontal Guide"
+msgstr "יצירת תיקייה"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
-msgid "Move horizontal guide"
-msgstr ""
+#, fuzzy
+msgid "Remove Horizontal Guide"
+msgstr "הסרת מפתחות שגויים"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
-msgid "Create new horizontal guide"
-msgstr ""
-
-#: editor/plugins/canvas_item_editor_plugin.cpp
-msgid "Remove horizontal guide"
-msgstr ""
-
-#: editor/plugins/canvas_item_editor_plugin.cpp
-msgid "Create new horizontal and vertical guides"
+msgid "Create Horizontal and Vertical Guides"
 msgstr ""
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
@@ -6871,7 +6910,12 @@ msgstr "אחורי"
 
 #: editor/plugins/spatial_editor_plugin.cpp
 #, fuzzy
-msgid "Align with View"
+msgid "Align Transform with View"
+msgstr "יישור עם התצוגה"
+
+#: editor/plugins/spatial_editor_plugin.cpp
+#, fuzzy
+msgid "Align Rotation with View"
 msgstr "יישור עם התצוגה"
 
 #: editor/plugins/spatial_editor_plugin.cpp editor/scene_tree_dock.cpp
@@ -7060,10 +7104,6 @@ msgstr ""
 #: editor/plugins/spatial_editor_plugin.cpp
 msgid "Focus Selection"
 msgstr "בחירת מיקוד"
-
-#: editor/plugins/spatial_editor_plugin.cpp
-msgid "Align Selection With View"
-msgstr ""
 
 #: editor/plugins/spatial_editor_plugin.cpp
 msgid "Tool Select"
@@ -7651,14 +7691,6 @@ msgid "Transpose"
 msgstr ""
 
 #: editor/plugins/tile_map_editor_plugin.cpp
-msgid "Mirror X"
-msgstr ""
-
-#: editor/plugins/tile_map_editor_plugin.cpp
-msgid "Mirror Y"
-msgstr ""
-
-#: editor/plugins/tile_map_editor_plugin.cpp
 msgid "Disable Autotile"
 msgstr ""
 
@@ -8084,6 +8116,10 @@ msgid "Visual Shader Input Type Changed"
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "(GLES3 only)"
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
 #, fuzzy
 msgid "Vertex"
 msgstr "קודקודים"
@@ -8174,6 +8210,22 @@ msgid "Color uniform."
 msgstr "התמרה"
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Returns the boolean result of the %s comparison between two parameters."
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Equal (==)"
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Greater Than (>)"
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Greater Than or Equal (>=)"
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
 "Returns an associated vector if the provided scalars are equal, greater or "
 "less."
@@ -8181,7 +8233,41 @@ msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
+"Returns the boolean result of the comparison between INF and a scalar "
+"parameter."
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid ""
+"Returns the boolean result of the comparison between NaN and a scalar "
+"parameter."
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Less Than (<)"
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Less Than or Equal (<=)"
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Not Equal (!=)"
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid ""
 "Returns an associated vector if the provided boolean value is true or false."
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Returns the boolean result of the comparison between two parameters."
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid ""
+"Returns the boolean result of the comparison between INF (or NaN) and a "
+"scalar parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8274,7 +8360,7 @@ msgid "Returns the arc-cosine of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Returns the inverse hyperbolic cosine of the parameter."
+msgid "Returns the inverse hyperbolic cosine of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8282,7 +8368,7 @@ msgid "Returns the arc-sine of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Returns the inverse hyperbolic sine of the parameter."
+msgid "Returns the inverse hyperbolic sine of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8294,7 +8380,7 @@ msgid "Returns the arc-tangent of the parameters."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Returns the inverse hyperbolic tangent of the parameter."
+msgid "Returns the inverse hyperbolic tangent of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8311,7 +8397,7 @@ msgid "Returns the cosine of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Returns the hyperbolic cosine of the parameter."
+msgid "Returns the hyperbolic cosine of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8380,11 +8466,11 @@ msgid "1.0 / scalar"
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Finds the nearest integer to the parameter."
+msgid "Finds the nearest integer to the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Finds the nearest even integer to the parameter."
+msgid "Finds the nearest even integer to the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8400,7 +8486,7 @@ msgid "Returns the sine of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Returns the hyperbolic sine of the parameter."
+msgid "Returns the hyperbolic sine of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8428,11 +8514,11 @@ msgid "Returns the tangent of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Returns the hyperbolic tangent of the parameter."
+msgid "Returns the hyperbolic tangent of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Finds the truncated value of the parameter."
+msgid "Finds the truncated value of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8473,11 +8559,15 @@ msgid "Perform the texture lookup."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "Cubic texture uniform."
+msgid "Cubic texture uniform lookup."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "2D texture uniform."
+msgid "2D texture uniform lookup."
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "2D texture uniform lookup with triplanar."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8487,7 +8577,7 @@ msgstr "התמרה"
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"(GLES3 only) Calculate the outer product of a pair of vectors.\n"
+"Calculate the outer product of a pair of vectors.\n"
 "\n"
 "OuterProduct treats the first parameter 'c' as a column vector (matrix with "
 "one column) and the second parameter 'r' as a row vector (matrix with one "
@@ -8505,15 +8595,15 @@ msgid "Decomposes transform to four vectors."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Calculates the determinant of a transform."
+msgid "Calculates the determinant of a transform."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Calculates the inverse of a transform."
+msgid "Calculates the inverse of a transform."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Calculates the transpose of a transform."
+msgid "Calculates the transpose of a transform."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8565,7 +8655,7 @@ msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"Returns a vector that points in the same direction as a reference vector. "
+"Returns the vector that points in the same direction as a reference vector. "
 "The function has three vector parameters : N, the vector to orient, I, the "
 "incident vector, and Nref, the reference vector. If the dot product of I and "
 "Nref is smaller than zero the return value is N. Otherwise -N is returned."
@@ -8593,12 +8683,12 @@ msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"Returns a vector that points in the direction of reflection ( a : incident "
+"Returns the vector that points in the direction of reflection ( a : incident "
 "vector, b : normal vector )."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "Returns a vector that points in the direction of refraction."
+msgid "Returns the vector that points in the direction of refraction."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8675,47 +8765,47 @@ msgid ""
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) (Fragment/Light mode only) Scalar derivative function."
+msgid "(Fragment/Light mode only) Scalar derivative function."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) (Fragment/Light mode only) Vector derivative function."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid ""
-"(GLES3 only) (Fragment/Light mode only) (Vector) Derivative in 'x' using "
-"local differencing."
+msgid "(Fragment/Light mode only) Vector derivative function."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"(GLES3 only) (Fragment/Light mode only) (Scalar) Derivative in 'x' using "
-"local differencing."
+"(Fragment/Light mode only) (Vector) Derivative in 'x' using local "
+"differencing."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"(GLES3 only) (Fragment/Light mode only) (Vector) Derivative in 'y' using "
-"local differencing."
+"(Fragment/Light mode only) (Scalar) Derivative in 'x' using local "
+"differencing."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"(GLES3 only) (Fragment/Light mode only) (Scalar) Derivative in 'y' using "
-"local differencing."
+"(Fragment/Light mode only) (Vector) Derivative in 'y' using local "
+"differencing."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"(GLES3 only) (Fragment/Light mode only) (Vector) Sum of absolute derivative "
-"in 'x' and 'y'."
+"(Fragment/Light mode only) (Scalar) Derivative in 'y' using local "
+"differencing."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"(GLES3 only) (Fragment/Light mode only) (Scalar) Sum of absolute derivative "
-"in 'x' and 'y'."
+"(Fragment/Light mode only) (Vector) Sum of absolute derivative in 'x' and "
+"'y'."
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid ""
+"(Fragment/Light mode only) (Scalar) Sum of absolute derivative in 'x' and "
+"'y'."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -9909,6 +9999,11 @@ msgstr "הרצת סקריפט"
 
 #: editor/scene_tree_dock.cpp
 #, fuzzy
+msgid "Reparent to New Node"
+msgstr "יצירת %s חדש"
+
+#: editor/scene_tree_dock.cpp
+#, fuzzy
 msgid "Make Scene Root"
 msgstr "שמירת סצנה"
 
@@ -10127,7 +10222,7 @@ msgid "Script is valid."
 msgstr ""
 
 #: editor/script_create_dialog.cpp
-msgid "Allowed: a-z, A-Z, 0-9 and _"
+msgid "Allowed: a-z, A-Z, 0-9, _ and ."
 msgstr ""
 
 #: editor/script_create_dialog.cpp
@@ -11676,6 +11771,11 @@ msgstr "גודל הגופן שגוי."
 msgid "Invalid source for shader."
 msgstr "גודל הגופן שגוי."
 
+#: scene/resources/visual_shader_nodes.cpp
+#, fuzzy
+msgid "Invalid comparison function for that type."
+msgstr "גודל הגופן שגוי."
+
 #: servers/visual/shader_language.cpp
 msgid "Assignment to function."
 msgstr ""
@@ -11691,6 +11791,18 @@ msgstr ""
 #: servers/visual/shader_language.cpp
 msgid "Constants cannot be modified."
 msgstr ""
+
+#, fuzzy
+#~ msgid "Previous Folder"
+#~ msgstr "המישור הקודם"
+
+#, fuzzy
+#~ msgid "Next Folder"
+#~ msgstr "יצירת תיקייה"
+
+#, fuzzy
+#~ msgid "Open in an external image editor."
+#~ msgstr "פתיחת העורך הבא"
 
 #~ msgid "Generating solution..."
 #~ msgstr "הפתרון נוצר…"

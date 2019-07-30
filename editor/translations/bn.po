@@ -144,6 +144,31 @@ msgstr "অ্যানিমেশন (Anim) কল পরিবর্তন �
 
 #: editor/animation_track_editor.cpp
 #, fuzzy
+msgid "Anim Multi Change Keyframe Time"
+msgstr "অ্যানিমেশন (Anim) ভ্যালু পরিবর্তন করুন"
+
+#: editor/animation_track_editor.cpp
+#, fuzzy
+msgid "Anim Multi Change Transition"
+msgstr "অ্যানিমেশন (Anim) ট্র্যানজিশন পরিবর্তন করুন"
+
+#: editor/animation_track_editor.cpp
+#, fuzzy
+msgid "Anim Multi Change Transform"
+msgstr "অ্যানিমেশন (Anim) ট্রান্সফর্ম পরিবর্তন করুন"
+
+#: editor/animation_track_editor.cpp
+#, fuzzy
+msgid "Anim Multi Change Keyframe Value"
+msgstr "অ্যানিমেশন (Anim) ভ্যালু পরিবর্তন করুন"
+
+#: editor/animation_track_editor.cpp
+#, fuzzy
+msgid "Anim Multi Change Call"
+msgstr "অ্যানিমেশন (Anim) কল পরিবর্তন করুন"
+
+#: editor/animation_track_editor.cpp
+#, fuzzy
 msgid "Change Animation Length"
 msgstr "অ্যানিমেশনের লুপ পরিবর্তন করুন"
 
@@ -1199,7 +1224,6 @@ msgid "Success!"
 msgstr "সম্পন্ন হয়েছে!"
 
 #: editor/editor_asset_installer.cpp editor/editor_node.cpp
-#: editor/plugins/asset_library_editor_plugin.cpp
 msgid "Install"
 msgstr "ইন্সটল"
 
@@ -1784,7 +1808,7 @@ msgstr "ফাইল-ম্যানেজারে দেখুন"
 msgid "New Folder..."
 msgstr "ফোল্ডার তৈরি করুন"
 
-#: editor/editor_file_dialog.cpp scene/gui/file_dialog.cpp
+#: editor/editor_file_dialog.cpp
 msgid "Refresh"
 msgstr "রিফ্রেস করুন"
 
@@ -1835,7 +1859,7 @@ msgstr "সামনের দিকে যান"
 msgid "Go Up"
 msgstr "উপরের দিকে যান"
 
-#: editor/editor_file_dialog.cpp scene/gui/file_dialog.cpp
+#: editor/editor_file_dialog.cpp
 msgid "Toggle Hidden Files"
 msgstr "অদৃশ্য ফাইলসমূহ অদলবদল/টগল করুন"
 
@@ -1861,27 +1885,32 @@ msgstr "ফেবরিট/প্রিয়কে নিচের দিকে
 
 #: editor/editor_file_dialog.cpp
 #, fuzzy
-msgid "Previous Folder"
-msgstr "পূর্বের ট্যাব"
+msgid "Go to previous folder."
+msgstr "ফোল্ডার তৈরী করা সম্ভব হয়নি।"
 
 #: editor/editor_file_dialog.cpp
 #, fuzzy
-msgid "Next Folder"
-msgstr "ফোল্ডার তৈরি করুন"
+msgid "Go to next folder."
+msgstr "ফোল্ডার তৈরী করা সম্ভব হয়নি।"
 
 #: editor/editor_file_dialog.cpp scene/gui/file_dialog.cpp
 #, fuzzy
 msgid "Go to parent folder."
 msgstr "ফোল্ডার তৈরী করা সম্ভব হয়নি।"
 
+#: editor/editor_file_dialog.cpp scene/gui/file_dialog.cpp
+#, fuzzy
+msgid "Refresh files."
+msgstr "ক্লাসের অনুসন্ধান করুন"
+
 #: editor/editor_file_dialog.cpp
 #, fuzzy
 msgid "(Un)favorite current folder."
 msgstr "ফোল্ডার তৈরী করা সম্ভব হয়নি।"
 
-#: editor/editor_file_dialog.cpp
+#: editor/editor_file_dialog.cpp scene/gui/file_dialog.cpp
 #, fuzzy
-msgid "Toggle visibility of hidden files."
+msgid "Toggle the visibility of hidden files."
 msgstr "অদৃশ্য ফাইলসমূহ অদলবদল/টগল করুন"
 
 #: editor/editor_file_dialog.cpp editor/filesystem_dock.cpp
@@ -2659,6 +2688,11 @@ msgid "Go to previously opened scene."
 msgstr "পূর্বে খোলা দৃশ্যে যান।"
 
 #: editor/editor_node.cpp
+#, fuzzy
+msgid "Copy Text"
+msgstr "পথ প্রতিলিপি/কপি করুন"
+
+#: editor/editor_node.cpp
 msgid "Next tab"
 msgstr "পরের ট্যাব"
 
@@ -2875,15 +2909,6 @@ msgstr "অর্থপূর্ন!"
 #, fuzzy
 msgid "Screenshots are stored in the Editor Data/Settings Folder."
 msgstr "এডিটরের সেটিংস"
-
-#: editor/editor_node.cpp
-msgid "Automatically Open Screenshots"
-msgstr ""
-
-#: editor/editor_node.cpp
-#, fuzzy
-msgid "Open in an external image editor."
-msgstr "এডিটরে খুলুন"
 
 #: editor/editor_node.cpp
 msgid "Toggle Fullscreen"
@@ -3224,6 +3249,11 @@ msgstr "সময়:"
 #, fuzzy
 msgid "Calls"
 msgstr "ডাকুন (Call)"
+
+#: editor/editor_properties.cpp
+#, fuzzy
+msgid "Edit Text:"
+msgstr "থিম এডিট করুন..."
 
 #: editor/editor_properties.cpp editor/script_create_dialog.cpp
 msgid "On"
@@ -5039,6 +5069,11 @@ msgid "Idle"
 msgstr "অনিয়োজিত"
 
 #: editor/plugins/asset_library_editor_plugin.cpp
+#, fuzzy
+msgid "Install..."
+msgstr "ইন্সটল"
+
+#: editor/plugins/asset_library_editor_plugin.cpp
 msgid "Retry"
 msgstr "পুনরায় চেষ্টা করুন"
 
@@ -5070,7 +5105,6 @@ msgid "Last"
 msgstr ""
 
 #: editor/plugins/asset_library_editor_plugin.cpp
-#: modules/gdnative/gdnative_library_editor_plugin.cpp
 msgid "All"
 msgstr "সকল"
 
@@ -5084,8 +5118,9 @@ msgid "Sort:"
 msgstr "সাজান:"
 
 #: editor/plugins/asset_library_editor_plugin.cpp
-msgid "Reverse"
-msgstr "উল্টান/বিপরীত দিকে ফিরান"
+#, fuzzy
+msgid "Reverse sorting."
+msgstr "পরীক্ষামূলক উৎস"
 
 #: editor/plugins/asset_library_editor_plugin.cpp
 #: editor/project_settings_editor.cpp
@@ -5160,36 +5195,38 @@ msgid "Rotation Step:"
 msgstr "ঘূর্ণায়নের পদক্ষেপ:"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
-msgid "Move vertical guide"
+#, fuzzy
+msgid "Move Vertical Guide"
 msgstr "ভার্টিক্যাল গাইড সরান"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
 #, fuzzy
-msgid "Create new vertical guide"
+msgid "Create Vertical Guide"
 msgstr "নতুন স্ক্রিপ্ট তৈরি করুন"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
 #, fuzzy
-msgid "Remove vertical guide"
+msgid "Remove Vertical Guide"
 msgstr "চলক/ভেরিয়েবল অপসারণ করুন"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
 #, fuzzy
-msgid "Move horizontal guide"
+msgid "Move Horizontal Guide"
 msgstr "বক্ররেখায় বিন্দু সরান"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
 #, fuzzy
-msgid "Create new horizontal guide"
+msgid "Create Horizontal Guide"
 msgstr "নতুন স্ক্রিপ্ট তৈরি করুন"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
 #, fuzzy
-msgid "Remove horizontal guide"
+msgid "Remove Horizontal Guide"
 msgstr "অগ্রহনযোগ্য চাবিসমূহ অপসারণ করুন"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
-msgid "Create new horizontal and vertical guides"
+#, fuzzy
+msgid "Create Horizontal and Vertical Guides"
 msgstr "নতুন হরাইজন্টাল এবং ভার্টিক্যাল গাইড তৈরী করুন"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
@@ -7220,8 +7257,13 @@ msgstr "পশ্চাৎ"
 
 #: editor/plugins/spatial_editor_plugin.cpp
 #, fuzzy
-msgid "Align with View"
+msgid "Align Transform with View"
 msgstr "দর্শনের সাথে সারিবদ্ধ করুন"
+
+#: editor/plugins/spatial_editor_plugin.cpp
+#, fuzzy
+msgid "Align Rotation with View"
+msgstr "নির্বাচনকে দর্শনের সাথে সারিবদ্ধ করুন"
 
 #: editor/plugins/spatial_editor_plugin.cpp editor/scene_tree_dock.cpp
 msgid "No parent to instance a child at."
@@ -7421,10 +7463,6 @@ msgstr "অরিজিনে ফোকাস করুন"
 #: editor/plugins/spatial_editor_plugin.cpp
 msgid "Focus Selection"
 msgstr "নির্বাচনে ফোকাস করুন"
-
-#: editor/plugins/spatial_editor_plugin.cpp
-msgid "Align Selection With View"
-msgstr "নির্বাচনকে দর্শনের সাথে সারিবদ্ধ করুন"
 
 #: editor/plugins/spatial_editor_plugin.cpp
 #, fuzzy
@@ -8044,14 +8082,6 @@ msgid "Transpose"
 msgstr "পক্ষান্তরিত করুন"
 
 #: editor/plugins/tile_map_editor_plugin.cpp
-msgid "Mirror X"
-msgstr "প্রতিবিম্ব X"
-
-#: editor/plugins/tile_map_editor_plugin.cpp
-msgid "Mirror Y"
-msgstr "প্রতিবিম্ব Y"
-
-#: editor/plugins/tile_map_editor_plugin.cpp
 #, fuzzy
 msgid "Disable Autotile"
 msgstr "স্বয়ংক্রিয় টুকরো"
@@ -8493,6 +8523,10 @@ msgid "Visual Shader Input Type Changed"
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "(GLES3 only)"
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
 #, fuzzy
 msgid "Vertex"
 msgstr "ভারটেক্স"
@@ -8585,6 +8619,22 @@ msgid "Color uniform."
 msgstr "রুপান্তর"
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Returns the boolean result of the %s comparison between two parameters."
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Equal (==)"
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Greater Than (>)"
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Greater Than or Equal (>=)"
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
 "Returns an associated vector if the provided scalars are equal, greater or "
 "less."
@@ -8592,7 +8642,41 @@ msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
+"Returns the boolean result of the comparison between INF and a scalar "
+"parameter."
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid ""
+"Returns the boolean result of the comparison between NaN and a scalar "
+"parameter."
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Less Than (<)"
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Less Than or Equal (<=)"
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Not Equal (!=)"
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid ""
 "Returns an associated vector if the provided boolean value is true or false."
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Returns the boolean result of the comparison between two parameters."
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid ""
+"Returns the boolean result of the comparison between INF (or NaN) and a "
+"scalar parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8688,7 +8772,7 @@ msgid "Returns the arc-cosine of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Returns the inverse hyperbolic cosine of the parameter."
+msgid "Returns the inverse hyperbolic cosine of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8696,7 +8780,7 @@ msgid "Returns the arc-sine of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Returns the inverse hyperbolic sine of the parameter."
+msgid "Returns the inverse hyperbolic sine of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8708,7 +8792,7 @@ msgid "Returns the arc-tangent of the parameters."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Returns the inverse hyperbolic tangent of the parameter."
+msgid "Returns the inverse hyperbolic tangent of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8725,7 +8809,7 @@ msgid "Returns the cosine of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Returns the hyperbolic cosine of the parameter."
+msgid "Returns the hyperbolic cosine of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8794,11 +8878,11 @@ msgid "1.0 / scalar"
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Finds the nearest integer to the parameter."
+msgid "Finds the nearest integer to the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Finds the nearest even integer to the parameter."
+msgid "Finds the nearest even integer to the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8814,7 +8898,7 @@ msgid "Returns the sine of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Returns the hyperbolic sine of the parameter."
+msgid "Returns the hyperbolic sine of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8842,11 +8926,11 @@ msgid "Returns the tangent of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Returns the hyperbolic tangent of the parameter."
+msgid "Returns the hyperbolic tangent of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Finds the truncated value of the parameter."
+msgid "Finds the truncated value of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8889,12 +8973,17 @@ msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 #, fuzzy
-msgid "Cubic texture uniform."
+msgid "Cubic texture uniform lookup."
 msgstr "টেক্সার ইউনিফর্ম পরিবর্তন করুন"
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 #, fuzzy
-msgid "2D texture uniform."
+msgid "2D texture uniform lookup."
+msgstr "টেক্সার ইউনিফর্ম পরিবর্তন করুন"
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+#, fuzzy
+msgid "2D texture uniform lookup with triplanar."
 msgstr "টেক্সার ইউনিফর্ম পরিবর্তন করুন"
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8904,7 +8993,7 @@ msgstr "রুপান্তরের এর সংলাপ..."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"(GLES3 only) Calculate the outer product of a pair of vectors.\n"
+"Calculate the outer product of a pair of vectors.\n"
 "\n"
 "OuterProduct treats the first parameter 'c' as a column vector (matrix with "
 "one column) and the second parameter 'r' as a row vector (matrix with one "
@@ -8922,15 +9011,15 @@ msgid "Decomposes transform to four vectors."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Calculates the determinant of a transform."
+msgid "Calculates the determinant of a transform."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Calculates the inverse of a transform."
+msgid "Calculates the inverse of a transform."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Calculates the transpose of a transform."
+msgid "Calculates the transpose of a transform."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8983,7 +9072,7 @@ msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"Returns a vector that points in the same direction as a reference vector. "
+"Returns the vector that points in the same direction as a reference vector. "
 "The function has three vector parameters : N, the vector to orient, I, the "
 "incident vector, and Nref, the reference vector. If the dot product of I and "
 "Nref is smaller than zero the return value is N. Otherwise -N is returned."
@@ -9011,12 +9100,12 @@ msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"Returns a vector that points in the direction of reflection ( a : incident "
+"Returns the vector that points in the direction of reflection ( a : incident "
 "vector, b : normal vector )."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "Returns a vector that points in the direction of refraction."
+msgid "Returns the vector that points in the direction of refraction."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -9095,47 +9184,47 @@ msgid ""
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) (Fragment/Light mode only) Scalar derivative function."
+msgid "(Fragment/Light mode only) Scalar derivative function."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) (Fragment/Light mode only) Vector derivative function."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid ""
-"(GLES3 only) (Fragment/Light mode only) (Vector) Derivative in 'x' using "
-"local differencing."
+msgid "(Fragment/Light mode only) Vector derivative function."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"(GLES3 only) (Fragment/Light mode only) (Scalar) Derivative in 'x' using "
-"local differencing."
+"(Fragment/Light mode only) (Vector) Derivative in 'x' using local "
+"differencing."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"(GLES3 only) (Fragment/Light mode only) (Vector) Derivative in 'y' using "
-"local differencing."
+"(Fragment/Light mode only) (Scalar) Derivative in 'x' using local "
+"differencing."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"(GLES3 only) (Fragment/Light mode only) (Scalar) Derivative in 'y' using "
-"local differencing."
+"(Fragment/Light mode only) (Vector) Derivative in 'y' using local "
+"differencing."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"(GLES3 only) (Fragment/Light mode only) (Vector) Sum of absolute derivative "
-"in 'x' and 'y'."
+"(Fragment/Light mode only) (Scalar) Derivative in 'y' using local "
+"differencing."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"(GLES3 only) (Fragment/Light mode only) (Scalar) Sum of absolute derivative "
-"in 'x' and 'y'."
+"(Fragment/Light mode only) (Vector) Sum of absolute derivative in 'x' and "
+"'y'."
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid ""
+"(Fragment/Light mode only) (Scalar) Sum of absolute derivative in 'x' and "
+"'y'."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -10403,6 +10492,11 @@ msgstr "পরবর্তী স্ক্রিপ্ট"
 
 #: editor/scene_tree_dock.cpp
 #, fuzzy
+msgid "Reparent to New Node"
+msgstr "নোডের নতুন অভিভাবক দান করুন"
+
+#: editor/scene_tree_dock.cpp
+#, fuzzy
 msgid "Make Scene Root"
 msgstr "অর্থপূর্ন!"
 
@@ -10645,7 +10739,8 @@ msgid "Script is valid."
 msgstr "স্ক্রিপ্ট"
 
 #: editor/script_create_dialog.cpp
-msgid "Allowed: a-z, A-Z, 0-9 and _"
+#, fuzzy
+msgid "Allowed: a-z, A-Z, 0-9, _ and ."
 msgstr "অনুমোদিত: a-z, A-Z, 0-9 এবং _"
 
 #: editor/script_create_dialog.cpp
@@ -12337,6 +12432,11 @@ msgstr "অকার্যকর উৎস!"
 msgid "Invalid source for shader."
 msgstr "অকার্যকর উৎস!"
 
+#: scene/resources/visual_shader_nodes.cpp
+#, fuzzy
+msgid "Invalid comparison function for that type."
+msgstr "অকার্যকর উৎস!"
+
 #: servers/visual/shader_language.cpp
 msgid "Assignment to function."
 msgstr ""
@@ -12352,6 +12452,27 @@ msgstr ""
 #: servers/visual/shader_language.cpp
 msgid "Constants cannot be modified."
 msgstr ""
+
+#, fuzzy
+#~ msgid "Previous Folder"
+#~ msgstr "পূর্বের ট্যাব"
+
+#, fuzzy
+#~ msgid "Next Folder"
+#~ msgstr "ফোল্ডার তৈরি করুন"
+
+#, fuzzy
+#~ msgid "Open in an external image editor."
+#~ msgstr "এডিটরে খুলুন"
+
+#~ msgid "Reverse"
+#~ msgstr "উল্টান/বিপরীত দিকে ফিরান"
+
+#~ msgid "Mirror X"
+#~ msgstr "প্রতিবিম্ব X"
+
+#~ msgid "Mirror Y"
+#~ msgstr "প্রতিবিম্ব Y"
 
 #, fuzzy
 #~ msgid "Generating solution..."

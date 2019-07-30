@@ -431,6 +431,7 @@ private:
 	HBoxContainer *bottom_panel_hb;
 	HBoxContainer *bottom_panel_hb_editors;
 	VBoxContainer *bottom_panel_vb;
+	Label *version_label;
 	ToolButton *bottom_panel_raise;
 
 	void _bottom_panel_raise_toggled(bool);
@@ -460,6 +461,8 @@ private:
 
 	void _tool_menu_option(int p_idx);
 	void _update_debug_options();
+	void _update_file_menu_opened();
+	void _update_file_menu_closed();
 
 	void _on_plugin_ready(Object *p_script, const String &p_activate_name);
 
@@ -776,6 +779,8 @@ public:
 	void stop_child_process();
 
 	Ref<Theme> get_editor_theme() const { return theme; }
+	Ref<Script> get_object_custom_type_base(const Object *p_object) const;
+	StringName get_object_custom_type_name(const Object *p_object) const;
 	Ref<Texture> get_object_icon(const Object *p_object, const String &p_fallback = "Object") const;
 	Ref<Texture> get_class_icon(const String &p_class, const String &p_fallback = "Object") const;
 

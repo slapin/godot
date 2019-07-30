@@ -397,6 +397,8 @@ void EditorNode::_notification(int p_what) {
 			distraction_free->set_icon(gui_base->get_icon("DistractionFree", "EditorIcons"));
 			scene_tab_add->set_icon(gui_base->get_icon("Add", "EditorIcons"));
 
+			bottom_panel_raise->set_icon(gui_base->get_icon("ExpandBottomDock", "EditorIcons"));
+
 			// clear_button->set_icon(gui_base->get_icon("Close", "EditorIcons")); don't have access to that node. needs to become a class property
 			dock_tab_move_left->set_icon(theme->get_icon("Back", "EditorIcons"));
 			dock_tab_move_right->set_icon(theme->get_icon("Forward", "EditorIcons"));
@@ -832,7 +834,7 @@ void EditorNode::_get_scene_metadata(const String &p_file) {
 	for (List<String>::Element *E = esl.front(); E; E = E->next()) {
 
 		Variant st = cf->get_value("editor_states", E->get());
-		if (st.get_type()) {
+		if (st.get_type() != Variant::NIL) {
 			md[E->get()] = st;
 		}
 	}
@@ -1963,6 +1965,7 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 				break;
 			opening_prev = true;
 			open_request(previous_scenes.back()->get());
+			previous_scenes.pop_back();
 
 		} break;
 		case FILE_CLOSE_OTHERS:
@@ -2488,12 +2491,6 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 
 			screenshot_timer->start();
 		} break;
-		case EDITOR_OPEN_SCREENSHOT: {
-
-			bool is_checked = settings_menu->get_popup()->is_item_checked(settings_menu->get_popup()->get_item_index(EDITOR_OPEN_SCREENSHOT));
-			settings_menu->get_popup()->set_item_checked(settings_menu->get_popup()->get_item_index(EDITOR_OPEN_SCREENSHOT), !is_checked);
-			EditorSettings::get_singleton()->set_project_metadata("screenshot_options", "open_screenshot", !is_checked);
-		} break;
 		case SETTINGS_PICK_MAIN_SCENE: {
 
 			file->set_mode(EditorFileDialog::MODE_OPEN_FILE);
@@ -2541,8 +2538,6 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 			restart_editor();
 		} break;
 		default: {
-			if (p_option >= IMPORT_PLUGIN_BASE) {
-			}
 		}
 	}
 }
@@ -2555,7 +2550,7 @@ void EditorNode::_screenshot(bool p_use_utc) {
 	String name = "editor_screenshot_" + OS::get_singleton()->get_iso_date_time(p_use_utc).replace(":", "") + ".png";
 	NodePath path = String("user://") + name;
 	_save_screenshot(path);
-	if (EditorSettings::get_singleton()->get_project_metadata("screenshot_options", "open_screenshot", true)) {
+	if (EditorSettings::get_singleton()->get("interface/editor/automatically_open_screenshots")) {
 		OS::get_singleton()->shell_open(String("file://") + ProjectSettings::get_singleton()->globalize_path(path));
 	}
 }
@@ -2623,7 +2618,7 @@ void EditorNode::_exit_editor() {
 
 	// Dim the editor window while it's quitting to make it clearer that it's busy.
 	// No transition is applied, as the effect needs to be visible immediately
-	float c = 1.0f - float(EDITOR_GET("interface/editor/dim_amount"));
+	float c = 0.4f;
 	Color dim_color = Color(c, c, c);
 	gui_base->set_modulate(dim_color);
 
@@ -2641,6 +2636,12 @@ void EditorNode::_discard_changes(const String &p_str) {
 		case FILE_CLOSE_RIGHT:
 		case FILE_CLOSE_ALL:
 		case SCENE_TAB_CLOSE: {
+
+			Node *scene = editor_data.get_edited_scene_root(tab_closing);
+			if (scene != NULL) {
+				String scene_filename = scene->get_filename();
+				previous_scenes.push_back(scene_filename);
+			}
 
 			_remove_scene(tab_closing);
 			_update_scene_tabs();
@@ -2705,6 +2706,21 @@ void EditorNode::_update_debug_options() {
 	if (check_debug_navigation) _menu_option_confirm(RUN_DEBUG_NAVIGATION, true);
 	if (check_live_debug) _menu_option_confirm(RUN_LIVE_DEBUG, true);
 	if (check_reload_scripts) _menu_option_confirm(RUN_RELOAD_SCRIPTS, true);
+}
+
+void EditorNode::_update_file_menu_opened() {
+
+	Ref<ShortCut> close_scene_sc = ED_GET_SHORTCUT("editor/close_scene");
+	close_scene_sc->set_name(TTR("Close Scene"));
+	Ref<ShortCut> reopen_closed_scene_sc = ED_GET_SHORTCUT("editor/reopen_closed_scene");
+	reopen_closed_scene_sc->set_name(TTR("Reopen Closed Scene"));
+	PopupMenu *pop = file_menu->get_popup();
+	pop->set_item_disabled(pop->get_item_index(FILE_OPEN_PREV), previous_scenes.empty());
+}
+
+void EditorNode::_update_file_menu_closed() {
+	PopupMenu *pop = file_menu->get_popup();
+	pop->set_item_disabled(pop->get_item_index(FILE_OPEN_PREV), false);
 }
 
 Control *EditorNode::get_viewport() {
@@ -3279,6 +3295,13 @@ Error EditorNode::load_scene(const String &p_scene, bool p_ignore_broken_deps, b
 
 void EditorNode::open_request(const String &p_path) {
 
+	if (!opening_prev) {
+		List<String>::Element *prev_scene = previous_scenes.find(p_path);
+		if (prev_scene != NULL) {
+			prev_scene->erase();
+		}
+	}
+
 	load_scene(p_path); // as it will be opened in separate tab
 }
 
@@ -3488,6 +3511,69 @@ void EditorNode::stop_child_process() {
 	_menu_option_confirm(RUN_STOP, false);
 }
 
+Ref<Script> EditorNode::get_object_custom_type_base(const Object *p_object) const {
+	ERR_FAIL_COND_V(!p_object, NULL);
+
+	Ref<Script> script = p_object->get_script();
+
+	if (script.is_valid()) {
+		// Uncommenting would break things! Consider adding a parameter if you need it.
+		// StringName name = EditorNode::get_editor_data().script_class_get_name(base_script->get_path());
+		// if (name != StringName())
+		// 	return name;
+
+		// should probably be deprecated in 4.x
+		StringName base = script->get_instance_base_type();
+		if (base != StringName() && EditorNode::get_editor_data().get_custom_types().has(base)) {
+			const Vector<EditorData::CustomType> &types = EditorNode::get_editor_data().get_custom_types()[base];
+
+			Ref<Script> base_script = script;
+			while (base_script.is_valid()) {
+				for (int i = 0; i < types.size(); ++i) {
+					if (types[i].script == base_script) {
+						return types[i].script;
+					}
+				}
+				base_script = base_script->get_base_script();
+			}
+		}
+	}
+
+	return NULL;
+}
+
+StringName EditorNode::get_object_custom_type_name(const Object *p_object) const {
+	ERR_FAIL_COND_V(!p_object, StringName());
+
+	Ref<Script> script = p_object->get_script();
+	if (script.is_null() && p_object->is_class("Script")) {
+		script = p_object;
+	}
+
+	if (script.is_valid()) {
+		Ref<Script> base_script = script;
+		while (base_script.is_valid()) {
+			StringName name = EditorNode::get_editor_data().script_class_get_name(base_script->get_path());
+			if (name != StringName())
+				return name;
+
+			// should probably be deprecated in 4.x
+			StringName base = base_script->get_instance_base_type();
+			if (base != StringName() && EditorNode::get_editor_data().get_custom_types().has(base)) {
+				const Vector<EditorData::CustomType> &types = EditorNode::get_editor_data().get_custom_types()[base];
+				for (int i = 0; i < types.size(); ++i) {
+					if (types[i].script == base_script) {
+						return types[i].name;
+					}
+				}
+			}
+			base_script = base_script->get_base_script();
+		}
+	}
+
+	return StringName();
+}
+
 Ref<Texture> EditorNode::get_object_icon(const Object *p_object, const String &p_fallback) const {
 	ERR_FAIL_COND_V(!p_object || !gui_base, NULL);
 
@@ -3497,23 +3583,24 @@ Ref<Texture> EditorNode::get_object_icon(const Object *p_object, const String &p
 	}
 
 	if (script.is_valid()) {
-		StringName name = EditorNode::get_editor_data().script_class_get_name(script->get_path());
-		String icon_path = EditorNode::get_editor_data().script_class_get_icon_path(name);
-		if (icon_path.length())
-			return ResourceLoader::load(icon_path);
+		Ref<Script> base_script = script;
+		while (base_script.is_valid()) {
+			StringName name = EditorNode::get_editor_data().script_class_get_name(base_script->get_path());
+			String icon_path = EditorNode::get_editor_data().script_class_get_icon_path(name);
+			if (icon_path.length())
+				return ResourceLoader::load(icon_path);
 
-		// should probably be deprecated in 4.x
-		StringName base = script->get_instance_base_type();
-		if (base != StringName()) {
-			const Map<String, Vector<EditorData::CustomType> > &p_map = EditorNode::get_editor_data().get_custom_types();
-			for (const Map<String, Vector<EditorData::CustomType> >::Element *E = p_map.front(); E; E = E->next()) {
-				const Vector<EditorData::CustomType> &ct = E->value();
-				for (int i = 0; i < ct.size(); ++i) {
-					if (ct[i].name == base && ct[i].icon.is_valid()) {
-						return ct[i].icon;
+			// should probably be deprecated in 4.x
+			StringName base = base_script->get_instance_base_type();
+			if (base != StringName() && EditorNode::get_editor_data().get_custom_types().has(base)) {
+				const Vector<EditorData::CustomType> &types = EditorNode::get_editor_data().get_custom_types()[base];
+				for (int i = 0; i < types.size(); ++i) {
+					if (types[i].script == base_script && types[i].icon.is_valid()) {
+						return types[i].icon;
 					}
 				}
 			}
+			base_script = base_script->get_base_script();
 		}
 	}
 
@@ -4415,8 +4502,17 @@ void EditorNode::_scene_tab_input(const Ref<InputEvent> &p_input) {
 				scene_tabs_context_menu->add_separator();
 				scene_tabs_context_menu->add_item(TTR("Show in FileSystem"), FILE_SHOW_IN_FILESYSTEM);
 				scene_tabs_context_menu->add_item(TTR("Play This Scene"), RUN_PLAY_SCENE);
+
 				scene_tabs_context_menu->add_separator();
-				scene_tabs_context_menu->add_item(TTR("Close Tab"), FILE_CLOSE);
+				Ref<ShortCut> close_tab_sc = ED_GET_SHORTCUT("editor/close_scene");
+				close_tab_sc->set_name(TTR("Close Tab"));
+				scene_tabs_context_menu->add_shortcut(close_tab_sc, FILE_CLOSE);
+				Ref<ShortCut> undo_close_tab_sc = ED_GET_SHORTCUT("editor/reopen_closed_scene");
+				undo_close_tab_sc->set_name(TTR("Undo Close Tab"));
+				scene_tabs_context_menu->add_shortcut(undo_close_tab_sc, FILE_OPEN_PREV);
+				if (previous_scenes.empty()) {
+					scene_tabs_context_menu->set_item_disabled(scene_tabs_context_menu->get_item_index(FILE_OPEN_PREV), true);
+				}
 				scene_tabs_context_menu->add_item(TTR("Close Other Tabs"), FILE_CLOSE_OTHERS);
 				scene_tabs_context_menu->add_item(TTR("Close Tabs to the Right"), FILE_CLOSE_RIGHT);
 				scene_tabs_context_menu->add_item(TTR("Close All Tabs"), FILE_CLOSE_ALL);
@@ -4995,9 +5091,8 @@ void EditorNode::_start_dimming(bool p_dimming) {
 void EditorNode::_dim_timeout() {
 
 	_dim_time += _dim_timer->get_wait_time();
-	float wait_time = EditorSettings::get_singleton()->get("interface/editor/dim_transition_time");
-
-	float c = 1.0f - (float)EditorSettings::get_singleton()->get("interface/editor/dim_amount");
+	float wait_time = 0.08f;
+	float c = 0.4f;
 
 	Color base = _dimming ? Color(1, 1, 1) : Color(c, c, c);
 	Color final = _dimming ? Color(c, c, c) : Color(1, 1, 1);
@@ -5038,18 +5133,12 @@ Vector<Ref<EditorResourceConversionPlugin> > EditorNode::find_resource_conversio
 
 void EditorNode::_bottom_panel_raise_toggled(bool p_pressed) {
 
-	if (p_pressed) {
-		top_split->hide();
-		bottom_panel_raise->set_icon(gui_base->get_icon("ShrinkBottomDock", "EditorIcons"));
-	} else {
-		top_split->show();
-		bottom_panel_raise->set_icon(gui_base->get_icon("ExpandBottomDock", "EditorIcons"));
-	}
+	top_split->set_visible(!p_pressed);
 }
 
 void EditorNode::_update_video_driver_color() {
 
-	//todo probably should de-harcode this and add to editor settings
+	// TODO: Probably should de-hardcode this and add to editor settings.
 	if (video_driver->get_text() == "GLES2") {
 		video_driver->add_color_override("font_color", Color::hex(0x5586a4ff));
 	} else if (video_driver->get_text() == "GLES3") {
@@ -5134,6 +5223,8 @@ void EditorNode::_bind_methods() {
 	ClassDB::bind_method("_node_renamed", &EditorNode::_node_renamed);
 	ClassDB::bind_method("edit_node", &EditorNode::edit_node);
 	ClassDB::bind_method("_unhandled_input", &EditorNode::_unhandled_input);
+	ClassDB::bind_method("_update_file_menu_opened", &EditorNode::_update_file_menu_opened);
+	ClassDB::bind_method("_update_file_menu_closed", &EditorNode::_update_file_menu_closed);
 
 	ClassDB::bind_method(D_METHOD("push_item", "object", "property", "inspector_only"), &EditorNode::push_item, DEFVAL(""), DEFVAL(false));
 
@@ -5501,6 +5592,8 @@ EditorNode::EditorNode() {
 	EDITOR_DEF_RST("interface/scene_tabs/restore_scenes_on_load", false);
 	EDITOR_DEF_RST("interface/scene_tabs/show_thumbnail_on_hover", true);
 	EDITOR_DEF_RST("interface/inspector/capitalize_properties", true);
+	EDITOR_DEF_RST("interface/inspector/default_float_step", 0.001);
+	EditorSettings::get_singleton()->add_property_hint(PropertyInfo(Variant::REAL, "interface/inspector/default_float_step", PROPERTY_HINT_EXP_RANGE, "0,1,0"));
 	EDITOR_DEF_RST("interface/inspector/disable_folding", false);
 	EDITOR_DEF_RST("interface/inspector/auto_unfold_foreign_scenes", true);
 	EDITOR_DEF("interface/inspector/horizontal_vector2_editing", false);
@@ -5808,6 +5901,7 @@ EditorNode::EditorNode() {
 	PopupMenu *p;
 
 	file_menu->set_tooltip(TTR("Operations with scene files."));
+
 	p = file_menu->get_popup();
 	p->set_hide_on_window_lose_focus(true);
 	p->add_shortcut(ED_SHORTCUT("editor/new_scene", TTR("New Scene")), FILE_NEW_SCENE);
@@ -5821,6 +5915,7 @@ EditorNode::EditorNode() {
 	p->add_shortcut(ED_SHORTCUT("editor/close_scene", TTR("Close Scene"), KEY_MASK_SHIFT + KEY_MASK_CMD + KEY_W), FILE_CLOSE);
 	p->add_separator();
 	p->add_submenu_item(TTR("Open Recent"), "RecentScenes", FILE_OPEN_RECENT);
+	p->add_shortcut(ED_SHORTCUT("editor/reopen_closed_scene", TTR("Reopen Closed Scene"), KEY_MASK_CMD + KEY_MASK_SHIFT + KEY_T), FILE_OPEN_PREV);
 	p->add_separator();
 	p->add_shortcut(ED_SHORTCUT("editor/quick_open", TTR("Quick Open..."), KEY_MASK_SHIFT + KEY_MASK_ALT + KEY_O), FILE_QUICK_OPEN);
 	p->add_shortcut(ED_SHORTCUT("editor/quick_open_scene", TTR("Quick Open Scene..."), KEY_MASK_SHIFT + KEY_MASK_CMD + KEY_O), FILE_QUICK_OPEN_SCENE);
@@ -5938,16 +6033,13 @@ EditorNode::EditorNode() {
 	p->add_child(editor_layouts);
 	editor_layouts->connect("id_pressed", this, "_layout_menu_option");
 	p->add_submenu_item(TTR("Editor Layout"), "Layouts");
+	p->add_separator();
 #ifdef OSX_ENABLED
 	p->add_shortcut(ED_SHORTCUT("editor/take_screenshot", TTR("Take Screenshot"), KEY_MASK_CMD | KEY_F12), EDITOR_SCREENSHOT);
 #else
 	p->add_shortcut(ED_SHORTCUT("editor/take_screenshot", TTR("Take Screenshot"), KEY_MASK_CTRL | KEY_F12), EDITOR_SCREENSHOT);
 #endif
 	p->set_item_tooltip(p->get_item_count() - 1, TTR("Screenshots are stored in the Editor Data/Settings Folder."));
-	p->add_check_shortcut(ED_SHORTCUT("editor/open_screenshot", TTR("Automatically Open Screenshots")), EDITOR_OPEN_SCREENSHOT);
-	bool is_open_screenshot = EditorSettings::get_singleton()->get_project_metadata("screenshot_options", "open_screenshot", true);
-	p->set_item_checked(p->get_item_count() - 1, is_open_screenshot);
-	p->set_item_tooltip(p->get_item_count() - 1, TTR("Open in an external image editor."));
 #ifdef OSX_ENABLED
 	p->add_shortcut(ED_SHORTCUT("editor/fullscreen_mode", TTR("Toggle Fullscreen"), KEY_MASK_CMD | KEY_MASK_CTRL | KEY_F), SETTINGS_TOGGLE_FULLSCREEN);
 #else
@@ -6200,6 +6292,13 @@ EditorNode::EditorNode() {
 	bottom_panel_hb_editors = memnew(HBoxContainer);
 	bottom_panel_hb_editors->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	bottom_panel_hb->add_child(bottom_panel_hb_editors);
+
+	version_label = memnew(Label);
+	version_label->set_text(VERSION_FULL_CONFIG);
+	// Fade out the version label to be less prominent, but still readable
+	version_label->set_self_modulate(Color(1, 1, 1, 0.6));
+	bottom_panel_hb->add_child(version_label);
+
 	bottom_panel_raise = memnew(ToolButton);
 	bottom_panel_raise->set_icon(gui_base->get_icon("ExpandBottomDock", "EditorIcons"));
 
@@ -6296,6 +6395,8 @@ EditorNode::EditorNode() {
 	file_script->connect("file_selected", this, "_dialog_action");
 
 	file_menu->get_popup()->connect("id_pressed", this, "_menu_option");
+	file_menu->connect("about_to_show", this, "_update_file_menu_opened");
+	file_menu->get_popup()->connect("popup_hide", this, "_update_file_menu_closed");
 
 	settings_menu->get_popup()->connect("id_pressed", this, "_menu_option");
 

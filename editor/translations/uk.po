@@ -15,7 +15,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Ukrainian (Godot Engine)\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2019-07-09 10:46+0000\n"
+"PO-Revision-Date: 2019-07-21 11:06+0000\n"
 "Last-Translator: Yuri Chornoivan <yurchor@ukr.net>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/godot-engine/"
 "godot/uk/>\n"
@@ -135,6 +135,31 @@ msgstr "Змінити значення ключового кадру"
 
 #: editor/animation_track_editor.cpp
 msgid "Anim Change Call"
+msgstr "Змінити виклик анімації"
+
+#: editor/animation_track_editor.cpp
+#, fuzzy
+msgid "Anim Multi Change Keyframe Time"
+msgstr "Змінити час ключового кадру"
+
+#: editor/animation_track_editor.cpp
+#, fuzzy
+msgid "Anim Multi Change Transition"
+msgstr "Змінити перехід"
+
+#: editor/animation_track_editor.cpp
+#, fuzzy
+msgid "Anim Multi Change Transform"
+msgstr "Змінити перетворення"
+
+#: editor/animation_track_editor.cpp
+#, fuzzy
+msgid "Anim Multi Change Keyframe Value"
+msgstr "Змінити значення ключового кадру"
+
+#: editor/animation_track_editor.cpp
+#, fuzzy
+msgid "Anim Multi Change Call"
 msgstr "Змінити виклик анімації"
 
 #: editor/animation_track_editor.cpp
@@ -642,7 +667,7 @@ msgstr "Номер рядка:"
 
 #: editor/code_editor.cpp
 msgid "Found %d match(es)."
-msgstr ""
+msgstr "Виявлено %d відповідників."
 
 #: editor/code_editor.cpp editor/editor_help.cpp
 msgid "No Matches"
@@ -800,9 +825,8 @@ msgid "Connect"
 msgstr "З'єднати"
 
 #: editor/connections_dialog.cpp
-#, fuzzy
 msgid "Signal:"
-msgstr "Сигнали:"
+msgstr "Сигнал:"
 
 #: editor/connections_dialog.cpp
 msgid "Connect '%s' to '%s'"
@@ -967,9 +991,9 @@ msgid "Owners Of:"
 msgstr "Власники:"
 
 #: editor/dependency_editor.cpp
-#, fuzzy
 msgid "Remove selected files from the project? (Can't be restored)"
-msgstr "Видалити вибрані файли з проєкту? (скасування неможливе)"
+msgstr ""
+"Вилучити позначені файли з проєкту? (Вилучені файли не вдасться відновити)"
 
 #: editor/dependency_editor.cpp
 msgid ""
@@ -1151,7 +1175,6 @@ msgid "Success!"
 msgstr "Успіх!"
 
 #: editor/editor_asset_installer.cpp editor/editor_node.cpp
-#: editor/plugins/asset_library_editor_plugin.cpp
 msgid "Install"
 msgstr "Встановити"
 
@@ -1520,6 +1543,8 @@ msgstr "Файл шаблону не знайдено:"
 #: editor/editor_export.cpp
 msgid "On 32-bit exports the embedded PCK cannot be bigger than 4 GiB."
 msgstr ""
+"При експортуванні у 32-бітовому режимі вбудовані PCK не можуть перевищувати "
+"за розміром 4 ГіБ."
 
 #: editor/editor_feature_profile.cpp
 msgid "3D Editor"
@@ -1693,7 +1718,7 @@ msgstr "Показати у менеджері файлів"
 msgid "New Folder..."
 msgstr "Створити теку..."
 
-#: editor/editor_file_dialog.cpp scene/gui/file_dialog.cpp
+#: editor/editor_file_dialog.cpp
 msgid "Refresh"
 msgstr "Оновити"
 
@@ -1744,7 +1769,7 @@ msgstr "Йти вперед"
 msgid "Go Up"
 msgstr "Вгору"
 
-#: editor/editor_file_dialog.cpp scene/gui/file_dialog.cpp
+#: editor/editor_file_dialog.cpp
 msgid "Toggle Hidden Files"
 msgstr "Перемкнути приховані файли"
 
@@ -1769,23 +1794,31 @@ msgid "Move Favorite Down"
 msgstr "Перемістити вибране вниз"
 
 #: editor/editor_file_dialog.cpp
-msgid "Previous Folder"
-msgstr "Попередня тека"
+#, fuzzy
+msgid "Go to previous folder."
+msgstr "Перейти до батьківської теки."
 
 #: editor/editor_file_dialog.cpp
-msgid "Next Folder"
-msgstr "Наступна тека"
+#, fuzzy
+msgid "Go to next folder."
+msgstr "Перейти до батьківської теки."
 
 #: editor/editor_file_dialog.cpp scene/gui/file_dialog.cpp
 msgid "Go to parent folder."
 msgstr "Перейти до батьківської теки."
 
+#: editor/editor_file_dialog.cpp scene/gui/file_dialog.cpp
+#, fuzzy
+msgid "Refresh files."
+msgstr "Шукати файли"
+
 #: editor/editor_file_dialog.cpp
 msgid "(Un)favorite current folder."
 msgstr "Перемкнути стан вибраності для поточної теки."
 
-#: editor/editor_file_dialog.cpp
-msgid "Toggle visibility of hidden files."
+#: editor/editor_file_dialog.cpp scene/gui/file_dialog.cpp
+#, fuzzy
+msgid "Toggle the visibility of hidden files."
 msgstr "Увімкнути або вимкнути видимість прихованих файлів."
 
 #: editor/editor_file_dialog.cpp editor/filesystem_dock.cpp
@@ -2517,6 +2550,10 @@ msgid "Go to previously opened scene."
 msgstr "Перейти до раніше відкритої сцени."
 
 #: editor/editor_node.cpp
+msgid "Copy Text"
+msgstr "Копіювати текст"
+
+#: editor/editor_node.cpp
 msgid "Next tab"
 msgstr "Наступна вкладка"
 
@@ -2725,14 +2762,6 @@ msgstr "Зробити знімок вікна"
 #: editor/editor_node.cpp
 msgid "Screenshots are stored in the Editor Data/Settings Folder."
 msgstr "Знімки зберігаються у теці Data/Settings редактора."
-
-#: editor/editor_node.cpp
-msgid "Automatically Open Screenshots"
-msgstr "Автоматично відкривати знімки вікон"
-
-#: editor/editor_node.cpp
-msgid "Open in an external image editor."
-msgstr "Відкрити у зовнішньому редакторі зображень."
 
 #: editor/editor_node.cpp
 msgid "Toggle Fullscreen"
@@ -3054,6 +3083,11 @@ msgstr "Час"
 #: editor/editor_profiler.cpp
 msgid "Calls"
 msgstr "Виклики"
+
+#: editor/editor_properties.cpp
+#, fuzzy
+msgid "Edit Text:"
+msgstr "Редагувати тему"
 
 #: editor/editor_properties.cpp editor/script_create_dialog.cpp
 msgid "On"
@@ -4726,6 +4760,10 @@ msgid "Idle"
 msgstr "Простій"
 
 #: editor/plugins/asset_library_editor_plugin.cpp
+msgid "Install..."
+msgstr "Встановити…"
+
+#: editor/plugins/asset_library_editor_plugin.cpp
 msgid "Retry"
 msgstr "Повторити спробу"
 
@@ -4754,7 +4792,6 @@ msgid "Last"
 msgstr "Останній"
 
 #: editor/plugins/asset_library_editor_plugin.cpp
-#: modules/gdnative/gdnative_library_editor_plugin.cpp
 msgid "All"
 msgstr "Все"
 
@@ -4768,8 +4805,8 @@ msgid "Sort:"
 msgstr "Сортувати:"
 
 #: editor/plugins/asset_library_editor_plugin.cpp
-msgid "Reverse"
-msgstr "Зворотний"
+msgid "Reverse sorting."
+msgstr "Обернений порядок."
 
 #: editor/plugins/asset_library_editor_plugin.cpp
 #: editor/project_settings_editor.cpp
@@ -4850,32 +4887,32 @@ msgid "Rotation Step:"
 msgstr "Крок повороту:"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
-msgid "Move vertical guide"
+msgid "Move Vertical Guide"
 msgstr "Перемістити вертикальну напрямну"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
-msgid "Create new vertical guide"
-msgstr "Створити нову вертикальну напрямну"
+msgid "Create Vertical Guide"
+msgstr "Створити вертикальну напрямну"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
-msgid "Remove vertical guide"
+msgid "Remove Vertical Guide"
 msgstr "Вилучити вертикальну напрямну"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
-msgid "Move horizontal guide"
+msgid "Move Horizontal Guide"
 msgstr "Перемістити горизонтальну напрямну"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
-msgid "Create new horizontal guide"
-msgstr "Створити нову горизонтальну напрямну"
+msgid "Create Horizontal Guide"
+msgstr "Створити горизонтальну напрямну"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
-msgid "Remove horizontal guide"
+msgid "Remove Horizontal Guide"
 msgstr "Вилучити горизонтальну напрямну"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
-msgid "Create new horizontal and vertical guides"
-msgstr "Створити нові горизонтальні та вертикальні напрямні"
+msgid "Create Horizontal and Vertical Guides"
+msgstr "Створити горизонтальні та вертикальні напрямні"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
 msgid "Move pivot"
@@ -6464,7 +6501,7 @@ msgstr "Засіб підсвічування синтаксису"
 
 #: editor/plugins/script_text_editor.cpp
 msgid "Go To"
-msgstr ""
+msgstr "Перейти"
 
 #: editor/plugins/script_text_editor.cpp
 #: editor/plugins/shader_editor_plugin.cpp editor/plugins/text_editor.cpp
@@ -6472,9 +6509,8 @@ msgid "Bookmarks"
 msgstr "Закладки"
 
 #: editor/plugins/script_text_editor.cpp
-#, fuzzy
 msgid "Breakpoints"
-msgstr "Створити точки."
+msgstr "Точки зупину"
 
 #: editor/plugins/script_text_editor.cpp scene/gui/line_edit.cpp
 #: scene/gui/text_edit.cpp
@@ -6763,8 +6799,14 @@ msgid "Rear"
 msgstr "Ззаду"
 
 #: editor/plugins/spatial_editor_plugin.cpp
-msgid "Align with View"
+#, fuzzy
+msgid "Align Transform with View"
 msgstr "Вирівняти з переглядом"
+
+#: editor/plugins/spatial_editor_plugin.cpp
+#, fuzzy
+msgid "Align Rotation with View"
+msgstr "Вирівняти позначене із переглядом"
 
 #: editor/plugins/spatial_editor_plugin.cpp editor/scene_tree_dock.cpp
 msgid "No parent to instance a child at."
@@ -6952,10 +6994,6 @@ msgstr "Фокус на центрі"
 #: editor/plugins/spatial_editor_plugin.cpp
 msgid "Focus Selection"
 msgstr "Фокусувати позначене"
-
-#: editor/plugins/spatial_editor_plugin.cpp
-msgid "Align Selection With View"
-msgstr "Вирівняти позначене із переглядом"
 
 #: editor/plugins/spatial_editor_plugin.cpp
 msgid "Tool Select"
@@ -7520,14 +7558,6 @@ msgid "Transpose"
 msgstr "Транспонувати"
 
 #: editor/plugins/tile_map_editor_plugin.cpp
-msgid "Mirror X"
-msgstr "Віддзеркалити за X"
-
-#: editor/plugins/tile_map_editor_plugin.cpp
-msgid "Mirror Y"
-msgstr "Віддзеркалити за Y"
-
-#: editor/plugins/tile_map_editor_plugin.cpp
 msgid "Disable Autotile"
 msgstr "Вимкнути автоплитки"
 
@@ -7927,6 +7957,10 @@ msgid "Visual Shader Input Type Changed"
 msgstr "Змінено тип введення для візуального шейдера"
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "(GLES3 only)"
+msgstr "(лише GLES3)"
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
 msgid "Vertex"
 msgstr "Вершина"
 
@@ -8011,6 +8045,22 @@ msgid "Color uniform."
 msgstr "Однорідний колір."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Returns the boolean result of the %s comparison between two parameters."
+msgstr "Повертає булевий результат порівняння %s між двома параметрами."
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Equal (==)"
+msgstr "Рівність (==)"
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Greater Than (>)"
+msgstr "Більше (>)"
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Greater Than or Equal (>=)"
+msgstr "Більше або дорівнює (>=)"
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
 "Returns an associated vector if the provided scalars are equal, greater or "
 "less."
@@ -8020,9 +8070,45 @@ msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
+"Returns the boolean result of the comparison between INF and a scalar "
+"parameter."
+msgstr "Повертає булевий результат порівняння між INF та скалярним параметром."
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid ""
+"Returns the boolean result of the comparison between NaN and a scalar "
+"parameter."
+msgstr "Повертає булевий результат порівняння між NaN і скалярним параметром."
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Less Than (<)"
+msgstr "Менше (<)"
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Less Than or Equal (<=)"
+msgstr "Менше або дорівнює (<=)"
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Not Equal (!=)"
+msgstr "Не дорівнює (!=)"
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid ""
 "Returns an associated vector if the provided boolean value is true or false."
 msgstr ""
 "Повертає пов'язаний вектор за заданим булевим значенням «true» або «false»."
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Returns the boolean result of the comparison between two parameters."
+msgstr "Повертає булевий результат порівняння між двома параметрами."
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid ""
+"Returns the boolean result of the comparison between INF (or NaN) and a "
+"scalar parameter."
+msgstr ""
+"Повертає булевий результат порівняння між INF (або NaN) та скалярним "
+"параметром."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid "Boolean constant."
@@ -8113,16 +8199,16 @@ msgid "Returns the arc-cosine of the parameter."
 msgstr "Повертає арккосинус параметра."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Returns the inverse hyperbolic cosine of the parameter."
-msgstr "(Лише GLES3) Повертає обернений гіперболічний косинус параметра."
+msgid "Returns the inverse hyperbolic cosine of the parameter."
+msgstr "Повертає обернений гіперболічний косинус параметра."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid "Returns the arc-sine of the parameter."
 msgstr "Повертає арксинус параметра."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Returns the inverse hyperbolic sine of the parameter."
-msgstr "(Лише GLES3) Повертає обернений гіперболічний синус параметра."
+msgid "Returns the inverse hyperbolic sine of the parameter."
+msgstr "Повертає обернений гіперболічний синус параметра."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid "Returns the arc-tangent of the parameter."
@@ -8133,8 +8219,8 @@ msgid "Returns the arc-tangent of the parameters."
 msgstr "Повертає арктангенс параметрів."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Returns the inverse hyperbolic tangent of the parameter."
-msgstr "(Лише GLES3) Повертає обернений гіперболічний тангенс параметра."
+msgid "Returns the inverse hyperbolic tangent of the parameter."
+msgstr "Повертає обернений гіперболічний тангенс параметра."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
@@ -8152,8 +8238,8 @@ msgid "Returns the cosine of the parameter."
 msgstr "Повертає косинус параметра."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Returns the hyperbolic cosine of the parameter."
-msgstr "(Лише GLES3) Повертає гіперболічний косинус параметра."
+msgid "Returns the hyperbolic cosine of the parameter."
+msgstr "Повертає гіперболічний косинус параметра."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid "Converts a quantity in radians to degrees."
@@ -8225,12 +8311,12 @@ msgid "1.0 / scalar"
 msgstr "1.0 / скаляр"
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Finds the nearest integer to the parameter."
-msgstr "(Лише GLES3) Знаходить найближче ціле значення до параметра."
+msgid "Finds the nearest integer to the parameter."
+msgstr "Знаходить найближче ціле значення до параметра."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Finds the nearest even integer to the parameter."
-msgstr "(Лише GLES3) Знаходить найближче парне ціле значення до параметра."
+msgid "Finds the nearest even integer to the parameter."
+msgstr "Знаходить найближче парне ціле значення до параметра."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid "Clamps the value between 0.0 and 1.0."
@@ -8245,8 +8331,8 @@ msgid "Returns the sine of the parameter."
 msgstr "Повертає синус параметра."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Returns the hyperbolic sine of the parameter."
-msgstr "(Лише GLES3) Повертає гіперболічний синус параметра."
+msgid "Returns the hyperbolic sine of the parameter."
+msgstr "Повертає гіперболічний синус параметра."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid "Returns the square root of the parameter."
@@ -8281,12 +8367,12 @@ msgid "Returns the tangent of the parameter."
 msgstr "Повертає тангенс параметра."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Returns the hyperbolic tangent of the parameter."
-msgstr "(Лише GLES3) Повертає гіперболічний тангенс параметра."
+msgid "Returns the hyperbolic tangent of the parameter."
+msgstr "Повертає гіперболічний тангенс параметра."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Finds the truncated value of the parameter."
-msgstr "(Лише GLES3) Визначає обрізане до цілого значення параметра."
+msgid "Finds the truncated value of the parameter."
+msgstr "Визначає обрізане до цілого значення параметра."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid "Adds scalar to scalar."
@@ -8325,12 +8411,16 @@ msgid "Perform the texture lookup."
 msgstr "Виконує пошук текстури."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "Cubic texture uniform."
-msgstr "Однорідна кубічна текстура."
+msgid "Cubic texture uniform lookup."
+msgstr "Пошук однорідної кубічної текстури."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "2D texture uniform."
-msgstr "Однорідна пласка текстура."
+msgid "2D texture uniform lookup."
+msgstr "Пошук однорідної пласкої текстури."
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "2D texture uniform lookup with triplanar."
+msgstr "Однорідний пошук пласкої текстури за допомогою трьох площин."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid "Transform function."
@@ -8338,7 +8428,7 @@ msgstr "Функція перетворення."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"(GLES3 only) Calculate the outer product of a pair of vectors.\n"
+"Calculate the outer product of a pair of vectors.\n"
 "\n"
 "OuterProduct treats the first parameter 'c' as a column vector (matrix with "
 "one column) and the second parameter 'r' as a row vector (matrix with one "
@@ -8346,7 +8436,7 @@ msgid ""
 "whose number of rows is the number of components in 'c' and whose number of "
 "columns is the number of components in 'r'."
 msgstr ""
-"(Лише GLES3) Обчислити зовнішній добуток пари векторів.\n"
+"Обчислити зовнішній добуток пари векторів.\n"
 "\n"
 "OuterProduct вважає перший параметр, «c», є вектором-стовпчиком (матрицею із "
 "одного стовпчика) а другий параметр, «r», є вектором-рядком (матрицею із "
@@ -8363,16 +8453,16 @@ msgid "Decomposes transform to four vectors."
 msgstr "Розкладає перетворення на чотири вектори."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Calculates the determinant of a transform."
-msgstr "(Лише GLES3) Обчислює визначник перетворення."
+msgid "Calculates the determinant of a transform."
+msgstr "Обчислює визначник перетворення."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Calculates the inverse of a transform."
-msgstr "(Лише GLES3) Обчислює обернену матрицю перетворення."
+msgid "Calculates the inverse of a transform."
+msgstr "Обчислює обернену матрицю перетворення."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Calculates the transpose of a transform."
-msgstr "(Лише GLES3) Обчислює транспозицію перетворення."
+msgid "Calculates the transpose of a transform."
+msgstr "Обчислює транспозицію перетворення."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid "Multiplies transform by transform."
@@ -8420,7 +8510,7 @@ msgstr "Обчислює скалярний добуток двох вектор
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"Returns a vector that points in the same direction as a reference vector. "
+"Returns the vector that points in the same direction as a reference vector. "
 "The function has three vector parameters : N, the vector to orient, I, the "
 "incident vector, and Nref, the reference vector. If the dot product of I and "
 "Nref is smaller than zero the return value is N. Otherwise -N is returned."
@@ -8452,14 +8542,14 @@ msgstr "1.0 / вектор"
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"Returns a vector that points in the direction of reflection ( a : incident "
+"Returns the vector that points in the direction of reflection ( a : incident "
 "vector, b : normal vector )."
 msgstr ""
 "Повертає вектор, який вказує напрямок відбиття ( a — вектор падіння, b — "
 "вектор нормалі )."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "Returns a vector that points in the direction of refraction."
+msgid "Returns the vector that points in the direction of refraction."
 msgstr "Повертає вектор, який вказує напрямок рефракції."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8558,64 +8648,59 @@ msgstr ""
 "напрямку погляду камери (функції слід передати відповіді вхідні дані)."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) (Fragment/Light mode only) Scalar derivative function."
-msgstr ""
-"(Лише GLES3) (лише у режимі фрагментів або світла) Функція скалярної "
-"похідної."
+msgid "(Fragment/Light mode only) Scalar derivative function."
+msgstr "(лише у режимі фрагментів або світла) Функція скалярної похідної."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) (Fragment/Light mode only) Vector derivative function."
-msgstr ""
-"(Лише GLES3) (лише у режимі фрагментів або світла) Функція векторної "
-"похідної."
+msgid "(Fragment/Light mode only) Vector derivative function."
+msgstr "(лише у режимі фрагментів або світла) Функція векторної похідної."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"(GLES3 only) (Fragment/Light mode only) (Vector) Derivative in 'x' using "
-"local differencing."
+"(Fragment/Light mode only) (Vector) Derivative in 'x' using local "
+"differencing."
 msgstr ""
-"(Лише GLES3) (лише у режимі фрагментів або світла) (вектор) Похідна у «x» на "
-"основі локального диференціювання."
+"(лише у режимі фрагментів або світла) (вектор) Похідна у «x» на основі "
+"локального диференціювання."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"(GLES3 only) (Fragment/Light mode only) (Scalar) Derivative in 'x' using "
-"local differencing."
+"(Fragment/Light mode only) (Scalar) Derivative in 'x' using local "
+"differencing."
 msgstr ""
-"(Лише GLES3) (лише у режимі фрагментів або світла) (скаляр) Похідна у «x» на "
-"основі локального диференціювання."
+"(лише у режимі фрагментів або світла) (скаляр) Похідна у «x» на основі "
+"локального диференціювання."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"(GLES3 only) (Fragment/Light mode only) (Vector) Derivative in 'y' using "
-"local differencing."
+"(Fragment/Light mode only) (Vector) Derivative in 'y' using local "
+"differencing."
 msgstr ""
-"(Лише GLES3) (лише у режимі фрагментів або світла) (вектор) Похідна у «y» на "
-"основі локального диференціювання."
+"(лише у режимі фрагментів або світла) (вектор) Похідна у «y» на основі "
+"локального диференціювання."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"(GLES3 only) (Fragment/Light mode only) (Scalar) Derivative in 'y' using "
-"local differencing."
+"(Fragment/Light mode only) (Scalar) Derivative in 'y' using local "
+"differencing."
 msgstr ""
-"(Лише GLES3) (лише у режимі фрагментів або світла) (скаляр) Похідна у «y» на "
-"основі локального диференціювання."
+"(лише у режимі фрагментів або світла) (скаляр) Похідна у «y» на основі "
+"локального диференціювання."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"(GLES3 only) (Fragment/Light mode only) (Vector) Sum of absolute derivative "
-"in 'x' and 'y'."
+"(Fragment/Light mode only) (Vector) Sum of absolute derivative in 'x' and "
+"'y'."
 msgstr ""
-"(Лише GLES3) (лише у режимі фрагментів або світла) (вектор) Сума похідних за "
-"модулем у «x» та «y»."
+"(лише у режимі фрагментів або світла) (вектор) Сума похідних за модулем у "
+"«x» та «y»."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"(GLES3 only) (Fragment/Light mode only) (Scalar) Sum of absolute derivative "
-"in 'x' and 'y'."
+"(Fragment/Light mode only) (Scalar) Sum of absolute derivative in 'x' and "
+"'y'."
 msgstr ""
-"(Лише GLES3) (лише у режимі фрагментів або світла) Сума похідних за модулем "
-"у «x» та «y»."
+"(лише у режимі фрагментів або світла) Сума похідних за модулем у «x» та «y»."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid "VisualShader"
@@ -9842,6 +9927,11 @@ msgid "Extend Script"
 msgstr "Розширити скрипт"
 
 #: editor/scene_tree_dock.cpp
+#, fuzzy
+msgid "Reparent to New Node"
+msgstr "Змінити батьківський вузол"
+
+#: editor/scene_tree_dock.cpp
 msgid "Make Scene Root"
 msgstr "Зробити кореневим для сцени"
 
@@ -10058,8 +10148,8 @@ msgid "Script is valid."
 msgstr "Скрипт є коректним."
 
 #: editor/script_create_dialog.cpp
-msgid "Allowed: a-z, A-Z, 0-9 and _"
-msgstr "Можна використовувати: a-z, A-Z, 0-9 і _"
+msgid "Allowed: a-z, A-Z, 0-9, _ and ."
+msgstr "Можна використовувати: a-z, A-Z, 0-9, _ і ."
 
 #: editor/script_create_dialog.cpp
 msgid "Built-in script (into scene file)."
@@ -11138,7 +11228,6 @@ msgid "Invalid splash screen image dimensions (should be 620x300)."
 msgstr "Некоректні розмірності зображення вікна вітання (мають бути 620x300)."
 
 #: scene/2d/animated_sprite.cpp
-#, fuzzy
 msgid ""
 "A SpriteFrames resource must be created or set in the \"Frames\" property in "
 "order for AnimatedSprite to display frames."
@@ -11206,11 +11295,10 @@ msgstr ""
 "увімкненим параметром «Анімація часток»."
 
 #: scene/2d/light_2d.cpp
-#, fuzzy
 msgid ""
 "A texture with the shape of the light must be supplied to the \"Texture\" "
 "property."
-msgstr "Для властивості «texture» слід надати текстуру із формою освітлення."
+msgstr "Для властивості «Texture» слід надати текстуру із формою освітлення."
 
 #: scene/2d/light_occluder_2d.cpp
 msgid ""
@@ -11220,11 +11308,10 @@ msgstr ""
 "багатокутник затуляння."
 
 #: scene/2d/light_occluder_2d.cpp
-#, fuzzy
 msgid "The occluder polygon for this occluder is empty. Please draw a polygon."
 msgstr ""
 "Для цього затуляння багатокутник є порожнім. Будь ласка, намалюйте "
-"багатокутник!"
+"багатокутник."
 
 #: scene/2d/navigation_polygon.cpp
 msgid ""
@@ -11324,7 +11411,6 @@ msgstr ""
 "форми."
 
 #: scene/2d/visibility_notifier_2d.cpp
-#, fuzzy
 msgid ""
 "VisibilityEnabler2D works best when used with the edited scene root directly "
 "as parent."
@@ -11333,9 +11419,8 @@ msgstr ""
 "безпосереднім батьківським елементом — редагованим коренем сцени."
 
 #: scene/3d/arvr_nodes.cpp
-#, fuzzy
 msgid "ARVRCamera must have an ARVROrigin node as its parent."
-msgstr "ARVRCamera повинен мати батьківським вузлом вузол ARVROrigin"
+msgstr "ARVRCamera повинен мати батьківським вузлом вузол ARVROrigin."
 
 #: scene/3d/arvr_nodes.cpp
 msgid "ARVRController must have an ARVROrigin node as its parent."
@@ -11425,13 +11510,12 @@ msgstr ""
 "Area, StaticBody, RigidBody, KinematicBody тощо, щоб надати їм форми."
 
 #: scene/3d/collision_shape.cpp
-#, fuzzy
 msgid ""
 "A shape must be provided for CollisionShape to function. Please create a "
 "shape resource for it."
 msgstr ""
 "Для забезпечення працездатності CollisionShape слід надати форму. Будь "
-"ласка, створіть ресурс форми для цього елемента!"
+"ласка, створіть ресурс форми для цього елемента."
 
 #: scene/3d/collision_shape.cpp
 msgid ""
@@ -11467,7 +11551,7 @@ msgstr ""
 
 #: scene/3d/light.cpp
 msgid "A SpotLight with an angle wider than 90 degrees cannot cast shadows."
-msgstr ""
+msgstr "SpotLight з кутом, який є більшим за 90 градусів, не може давати тіні."
 
 #: scene/3d/navigation_mesh.cpp
 msgid "A NavigationMesh resource must be set or created for this node to work."
@@ -11513,12 +11597,11 @@ msgid "PathFollow only works when set as a child of a Path node."
 msgstr "PathFollow працюватиме лише як дочірній елемент вузла Path."
 
 #: scene/3d/path.cpp
-#, fuzzy
 msgid ""
 "PathFollow's ROTATION_ORIENTED requires \"Up Vector\" to be enabled in its "
 "parent Path's Curve resource."
 msgstr ""
-"PathFollow ROTATION_ORIENTED потребує вмикання «Up Vector» у його "
+"ROTATION_ORIENTED у PathFollow потребує вмикання «Up Vector» у його "
 "батьківському ресурсі Curve у Path."
 
 #: scene/3d/physics_body.cpp
@@ -11532,13 +11615,12 @@ msgstr ""
 "Замість цієї зміни, вам варто змінити розміри дочірніх форм зіткнення."
 
 #: scene/3d/remote_transform.cpp
-#, fuzzy
 msgid ""
 "The \"Remote Path\" property must point to a valid Spatial or Spatial-"
 "derived node to work."
 msgstr ""
-"Щоб усе працювало як слід, властивість шляху (path) має вказувати на "
-"коректний вузол Spatial."
+"Щоб усе працювало як слід, властивість «Remote Path» має вказувати на "
+"коректний вузол Spatial або похідний від Spatial."
 
 #: scene/3d/soft_body.cpp
 msgid "This body will be ignored until you set a mesh."
@@ -11554,13 +11636,12 @@ msgstr ""
 "Замість цієї зміни, вам варто змінити розміри дочірніх форм зіткнення."
 
 #: scene/3d/sprite_3d.cpp
-#, fuzzy
 msgid ""
 "A SpriteFrames resource must be created or set in the \"Frames\" property in "
 "order for AnimatedSprite3D to display frames."
 msgstr ""
-"Щоб AnimatedSprite могла показувати кадри, має бути створено або встановлено "
-"у властивості «Frames» ресурс SpriteFrames."
+"Щоб AnimatedSprite3D могла показувати кадри, має бути створено або "
+"встановлено у властивості «Frames» ресурс SpriteFrames."
 
 #: scene/3d/vehicle_body.cpp
 msgid ""
@@ -11575,6 +11656,8 @@ msgid ""
 "WorldEnvironment requires its \"Environment\" property to contain an "
 "Environment to have a visible effect."
 msgstr ""
+"Щоб WorldEnvironment мала видимий ефект, її властивість «Environment» має "
+"містити середовище."
 
 #: scene/3d/world_environment.cpp
 msgid ""
@@ -11613,7 +11696,6 @@ msgid "Nothing connected to input '%s' of node '%s'."
 msgstr "Нічого не з'єднано із входом «%s» вузла «%s»."
 
 #: scene/animation/animation_tree.cpp
-#, fuzzy
 msgid "No root AnimationNode for the graph is set."
 msgstr "Кореневий елемент AnimationNode для графу не встановлено."
 
@@ -11627,7 +11709,6 @@ msgstr ""
 "Шлях, встановлений для AnimationPlayer, не веде до вузла AnimationPlayer."
 
 #: scene/animation/animation_tree.cpp
-#, fuzzy
 msgid "The AnimationPlayer root node is not a valid node."
 msgstr "Кореневий елемент AnimationPlayer не є коректним вузлом."
 
@@ -11657,7 +11738,6 @@ msgid "Add current color as a preset."
 msgstr "Додати поточний колір як шаблон."
 
 #: scene/gui/container.cpp
-#, fuzzy
 msgid ""
 "Container by itself serves no purpose unless a script configures its "
 "children placement behavior.\n"
@@ -11686,7 +11766,6 @@ msgid "Please Confirm..."
 msgstr "Будь ласка, підтвердьте..."
 
 #: scene/gui/popup.cpp
-#, fuzzy
 msgid ""
 "Popups will hide by default unless you call popup() or any of the popup*() "
 "functions. Making them visible for editing is fine, but they will hide upon "
@@ -11697,12 +11776,10 @@ msgstr ""
 "практика. Втім, слід пам'ятати, що під час запуску їх буде приховано."
 
 #: scene/gui/range.cpp
-#, fuzzy
 msgid "If \"Exp Edit\" is enabled, \"Min Value\" must be greater than 0."
-msgstr "Якщо exp_edit має значення true, min_value має бути > 0."
+msgstr "Якщо увімкнено «Exp Edit», «Min Value» має бути > 0."
 
 #: scene/gui/scroll_container.cpp
-#, fuzzy
 msgid ""
 "ScrollContainer is intended to work with a single child control.\n"
 "Use a container as child (VBox, HBox, etc.), or a Control and set the custom "
@@ -11758,13 +11835,16 @@ msgid "Input"
 msgstr "Вхідні дані"
 
 #: scene/resources/visual_shader_nodes.cpp
-#, fuzzy
 msgid "Invalid source for preview."
-msgstr "Некоректне джерело програми побудови тіней."
+msgstr "Некоректне джерело для попереднього перегляду."
 
 #: scene/resources/visual_shader_nodes.cpp
 msgid "Invalid source for shader."
 msgstr "Некоректне джерело програми побудови тіней."
+
+#: scene/resources/visual_shader_nodes.cpp
+msgid "Invalid comparison function for that type."
+msgstr "Некоректна функція порівняння для цього типу."
 
 #: servers/visual/shader_language.cpp
 msgid "Assignment to function."
@@ -11781,6 +11861,27 @@ msgstr "Змінні величини можна пов'язувати лише 
 #: servers/visual/shader_language.cpp
 msgid "Constants cannot be modified."
 msgstr "Сталі не можна змінювати."
+
+#~ msgid "Previous Folder"
+#~ msgstr "Попередня тека"
+
+#~ msgid "Next Folder"
+#~ msgstr "Наступна тека"
+
+#~ msgid "Automatically Open Screenshots"
+#~ msgstr "Автоматично відкривати знімки вікон"
+
+#~ msgid "Open in an external image editor."
+#~ msgstr "Відкрити у зовнішньому редакторі зображень."
+
+#~ msgid "Reverse"
+#~ msgstr "Зворотний"
+
+#~ msgid "Mirror X"
+#~ msgstr "Віддзеркалити за X"
+
+#~ msgid "Mirror Y"
+#~ msgstr "Віддзеркалити за Y"
 
 #~ msgid "Generating solution..."
 #~ msgstr "Створення розв'язку..."

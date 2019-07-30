@@ -712,14 +712,14 @@ Error ResourceInteractiveLoaderBinary::poll() {
 	if (!obj) {
 		error = ERR_FILE_CORRUPT;
 		ERR_EXPLAIN(local_path + ":Resource of unrecognized type in file: " + t);
+		ERR_FAIL_V(ERR_FILE_CORRUPT);
 	}
-	ERR_FAIL_COND_V(!obj, ERR_FILE_CORRUPT);
 
 	Resource *r = Object::cast_to<Resource>(obj);
 	if (!r) {
 		error = ERR_FILE_CORRUPT;
-		memdelete(obj); //bye
 		ERR_EXPLAIN(local_path + ":Resource type in resource field not a resource, type is: " + obj->get_class());
+		memdelete(obj); //bye
 		ERR_FAIL_V(ERR_FILE_CORRUPT);
 	}
 

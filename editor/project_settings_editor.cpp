@@ -52,8 +52,8 @@ static const char *_button_names[JOY_BUTTON_MAX] = {
 	"R2",
 	"L3",
 	"R3",
-	"Select, Nintendo -",
-	"Start, Nintendo +",
+	"Select, DualShock Share, Nintendo -",
+	"Start, DualShock Options, Nintendo +",
 	"D-Pad Up",
 	"D-Pad Down",
 	"D-Pad Left",
@@ -965,8 +965,6 @@ void ProjectSettingsEditor::_action_add() {
 	while (r->get_next())
 		r = r->get_next();
 
-	if (!r)
-		return;
 	r->select(0);
 	input_editor->ensure_cursor_is_visible();
 	action_add_error->hide();

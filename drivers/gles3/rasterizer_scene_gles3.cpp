@@ -1008,7 +1008,8 @@ RID RasterizerSceneGLES3::light_instance_create(RID p_light) {
 
 	if (!light_instance->light_ptr) {
 		memdelete(light_instance);
-		ERR_FAIL_COND_V(!light_instance->light_ptr, RID());
+		ERR_EXPLAIN("Condition ' !light_instance->light_ptr ' is true.");
+		ERR_FAIL_V(RID());
 	}
 
 	light_instance->self = light_instance_owner.make_rid(light_instance);
@@ -2364,7 +2365,7 @@ void RasterizerSceneGLES3::_add_geometry_with_material(RasterizerStorageGLES3::G
 
 	if (p_depth_pass) {
 
-		if (has_blend_alpha || p_material->shader->spatial.uses_depth_texture || (has_base_alpha && p_material->shader->spatial.depth_draw_mode != RasterizerStorageGLES3::Shader::Spatial::DEPTH_DRAW_ALPHA_PREPASS) || p_material->shader->spatial.depth_draw_mode == RasterizerStorageGLES3::Shader::Spatial::DEPTH_DRAW_NEVER || p_material->shader->spatial.no_depth_test)
+		if (has_blend_alpha || p_material->shader->spatial.uses_depth_texture || (has_base_alpha && p_material->shader->spatial.depth_draw_mode != RasterizerStorageGLES3::Shader::Spatial::DEPTH_DRAW_ALPHA_PREPASS) || p_material->shader->spatial.depth_draw_mode == RasterizerStorageGLES3::Shader::Spatial::DEPTH_DRAW_NEVER || p_material->shader->spatial.no_depth_test || p_instance->cast_shadows == VS::SHADOW_CASTING_SETTING_OFF)
 			return; //bye
 
 		if (!p_material->shader->spatial.uses_alpha_scissor && !p_material->shader->spatial.writes_modelview_or_projection && !p_material->shader->spatial.uses_vertex && !p_material->shader->spatial.uses_discard && p_material->shader->spatial.depth_draw_mode != RasterizerStorageGLES3::Shader::Spatial::DEPTH_DRAW_ALPHA_PREPASS) {
@@ -2763,9 +2764,7 @@ void RasterizerSceneGLES3::_setup_directional_light(int p_index, const Transform
 				width /= 2;
 				height /= 2;
 
-				if (j == 0) {
-
-				} else if (j == 1) {
+				if (j == 1) {
 					x += width;
 				} else if (j == 2) {
 					y += height;
@@ -2778,9 +2777,7 @@ void RasterizerSceneGLES3::_setup_directional_light(int p_index, const Transform
 
 				height /= 2;
 
-				if (j == 0) {
-
-				} else {
+				if (j != 0) {
 					y += height;
 				}
 			}
@@ -2827,7 +2824,7 @@ void RasterizerSceneGLES3::_setup_lights(RID *p_light_cull_result, int p_light_c
 
 	for (int i = 0; i < p_light_cull_count; i++) {
 
-		ERR_BREAK(i >= RenderList::MAX_LIGHTS);
+		ERR_BREAK(i >= render_list.max_lights);
 
 		LightInstance *li = light_instance_owner.getptr(p_light_cull_result[i]);
 
@@ -4192,7 +4189,7 @@ void RasterizerSceneGLES3::render_scene(const Transform &p_cam_transform, const 
 
 	for (int i = 0; i < p_light_cull_count; i++) {
 
-		ERR_BREAK(i >= RenderList::MAX_LIGHTS);
+		ERR_BREAK(i >= render_list.max_lights);
 
 		LightInstance *li = light_instance_owner.getptr(p_light_cull_result[i]);
 		if (li->light_ptr->param[VS::LIGHT_PARAM_CONTACT_SHADOW_SIZE] > CMP_EPSILON) {
@@ -4741,9 +4738,7 @@ void RasterizerSceneGLES3::render_shadow(RID p_light, RID p_shadow_atlas, int p_
 			width /= 2;
 			height /= 2;
 
-			if (p_pass == 0) {
-
-			} else if (p_pass == 1) {
+			if (p_pass == 1) {
 				x += width;
 			} else if (p_pass == 2) {
 				y += height;
@@ -5069,6 +5064,10 @@ void RasterizerSceneGLES3::initialize() {
 
 	render_list.max_elements = GLOBAL_DEF_RST("rendering/limits/rendering/max_renderable_elements", (int)RenderList::DEFAULT_MAX_ELEMENTS);
 	ProjectSettings::get_singleton()->set_custom_property_info("rendering/limits/rendering/max_renderable_elements", PropertyInfo(Variant::INT, "rendering/limits/rendering/max_renderable_elements", PROPERTY_HINT_RANGE, "1024,1000000,1"));
+	render_list.max_lights = GLOBAL_DEF("rendering/limits/rendering/max_renderable_lights", (int)RenderList::DEFAULT_MAX_LIGHTS);
+	ProjectSettings::get_singleton()->set_custom_property_info("rendering/limits/rendering/max_renderable_lights", PropertyInfo(Variant::INT, "rendering/limits/rendering/max_renderable_lights", PROPERTY_HINT_RANGE, "16,4096,1"));
+	render_list.max_reflections = GLOBAL_DEF("rendering/limits/rendering/max_renderable_reflections", (int)RenderList::DEFAULT_MAX_REFLECTIONS);
+	ProjectSettings::get_singleton()->set_custom_property_info("rendering/limits/rendering/max_renderable_reflections", PropertyInfo(Variant::INT, "rendering/limits/rendering/max_renderable_reflections", PROPERTY_HINT_RANGE, "8,1024,1"));
 
 	{
 		//quad buffers
@@ -5163,7 +5162,7 @@ void RasterizerSceneGLES3::initialize() {
 		glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &max_ubo_size);
 		const int ubo_light_size = 160;
 		state.ubo_light_size = ubo_light_size;
-		state.max_ubo_lights = MIN(RenderList::MAX_LIGHTS, max_ubo_size / ubo_light_size);
+		state.max_ubo_lights = MIN(render_list.max_lights, max_ubo_size / ubo_light_size);
 
 		state.spot_array_tmp = (uint8_t *)memalloc(ubo_light_size * state.max_ubo_lights);
 		state.omni_array_tmp = (uint8_t *)memalloc(ubo_light_size * state.max_ubo_lights);
@@ -5188,7 +5187,7 @@ void RasterizerSceneGLES3::initialize() {
 		state.scene_shader.add_custom_define("#define MAX_LIGHT_DATA_STRUCTS " + itos(state.max_ubo_lights) + "\n");
 		state.scene_shader.add_custom_define("#define MAX_FORWARD_LIGHTS " + itos(state.max_forward_lights_per_object) + "\n");
 
-		state.max_ubo_reflections = MIN((int)RenderList::MAX_REFLECTIONS, max_ubo_size / sizeof(ReflectionProbeDataUBO));
+		state.max_ubo_reflections = MIN(render_list.max_reflections, max_ubo_size / (int)sizeof(ReflectionProbeDataUBO));
 
 		state.reflection_array_tmp = (uint8_t *)memalloc(sizeof(ReflectionProbeDataUBO) * state.max_ubo_reflections);
 
@@ -5301,7 +5300,7 @@ void RasterizerSceneGLES3::initialize() {
 		GLOBAL_DEF("rendering/quality/subsurface_scattering/follow_surface", false);
 		GLOBAL_DEF("rendering/quality/subsurface_scattering/weight_samples", true);
 
-		GLOBAL_DEF("rendering/quality/voxel_cone_tracing/high_quality", true);
+		GLOBAL_DEF("rendering/quality/voxel_cone_tracing/high_quality", false);
 	}
 
 	exposure_shrink_size = 243;

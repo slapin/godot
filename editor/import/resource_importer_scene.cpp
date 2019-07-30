@@ -435,6 +435,7 @@ Node *ResourceImporterScene::_fix_node(Node *p_node, Node *p_root, Map<Ref<Mesh>
 			Object::cast_to<Spatial>(sb)->set_transform(Object::cast_to<Spatial>(p_node)->get_transform());
 			p_node->replace_by(sb);
 			memdelete(p_node);
+			p_node = NULL;
 			CollisionShape *colshape = memnew(CollisionShape);
 			if (empty_draw_type == "CUBE") {
 				BoxShape *boxShape = memnew(BoxShape);
@@ -893,7 +894,6 @@ void ResourceImporterScene::_filter_tracks(Node *scene, const String &p_text) {
 				keep.insert(F->get());
 			}
 			_filter_anim_tracks(anim->get_animation(name), keep);
-		} else {
 		}
 	}
 }

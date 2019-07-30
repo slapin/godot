@@ -159,11 +159,11 @@ bool GDScriptLanguage::validate(const String &p_script, int &r_line_error, int &
 		for (int i = 0; i < cl->subclasses.size(); i++) {
 			for (int j = 0; j < cl->subclasses[i]->functions.size(); j++) {
 
-				funcs[cl->subclasses[i]->functions[j]->line] = String(cl->subclasses[i]->name) + "." + String(cl->subclasses[i]->functions[j]->name);
+				funcs[cl->subclasses[i]->functions[j]->line] = String(cl->subclasses[i]->name) + "." + cl->subclasses[i]->functions[j]->name;
 			}
 			for (int j = 0; j < cl->subclasses[i]->static_functions.size(); j++) {
 
-				funcs[cl->subclasses[i]->static_functions[j]->line] = String(cl->subclasses[i]->name) + "." + String(cl->subclasses[i]->static_functions[j]->name);
+				funcs[cl->subclasses[i]->static_functions[j]->line] = String(cl->subclasses[i]->name) + "." + cl->subclasses[i]->static_functions[j]->name;
 			}
 		}
 
@@ -386,8 +386,6 @@ void GDScriptLanguage::debug_get_globals(List<String> *p_globals, List<Variant> 
 
 String GDScriptLanguage::debug_parse_stack_level_expression(int p_level, const String &p_expression, int p_max_subitems, int p_max_depth) {
 
-	if (_debug_parse_err_line >= 0)
-		return "";
 	return "";
 }
 

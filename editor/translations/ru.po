@@ -51,12 +51,14 @@
 # Teashrock <kajitsu22@gmail.com>, 2019.
 # Дмитрий Ефимов <daefimov@gmail.com>, 2019.
 # Sergey <www.window1@mail.ru>, 2019.
+# Vladislav <onion.ring@mail.ru>, 2019.
+# knightpp <kotteam99@gmail.com>, 2019.
 msgid ""
 msgstr ""
 "Project-Id-Version: Godot Engine editor\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2019-07-09 10:46+0000\n"
-"Last-Translator: Sergey <www.window1@mail.ru>\n"
+"PO-Revision-Date: 2019-07-29 19:20+0000\n"
+"Last-Translator: knightpp <kotteam99@gmail.com>\n"
 "Language-Team: Russian <https://hosted.weblate.org/projects/godot-engine/"
 "godot/ru/>\n"
 "Language: ru\n"
@@ -174,6 +176,31 @@ msgstr "Измененить значение ключевого кадра"
 
 #: editor/animation_track_editor.cpp
 msgid "Anim Change Call"
+msgstr "Изменить вызов анимации"
+
+#: editor/animation_track_editor.cpp
+#, fuzzy
+msgid "Anim Multi Change Keyframe Time"
+msgstr "Изменить время ключевого кадра"
+
+#: editor/animation_track_editor.cpp
+#, fuzzy
+msgid "Anim Multi Change Transition"
+msgstr "Изменить переход"
+
+#: editor/animation_track_editor.cpp
+#, fuzzy
+msgid "Anim Multi Change Transform"
+msgstr "Изменить положение"
+
+#: editor/animation_track_editor.cpp
+#, fuzzy
+msgid "Anim Multi Change Keyframe Value"
+msgstr "Измененить значение ключевого кадра"
+
+#: editor/animation_track_editor.cpp
+#, fuzzy
+msgid "Anim Multi Change Call"
 msgstr "Изменить вызов анимации"
 
 #: editor/animation_track_editor.cpp
@@ -482,7 +509,7 @@ msgstr ""
 
 #: editor/animation_track_editor.cpp
 msgid "Warning: Editing imported animation"
-msgstr ""
+msgstr "Внимание: Редактирование импортированной анимации. "
 
 #: editor/animation_track_editor.cpp editor/plugins/script_text_editor.cpp
 #: scene/gui/line_edit.cpp scene/gui/text_edit.cpp
@@ -502,9 +529,8 @@ msgid "Group tracks by node or display them as plain list."
 msgstr "Группировать треки по узлам или показывать их как простой список."
 
 #: editor/animation_track_editor.cpp
-#, fuzzy
 msgid "Snap:"
-msgstr "Привязка"
+msgstr "Привязка:"
 
 #: editor/animation_track_editor.cpp
 msgid "Animation step value."
@@ -670,7 +696,7 @@ msgstr "Номер строки:"
 
 #: editor/code_editor.cpp
 msgid "Found %d match(es)."
-msgstr ""
+msgstr "Найдено %d совпадений."
 
 #: editor/code_editor.cpp editor/editor_help.cpp
 msgid "No Matches"
@@ -755,9 +781,8 @@ msgid "From Signal:"
 msgstr "Сигналы:"
 
 #: editor/connections_dialog.cpp
-#, fuzzy
 msgid "Scene does not contain any script."
-msgstr "Узел не содержит геометрии."
+msgstr "Узел не содержит скрипт."
 
 #: editor/connections_dialog.cpp editor/editor_autoload_settings.cpp
 #: editor/groups_editor.cpp editor/plugins/item_list_editor_plugin.cpp
@@ -797,6 +822,8 @@ msgstr "Отложенное"
 msgid ""
 "Defers the signal, storing it in a queue and only firing it at idle time."
 msgstr ""
+"Откладывает сигнал, храня его в очереди и выполняет его только в режиме "
+"простоя."
 
 #: editor/connections_dialog.cpp
 msgid "Oneshot"
@@ -855,9 +882,8 @@ msgid "Disconnect"
 msgstr "Отсоединить"
 
 #: editor/connections_dialog.cpp
-#, fuzzy
 msgid "Connect a Signal to a Method"
-msgstr "Подключить сигнал: "
+msgstr "Подключить Сигнал к Методу: "
 
 #: editor/connections_dialog.cpp
 msgid "Edit Connection:"
@@ -1180,7 +1206,6 @@ msgid "Success!"
 msgstr "Успех!"
 
 #: editor/editor_asset_installer.cpp editor/editor_node.cpp
-#: editor/plugins/asset_library_editor_plugin.cpp
 msgid "Install"
 msgstr "Установить"
 
@@ -1307,7 +1332,7 @@ msgstr "Открыть раскладку звуковой шины"
 
 #: editor/editor_audio_buses.cpp
 msgid "There is no '%s' file."
-msgstr ""
+msgstr "Файла '%s' не существует."
 
 #: editor/editor_audio_buses.cpp editor/plugins/canvas_item_editor_plugin.cpp
 msgid "Layout"
@@ -1376,8 +1401,9 @@ msgid "Must not collide with an existing global constant name."
 msgstr "Не должно конфликтовать с существующим глобальным именем константы."
 
 #: editor/editor_autoload_settings.cpp
+#, fuzzy
 msgid "Keyword cannot be used as an autoload name."
-msgstr ""
+msgstr "Ключевое слово нельзя использовать как имя автозагрузки."
 
 #: editor/editor_autoload_settings.cpp
 msgid "Autoload '%s' already exists!"
@@ -1462,9 +1488,8 @@ msgid "[unsaved]"
 msgstr "[не сохранено]"
 
 #: editor/editor_dir_dialog.cpp
-#, fuzzy
 msgid "Please select a base directory first."
-msgstr "Пожалуйста, выберите базовый каталог"
+msgstr "Пожалуйста, выберите базовый каталог."
 
 #: editor/editor_dir_dialog.cpp
 msgid "Choose a Directory"
@@ -1550,6 +1575,7 @@ msgstr "Файл шаблона не найден:"
 #: editor/editor_export.cpp
 msgid "On 32-bit exports the embedded PCK cannot be bigger than 4 GiB."
 msgstr ""
+"На 32-х битных системах встроенный PCK файл не может быть больше 4 Гбит."
 
 #: editor/editor_feature_profile.cpp
 msgid "3D Editor"
@@ -1592,6 +1618,7 @@ msgstr "Заменить всё (без возможности отмены)"
 #: editor/editor_feature_profile.cpp
 msgid "Profile must be a valid filename and must not contain '.'"
 msgstr ""
+"Название профиля должно быть корректным именем файла и не содержать '.'"
 
 #: editor/editor_feature_profile.cpp
 msgid "Profile with this name already exists."
@@ -1646,6 +1673,7 @@ msgid ""
 "Profile '%s' already exists. Remove it first before importing, import "
 "aborted."
 msgstr ""
+"Профиль '%s' уже существует. Удалите его перед импортом, импорт отменен."
 
 #: editor/editor_feature_profile.cpp
 #, fuzzy
@@ -1654,7 +1682,7 @@ msgstr "Ошибка при загрузке шаблона '%s'"
 
 #: editor/editor_feature_profile.cpp
 msgid "Unset"
-msgstr ""
+msgstr "Сбросить"
 
 #: editor/editor_feature_profile.cpp
 #, fuzzy
@@ -1745,7 +1773,7 @@ msgstr "Просмотреть в проводнике"
 msgid "New Folder..."
 msgstr "Новая папка..."
 
-#: editor/editor_file_dialog.cpp scene/gui/file_dialog.cpp
+#: editor/editor_file_dialog.cpp
 msgid "Refresh"
 msgstr "Обновить"
 
@@ -1796,7 +1824,7 @@ msgstr "Вперёд"
 msgid "Go Up"
 msgstr "Вверх"
 
-#: editor/editor_file_dialog.cpp scene/gui/file_dialog.cpp
+#: editor/editor_file_dialog.cpp
 msgid "Toggle Hidden Files"
 msgstr "Скрыть файлы"
 
@@ -1821,24 +1849,31 @@ msgid "Move Favorite Down"
 msgstr "Переместить избранное вниз"
 
 #: editor/editor_file_dialog.cpp
-msgid "Previous Folder"
-msgstr "Предыдущая папка"
+#, fuzzy
+msgid "Go to previous folder."
+msgstr "Перейти к родительской папке."
 
 #: editor/editor_file_dialog.cpp
-msgid "Next Folder"
-msgstr "Следующая папка"
+#, fuzzy
+msgid "Go to next folder."
+msgstr "Перейти к родительской папке."
 
 #: editor/editor_file_dialog.cpp scene/gui/file_dialog.cpp
 msgid "Go to parent folder."
 msgstr "Перейти к родительской папке."
 
+#: editor/editor_file_dialog.cpp scene/gui/file_dialog.cpp
+#, fuzzy
+msgid "Refresh files."
+msgstr "Поиск файлов"
+
 #: editor/editor_file_dialog.cpp
 msgid "(Un)favorite current folder."
 msgstr "Добавить или удалить текущую папку из избранных."
 
-#: editor/editor_file_dialog.cpp
+#: editor/editor_file_dialog.cpp scene/gui/file_dialog.cpp
 #, fuzzy
-msgid "Toggle visibility of hidden files."
+msgid "Toggle the visibility of hidden files."
 msgstr "Скрыть файлы"
 
 #: editor/editor_file_dialog.cpp editor/filesystem_dock.cpp
@@ -2419,8 +2454,8 @@ msgid ""
 "Unable to load addon script from path: '%s' There seems to be an error in "
 "the code, please check the syntax."
 msgstr ""
-"Невозможно загрузить скрипт аддона из источника: '%s' В коде есть "
-"ошибка. Пожалуйста, проверьте синтаксис."
+"Невозможно загрузить скрипт аддона из источника: '%s' В коде есть ошибка. "
+"Пожалуйста, проверьте синтаксис."
 
 #: editor/editor_node.cpp
 msgid ""
@@ -2522,7 +2557,7 @@ msgstr "Закрыть другие вкладки"
 
 #: editor/editor_node.cpp
 msgid "Close Tabs to the Right"
-msgstr ""
+msgstr "Закрыть вкладки справа"
 
 #: editor/editor_node.cpp
 #, fuzzy
@@ -2568,6 +2603,11 @@ msgstr "Сцена"
 #: editor/editor_node.cpp
 msgid "Go to previously opened scene."
 msgstr "Перейти к предыдущей открытой сцене."
+
+#: editor/editor_node.cpp
+#, fuzzy
+msgid "Copy Text"
+msgstr "Копировать путь"
 
 #: editor/editor_node.cpp
 msgid "Next tab"
@@ -2661,7 +2701,7 @@ msgstr "Открыть папку с данными проекта"
 
 #: editor/editor_node.cpp
 msgid "Install Android Build Template"
-msgstr ""
+msgstr "Установить шаблон сборки Android"
 
 #: editor/editor_node.cpp
 msgid "Quit to Project List"
@@ -2780,15 +2820,6 @@ msgstr "Создать корневой узел сцены"
 #, fuzzy
 msgid "Screenshots are stored in the Editor Data/Settings Folder."
 msgstr "Открыть папку Данные/Настройки редактора"
-
-#: editor/editor_node.cpp
-msgid "Automatically Open Screenshots"
-msgstr ""
-
-#: editor/editor_node.cpp
-#, fuzzy
-msgid "Open in an external image editor."
-msgstr "Открыть следующий редактор"
 
 #: editor/editor_node.cpp
 msgid "Toggle Fullscreen"
@@ -2948,6 +2979,8 @@ msgstr "Не сохранять"
 #: editor/editor_node.cpp
 msgid "Android build template is missing, please install relevant templates."
 msgstr ""
+"Шаблон сборки Android отсутствует, пожалуйста, установите соответствующие "
+"шаблоны."
 
 #: editor/editor_node.cpp
 #, fuzzy
@@ -3108,6 +3141,11 @@ msgstr "Время"
 #: editor/editor_profiler.cpp
 msgid "Calls"
 msgstr "Вызовы"
+
+#: editor/editor_properties.cpp
+#, fuzzy
+msgid "Edit Text:"
+msgstr "Редактировать тему..."
 
 #: editor/editor_properties.cpp editor/script_create_dialog.cpp
 msgid "On"
@@ -4786,6 +4824,11 @@ msgid "Idle"
 msgstr "Простой"
 
 #: editor/plugins/asset_library_editor_plugin.cpp
+#, fuzzy
+msgid "Install..."
+msgstr "Установить"
+
+#: editor/plugins/asset_library_editor_plugin.cpp
 msgid "Retry"
 msgstr "Повторить"
 
@@ -4814,7 +4857,6 @@ msgid "Last"
 msgstr "Последняя"
 
 #: editor/plugins/asset_library_editor_plugin.cpp
-#: modules/gdnative/gdnative_library_editor_plugin.cpp
 msgid "All"
 msgstr "Все"
 
@@ -4828,8 +4870,9 @@ msgid "Sort:"
 msgstr "Сортировать:"
 
 #: editor/plugins/asset_library_editor_plugin.cpp
-msgid "Reverse"
-msgstr "Обратно"
+#, fuzzy
+msgid "Reverse sorting."
+msgstr "Запрашиваю..."
 
 #: editor/plugins/asset_library_editor_plugin.cpp
 #: editor/project_settings_editor.cpp
@@ -4909,31 +4952,38 @@ msgid "Rotation Step:"
 msgstr "Шаг поворота:"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
-msgid "Move vertical guide"
+#, fuzzy
+msgid "Move Vertical Guide"
 msgstr "Перемещение вертикальной направляющей"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
-msgid "Create new vertical guide"
+#, fuzzy
+msgid "Create Vertical Guide"
 msgstr "Создать вертикальную направляющую"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
-msgid "Remove vertical guide"
+#, fuzzy
+msgid "Remove Vertical Guide"
 msgstr "Убрать вертикальную направляющую"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
-msgid "Move horizontal guide"
+#, fuzzy
+msgid "Move Horizontal Guide"
 msgstr "Переместить горизонтальную направляющую"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
-msgid "Create new horizontal guide"
+#, fuzzy
+msgid "Create Horizontal Guide"
 msgstr "Создать новую горизонтальную направляющую"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
-msgid "Remove horizontal guide"
+#, fuzzy
+msgid "Remove Horizontal Guide"
 msgstr "Удалить горизонтальную направляющую"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
-msgid "Create new horizontal and vertical guides"
+#, fuzzy
+msgid "Create Horizontal and Vertical Guides"
 msgstr "Создание новых горизонтальных и вертикальных направляющих"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
@@ -6866,8 +6916,13 @@ msgstr "Зад"
 
 #: editor/plugins/spatial_editor_plugin.cpp
 #, fuzzy
-msgid "Align with View"
+msgid "Align Transform with View"
 msgstr "Выравнять с областью просмотра"
+
+#: editor/plugins/spatial_editor_plugin.cpp
+#, fuzzy
+msgid "Align Rotation with View"
+msgstr "Совместить выбранное с видом"
 
 #: editor/plugins/spatial_editor_plugin.cpp editor/scene_tree_dock.cpp
 msgid "No parent to instance a child at."
@@ -7057,10 +7112,6 @@ msgstr "Фокус на центре"
 #: editor/plugins/spatial_editor_plugin.cpp
 msgid "Focus Selection"
 msgstr "Показать выбранное"
-
-#: editor/plugins/spatial_editor_plugin.cpp
-msgid "Align Selection With View"
-msgstr "Совместить выбранное с видом"
 
 #: editor/plugins/spatial_editor_plugin.cpp
 msgid "Tool Select"
@@ -7650,14 +7701,6 @@ msgid "Transpose"
 msgstr "Транспонировать"
 
 #: editor/plugins/tile_map_editor_plugin.cpp
-msgid "Mirror X"
-msgstr "Зеркально по X"
-
-#: editor/plugins/tile_map_editor_plugin.cpp
-msgid "Mirror Y"
-msgstr "Зеркально по Y"
-
-#: editor/plugins/tile_map_editor_plugin.cpp
 #, fuzzy
 msgid "Disable Autotile"
 msgstr "Автотайлы"
@@ -8080,6 +8123,10 @@ msgid "Visual Shader Input Type Changed"
 msgstr "Изменен тип ввода Визуального Шейдера"
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "(GLES3 only)"
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
 msgid "Vertex"
 msgstr "Вершины"
 
@@ -8171,6 +8218,22 @@ msgid "Color uniform."
 msgstr "Очистить преобразование"
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Returns the boolean result of the %s comparison between two parameters."
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Equal (==)"
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Greater Than (>)"
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Greater Than or Equal (>=)"
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
 "Returns an associated vector if the provided scalars are equal, greater or "
 "less."
@@ -8178,7 +8241,41 @@ msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
+"Returns the boolean result of the comparison between INF and a scalar "
+"parameter."
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid ""
+"Returns the boolean result of the comparison between NaN and a scalar "
+"parameter."
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Less Than (<)"
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Less Than or Equal (<=)"
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Not Equal (!=)"
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid ""
 "Returns an associated vector if the provided boolean value is true or false."
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid "Returns the boolean result of the comparison between two parameters."
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid ""
+"Returns the boolean result of the comparison between INF (or NaN) and a "
+"scalar parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8274,7 +8371,7 @@ msgid "Returns the arc-cosine of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Returns the inverse hyperbolic cosine of the parameter."
+msgid "Returns the inverse hyperbolic cosine of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8282,7 +8379,7 @@ msgid "Returns the arc-sine of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Returns the inverse hyperbolic sine of the parameter."
+msgid "Returns the inverse hyperbolic sine of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8294,7 +8391,7 @@ msgid "Returns the arc-tangent of the parameters."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Returns the inverse hyperbolic tangent of the parameter."
+msgid "Returns the inverse hyperbolic tangent of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8311,7 +8408,7 @@ msgid "Returns the cosine of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Returns the hyperbolic cosine of the parameter."
+msgid "Returns the hyperbolic cosine of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8380,11 +8477,11 @@ msgid "1.0 / scalar"
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Finds the nearest integer to the parameter."
+msgid "Finds the nearest integer to the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Finds the nearest even integer to the parameter."
+msgid "Finds the nearest even integer to the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8400,7 +8497,7 @@ msgid "Returns the sine of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Returns the hyperbolic sine of the parameter."
+msgid "Returns the hyperbolic sine of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8428,11 +8525,11 @@ msgid "Returns the tangent of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Returns the hyperbolic tangent of the parameter."
+msgid "Returns the hyperbolic tangent of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Finds the truncated value of the parameter."
+msgid "Finds the truncated value of the parameter."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8475,12 +8572,17 @@ msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 #, fuzzy
-msgid "Cubic texture uniform."
+msgid "Cubic texture uniform lookup."
 msgstr "Изменить текстурную единицу"
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 #, fuzzy
-msgid "2D texture uniform."
+msgid "2D texture uniform lookup."
+msgstr "Изменить текстурную единицу"
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+#, fuzzy
+msgid "2D texture uniform lookup with triplanar."
 msgstr "Изменить текстурную единицу"
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8490,7 +8592,7 @@ msgstr "Окно преобразования..."
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"(GLES3 only) Calculate the outer product of a pair of vectors.\n"
+"Calculate the outer product of a pair of vectors.\n"
 "\n"
 "OuterProduct treats the first parameter 'c' as a column vector (matrix with "
 "one column) and the second parameter 'r' as a row vector (matrix with one "
@@ -8508,15 +8610,15 @@ msgid "Decomposes transform to four vectors."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Calculates the determinant of a transform."
+msgid "Calculates the determinant of a transform."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Calculates the inverse of a transform."
+msgid "Calculates the inverse of a transform."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) Calculates the transpose of a transform."
+msgid "Calculates the transpose of a transform."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8569,7 +8671,7 @@ msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"Returns a vector that points in the same direction as a reference vector. "
+"Returns the vector that points in the same direction as a reference vector. "
 "The function has three vector parameters : N, the vector to orient, I, the "
 "incident vector, and Nref, the reference vector. If the dot product of I and "
 "Nref is smaller than zero the return value is N. Otherwise -N is returned."
@@ -8597,12 +8699,12 @@ msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"Returns a vector that points in the direction of reflection ( a : incident "
+"Returns the vector that points in the direction of reflection ( a : incident "
 "vector, b : normal vector )."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "Returns a vector that points in the direction of refraction."
+msgid "Returns the vector that points in the direction of refraction."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -8681,47 +8783,47 @@ msgid ""
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) (Fragment/Light mode only) Scalar derivative function."
+msgid "(Fragment/Light mode only) Scalar derivative function."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
-msgid "(GLES3 only) (Fragment/Light mode only) Vector derivative function."
-msgstr ""
-
-#: editor/plugins/visual_shader_editor_plugin.cpp
-msgid ""
-"(GLES3 only) (Fragment/Light mode only) (Vector) Derivative in 'x' using "
-"local differencing."
+msgid "(Fragment/Light mode only) Vector derivative function."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"(GLES3 only) (Fragment/Light mode only) (Scalar) Derivative in 'x' using "
-"local differencing."
+"(Fragment/Light mode only) (Vector) Derivative in 'x' using local "
+"differencing."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"(GLES3 only) (Fragment/Light mode only) (Vector) Derivative in 'y' using "
-"local differencing."
+"(Fragment/Light mode only) (Scalar) Derivative in 'x' using local "
+"differencing."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"(GLES3 only) (Fragment/Light mode only) (Scalar) Derivative in 'y' using "
-"local differencing."
+"(Fragment/Light mode only) (Vector) Derivative in 'y' using local "
+"differencing."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"(GLES3 only) (Fragment/Light mode only) (Vector) Sum of absolute derivative "
-"in 'x' and 'y'."
+"(Fragment/Light mode only) (Scalar) Derivative in 'y' using local "
+"differencing."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
 msgid ""
-"(GLES3 only) (Fragment/Light mode only) (Scalar) Sum of absolute derivative "
-"in 'x' and 'y'."
+"(Fragment/Light mode only) (Vector) Sum of absolute derivative in 'x' and "
+"'y'."
+msgstr ""
+
+#: editor/plugins/visual_shader_editor_plugin.cpp
+msgid ""
+"(Fragment/Light mode only) (Scalar) Sum of absolute derivative in 'x' and "
+"'y'."
 msgstr ""
 
 #: editor/plugins/visual_shader_editor_plugin.cpp
@@ -9964,6 +10066,11 @@ msgid "Extend Script"
 msgstr "Расширить скрипт"
 
 #: editor/scene_tree_dock.cpp
+#, fuzzy
+msgid "Reparent to New Node"
+msgstr "Переподчинить узел"
+
+#: editor/scene_tree_dock.cpp
 msgid "Make Scene Root"
 msgstr "Создать корневой узел сцены"
 
@@ -10197,7 +10304,8 @@ msgid "Script is valid."
 msgstr "Скрипт корректен"
 
 #: editor/script_create_dialog.cpp
-msgid "Allowed: a-z, A-Z, 0-9 and _"
+#, fuzzy
+msgid "Allowed: a-z, A-Z, 0-9, _ and ."
 msgstr "Допускаются: a-z, A-Z, 0-9 и _"
 
 #: editor/script_create_dialog.cpp
@@ -11885,6 +11993,11 @@ msgstr "Недействительный источник шейдера."
 msgid "Invalid source for shader."
 msgstr "Недействительный источник шейдера."
 
+#: scene/resources/visual_shader_nodes.cpp
+#, fuzzy
+msgid "Invalid comparison function for that type."
+msgstr "Недействительный источник шейдера."
+
 #: servers/visual/shader_language.cpp
 msgid "Assignment to function."
 msgstr "Назначение функции."
@@ -11900,6 +12013,28 @@ msgstr "Изменения могут быть назначены только �
 #: servers/visual/shader_language.cpp
 msgid "Constants cannot be modified."
 msgstr "Константы не могут быть изменены."
+
+#~ msgid "Previous Folder"
+#~ msgstr "Предыдущая папка"
+
+#~ msgid "Next Folder"
+#~ msgstr "Следующая папка"
+
+#~ msgid "Automatically Open Screenshots"
+#~ msgstr "Автоматически открывать скриншоты"
+
+#, fuzzy
+#~ msgid "Open in an external image editor."
+#~ msgstr "Открыть следующий редактор"
+
+#~ msgid "Reverse"
+#~ msgstr "Обратно"
+
+#~ msgid "Mirror X"
+#~ msgstr "Зеркально по X"
+
+#~ msgid "Mirror Y"
+#~ msgstr "Зеркально по Y"
 
 #~ msgid "Generating solution..."
 #~ msgstr "Генерация решения..."

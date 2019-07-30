@@ -691,9 +691,9 @@ void SpatialMaterial::_update_shader() {
 		code += "\tTANGENT+= vec3(1.0,0.0,0.0) * abs(NORMAL.z);\n";
 		code += "\tTANGENT = normalize(TANGENT);\n";
 
-		code += "\tBINORMAL = vec3(0.0,1.0,0.0) * abs(NORMAL.x);\n";
-		code += "\tBINORMAL+= vec3(0.0,0.0,-1.0) * abs(NORMAL.y);\n";
-		code += "\tBINORMAL+= vec3(0.0,1.0,0.0) * abs(NORMAL.z);\n";
+		code += "\tBINORMAL = vec3(0.0,-1.0,0.0) * abs(NORMAL.x);\n";
+		code += "\tBINORMAL+= vec3(0.0,0.0,1.0) * abs(NORMAL.y);\n";
+		code += "\tBINORMAL+= vec3(0.0,-1.0,0.0) * abs(NORMAL.z);\n";
 		code += "\tBINORMAL = normalize(BINORMAL);\n";
 	}
 
@@ -2353,8 +2353,8 @@ SpatialMaterial::SpatialMaterial() :
 
 	set_ao_light_affect(0.0);
 
-	set_metallic_texture_channel(TEXTURE_CHANNEL_BLUE);
-	set_roughness_texture_channel(TEXTURE_CHANNEL_GREEN);
+	set_metallic_texture_channel(TEXTURE_CHANNEL_RED);
+	set_roughness_texture_channel(TEXTURE_CHANNEL_RED);
 	set_ao_texture_channel(TEXTURE_CHANNEL_RED);
 	set_refraction_texture_channel(TEXTURE_CHANNEL_RED);
 

@@ -69,7 +69,7 @@
 #define FREELOOK_SPEED_MULTIPLIER 1.08
 
 #define MIN_Z 0.01
-#define MAX_Z 10000
+#define MAX_Z 1000000.0
 
 #define MIN_FOV 0.01
 #define MAX_FOV 179
@@ -514,7 +514,7 @@ void SpatialEditorViewport::_select_region() {
 	for (int i = 0; i < instances.size(); i++) {
 
 		Spatial *sp = Object::cast_to<Spatial>(ObjectDB::get_instance(instances[i]));
-		if (!sp && _is_node_locked(sp))
+		if (!sp || _is_node_locked(sp))
 			continue;
 
 		Node *item = Object::cast_to<Node>(sp);
@@ -645,7 +645,7 @@ bool SpatialEditorViewport::_gizmo_select(const Vector2 &p_screenpos, bool p_hig
 
 			Vector3 r;
 
-			if (Geometry::segment_intersects_sphere(ray_pos, ray_pos + ray * 10000.0, grabber_pos, grabber_radius, &r)) {
+			if (Geometry::segment_intersects_sphere(ray_pos, ray_pos + ray * MAX_Z, grabber_pos, grabber_radius, &r)) {
 				float d = r.distance_to(ray_pos);
 				if (d < col_d) {
 					col_d = d;
@@ -753,7 +753,7 @@ bool SpatialEditorViewport::_gizmo_select(const Vector2 &p_screenpos, bool p_hig
 
 			Vector3 r;
 
-			if (Geometry::segment_intersects_sphere(ray_pos, ray_pos + ray * 10000.0, grabber_pos, grabber_radius, &r)) {
+			if (Geometry::segment_intersects_sphere(ray_pos, ray_pos + ray * MAX_Z, grabber_pos, grabber_radius, &r)) {
 				float d = r.distance_to(ray_pos);
 				if (d < col_d) {
 					col_d = d;
@@ -1291,6 +1291,8 @@ void SpatialEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 
 				Vector3 ray_pos = _get_ray_pos(m->get_position());
 				Vector3 ray = _get_ray(m->get_position());
+				float snap = EDITOR_GET("interface/inspector/default_float_step");
+				int snap_step_decimals = Math::range_step_decimals(snap);
 
 				switch (_edit.mode) {
 
@@ -1372,18 +1374,14 @@ void SpatialEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 						// Disable local transformation for TRANSFORM_VIEW
 						bool local_coords = (spatial_editor->are_local_coords_enabled() && _edit.plane != TRANSFORM_VIEW);
 
-						float snap = 0;
 						if (_edit.snap || spatial_editor->is_snap_enabled()) {
-
 							snap = spatial_editor->get_scale_snap() / 100;
-
-							Vector3 motion_snapped = motion;
-							motion_snapped.snap(Vector3(snap, snap, snap));
-							set_message(TTR("Scaling: ") + motion_snapped);
-
-						} else {
-							set_message(TTR("Scaling: ") + motion);
 						}
+						Vector3 motion_snapped = motion;
+						motion_snapped.snap(Vector3(snap, snap, snap));
+						// This might not be necessary anymore after issue #288 is solved (in 4.0?).
+						set_message(TTR("Scaling: ") + "(" + String::num(motion_snapped.x, snap_step_decimals) + ", " +
+									String::num(motion_snapped.y, snap_step_decimals) + ", " + String::num(motion_snapped.z, snap_step_decimals) + ")");
 
 						for (List<Node *>::Element *E = selection.front(); E; E = E->next()) {
 
@@ -1502,17 +1500,13 @@ void SpatialEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 						// Disable local transformation for TRANSFORM_VIEW
 						bool local_coords = (spatial_editor->are_local_coords_enabled() && _edit.plane != TRANSFORM_VIEW);
 
-						float snap = 0;
 						if (_edit.snap || spatial_editor->is_snap_enabled()) {
-
 							snap = spatial_editor->get_translate_snap();
-
-							Vector3 motion_snapped = motion;
-							motion_snapped.snap(Vector3(snap, snap, snap));
-							set_message(TTR("Translating: ") + motion_snapped);
-						} else {
-							set_message(TTR("Translating: ") + motion);
 						}
+						Vector3 motion_snapped = motion;
+						motion_snapped.snap(Vector3(snap, snap, snap));
+						set_message(TTR("Translating: ") + "(" + String::num(motion_snapped.x, snap_step_decimals) + ", " +
+									String::num(motion_snapped.y, snap_step_decimals) + ", " + String::num(motion_snapped.z, snap_step_decimals) + ")");
 
 						for (List<Node *>::Element *E = selection.front(); E; E = E->next()) {
 
@@ -1601,20 +1595,12 @@ void SpatialEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 						float angle = Math::atan2(x_axis.dot(intersection - _edit.center), y_axis.dot(intersection - _edit.center));
 
 						if (_edit.snap || spatial_editor->is_snap_enabled()) {
-
-							float snap = spatial_editor->get_rotate_snap();
-
-							if (snap) {
-								angle = Math::rad2deg(angle) + snap * 0.5; //else it won't reach +180
-								angle -= Math::fmod(angle, snap);
-								set_message(vformat(TTR("Rotating %s degrees."), rtos(angle)));
-								angle = Math::deg2rad(angle);
-							} else
-								set_message(vformat(TTR("Rotating %s degrees."), rtos(Math::rad2deg(angle))));
-
-						} else {
-							set_message(vformat(TTR("Rotating %s degrees."), rtos(Math::rad2deg(angle))));
+							snap = spatial_editor->get_rotate_snap();
 						}
+						angle = Math::rad2deg(angle) + snap * 0.5; //else it won't reach +180
+						angle -= Math::fmod(angle, snap);
+						set_message(vformat(TTR("Rotating %s degrees."), String::num(angle, snap_step_decimals)));
+						angle = Math::deg2rad(angle);
 
 						List<Node *> &selection = editor_selection->get_selected_node_list();
 
@@ -1835,8 +1821,11 @@ void SpatialEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 			_menu_option(orthogonal ? VIEW_PERSPECTIVE : VIEW_ORTHOGONAL);
 			_update_name();
 		}
-		if (ED_IS_SHORTCUT("spatial_editor/align_selection_with_view", p_event)) {
-			_menu_option(VIEW_ALIGN_SELECTION_WITH_VIEW);
+		if (ED_IS_SHORTCUT("spatial_editor/align_transform_with_view", p_event)) {
+			_menu_option(VIEW_ALIGN_TRANSFORM_WITH_VIEW);
+		}
+		if (ED_IS_SHORTCUT("spatial_editor/align_rotation_with_view", p_event)) {
+			_menu_option(VIEW_ALIGN_ROTATION_WITH_VIEW);
 		}
 		if (ED_IS_SHORTCUT("spatial_editor/insert_anim_key", p_event)) {
 			if (!get_selected_count() || _edit.mode != TRANSFORM_NONE)
@@ -2562,7 +2551,7 @@ void SpatialEditorViewport::_menu_option(int p_option) {
 			focus_selection();
 
 		} break;
-		case VIEW_ALIGN_SELECTION_WITH_VIEW: {
+		case VIEW_ALIGN_TRANSFORM_WITH_VIEW: {
 
 			if (!get_selected_count())
 				break;
@@ -2571,7 +2560,8 @@ void SpatialEditorViewport::_menu_option(int p_option) {
 
 			List<Node *> &selection = editor_selection->get_selected_node_list();
 
-			undo_redo->create_action(TTR("Align with View"));
+			undo_redo->create_action(TTR("Align Transform with View"));
+
 			for (List<Node *>::Element *E = selection.front(); E; E = E->next()) {
 
 				Spatial *sp = Object::cast_to<Spatial>(E->get());
@@ -2595,6 +2585,34 @@ void SpatialEditorViewport::_menu_option(int p_option) {
 				undo_redo->add_undo_method(sp, "set_global_transform", sp->get_global_gizmo_transform());
 			}
 			undo_redo->commit_action();
+			focus_selection();
+
+		} break;
+		case VIEW_ALIGN_ROTATION_WITH_VIEW: {
+
+			if (!get_selected_count())
+				break;
+
+			Transform camera_transform = camera->get_global_transform();
+
+			List<Node *> &selection = editor_selection->get_selected_node_list();
+
+			undo_redo->create_action(TTR("Align Rotation with View"));
+			for (List<Node *>::Element *E = selection.front(); E; E = E->next()) {
+
+				Spatial *sp = Object::cast_to<Spatial>(E->get());
+				if (!sp)
+					continue;
+
+				SpatialEditorSelectedItem *se = editor_selection->get_node_editor_data<SpatialEditorSelectedItem>(sp);
+				if (!se)
+					continue;
+
+				undo_redo->add_do_method(sp, "set_rotation", camera_transform.basis.get_rotation());
+				undo_redo->add_undo_method(sp, "set_rotation", sp->get_rotation());
+			}
+			undo_redo->commit_action();
+
 		} break;
 		case VIEW_ENVIRONMENT: {
 
@@ -3544,7 +3562,8 @@ SpatialEditorViewport::SpatialEditorViewport(SpatialEditor *p_spatial_editor, Ed
 	view_menu->get_popup()->add_separator();
 	view_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("spatial_editor/focus_origin"), VIEW_CENTER_TO_ORIGIN);
 	view_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("spatial_editor/focus_selection"), VIEW_CENTER_TO_SELECTION);
-	view_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("spatial_editor/align_selection_with_view"), VIEW_ALIGN_SELECTION_WITH_VIEW);
+	view_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("spatial_editor/align_transform_with_view"), VIEW_ALIGN_TRANSFORM_WITH_VIEW);
+	view_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("spatial_editor/align_rotation_with_view"), VIEW_ALIGN_ROTATION_WITH_VIEW);
 	view_menu->get_popup()->connect("id_pressed", this, "_menu_option");
 
 	view_menu->set_disable_shortcuts(true);
@@ -5601,7 +5620,8 @@ SpatialEditor::SpatialEditor(EditorNode *p_editor) {
 	ED_SHORTCUT("spatial_editor/insert_anim_key", TTR("Insert Animation Key"), KEY_K);
 	ED_SHORTCUT("spatial_editor/focus_origin", TTR("Focus Origin"), KEY_O);
 	ED_SHORTCUT("spatial_editor/focus_selection", TTR("Focus Selection"), KEY_F);
-	ED_SHORTCUT("spatial_editor/align_selection_with_view", TTR("Align Selection With View"), KEY_MASK_ALT + KEY_MASK_CMD + KEY_F);
+	ED_SHORTCUT("spatial_editor/align_transform_with_view", TTR("Align Transform with View"), KEY_MASK_ALT + KEY_MASK_CMD + KEY_M);
+	ED_SHORTCUT("spatial_editor/align_rotation_with_view", TTR("Align Rotation with View"), KEY_MASK_ALT + KEY_MASK_CMD + KEY_F);
 
 	ED_SHORTCUT("spatial_editor/tool_select", TTR("Tool Select"), KEY_Q);
 	ED_SHORTCUT("spatial_editor/tool_move", TTR("Tool Move"), KEY_W);

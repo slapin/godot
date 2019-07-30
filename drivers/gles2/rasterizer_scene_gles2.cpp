@@ -880,7 +880,11 @@ RID RasterizerSceneGLES2::light_instance_create(RID p_light) {
 
 	light_instance->light_index = 0xFFFF;
 
-	ERR_FAIL_COND_V(!light_instance->light_ptr, RID());
+	if (!light_instance->light_ptr) {
+		memdelete(light_instance);
+		ERR_EXPLAIN("Condition ' !light_instance->light_ptr ' is true.");
+		ERR_FAIL_V(RID());
+	}
 
 	light_instance->self = light_instance_owner.make_rid(light_instance);
 
@@ -1963,9 +1967,7 @@ void RasterizerSceneGLES2::_setup_light(LightInstance *light, ShadowAtlas *shado
 						width /= 2;
 						height /= 2;
 
-						if (k == 0) {
-
-						} else if (k == 1) {
+						if (k == 1) {
 							x += width;
 						} else if (k == 2) {
 							y += height;
@@ -1978,9 +1980,7 @@ void RasterizerSceneGLES2::_setup_light(LightInstance *light, ShadowAtlas *shado
 
 						height /= 2;
 
-						if (k == 0) {
-
-						} else {
+						if (k != 0) {
 							y += height;
 						}
 					}
@@ -2287,19 +2287,6 @@ void RasterizerSceneGLES2::_render_render_list(RenderList::Element **p_elements,
 				prev_unshaded = unshaded;
 			}
 
-			bool depth_prepass = false;
-
-			if (!p_alpha_pass && material->shader->spatial.depth_draw_mode == RasterizerStorageGLES2::Shader::Spatial::DEPTH_DRAW_ALPHA_PREPASS) {
-				depth_prepass = true;
-			}
-
-			if (depth_prepass != prev_depth_prepass) {
-
-				state.scene_shader.set_conditional(SceneShaderGLES2::USE_DEPTH_PREPASS, depth_prepass);
-				prev_depth_prepass = depth_prepass;
-				rebind = true;
-			}
-
 			bool base_pass = !accum_pass && !unshaded; //conditions for a base pass
 
 			if (base_pass != prev_base_pass) {
@@ -2432,6 +2419,19 @@ void RasterizerSceneGLES2::_render_render_list(RenderList::Element **p_elements,
 				rebind = true;
 				rebind_lightmap = true;
 			}
+		}
+
+		bool depth_prepass = false;
+
+		if (!p_alpha_pass && material->shader->spatial.depth_draw_mode == RasterizerStorageGLES2::Shader::Spatial::DEPTH_DRAW_ALPHA_PREPASS) {
+			depth_prepass = true;
+		}
+
+		if (depth_prepass != prev_depth_prepass) {
+
+			state.scene_shader.set_conditional(SceneShaderGLES2::USE_DEPTH_PREPASS, depth_prepass);
+			prev_depth_prepass = depth_prepass;
+			rebind = true;
 		}
 
 		bool instancing = e->instance->base_type == VS::INSTANCE_MULTIMESH;
@@ -3171,9 +3171,7 @@ void RasterizerSceneGLES2::render_shadow(RID p_light, RID p_shadow_atlas, int p_
 			width /= 2;
 			height /= 2;
 
-			if (p_pass == 0) {
-
-			} else if (p_pass == 1) {
+			if (p_pass == 1) {
 				x += width;
 			} else if (p_pass == 2) {
 				y += height;

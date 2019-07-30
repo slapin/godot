@@ -403,11 +403,10 @@ void FileDialog::update_file_list() {
 	List<String> files;
 	List<String> dirs;
 
-	bool is_dir;
 	bool is_hidden;
 	String item;
 
-	while ((item = dir_access->get_next(&is_dir)) != "") {
+	while ((item = dir_access->get_next()) != "") {
 
 		if (item == "." || item == "..")
 			continue;
@@ -415,7 +414,7 @@ void FileDialog::update_file_list() {
 		is_hidden = dir_access->current_is_hidden();
 
 		if (show_hidden_files || !is_hidden) {
-			if (!is_dir)
+			if (!dir_access->current_is_dir())
 				files.push_back(item);
 			else
 				dirs.push_back(item);
@@ -880,14 +879,14 @@ FileDialog::FileDialog() {
 	dir->set_h_size_flags(SIZE_EXPAND_FILL);
 
 	refresh = memnew(ToolButton);
-	refresh->set_tooltip(RTR("Refresh"));
+	refresh->set_tooltip(RTR("Refresh files."));
 	refresh->connect("pressed", this, "_update_file_list");
 	hbc->add_child(refresh);
 
 	show_hidden = memnew(ToolButton);
 	show_hidden->set_toggle_mode(true);
 	show_hidden->set_pressed(is_showing_hidden_files());
-	show_hidden->set_tooltip(RTR("Toggle Hidden Files"));
+	show_hidden->set_tooltip(RTR("Toggle the visibility of hidden files."));
 	show_hidden->connect("toggled", this, "set_show_hidden_files");
 	hbc->add_child(show_hidden);
 

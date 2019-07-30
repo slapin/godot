@@ -322,6 +322,7 @@
 			<description>
 				The natural exponential function. It raises the mathematical constant [b]e[/b] to the power of [code]s[/code] and returns it.
 				[b]e[/b] has an approximate value of 2.71828.
+				For exponents to other bases use the method [method pow].
 				[codeblock]
 				a = exp(2) # Approximately 7.39
 				[/codeblock]
@@ -345,45 +346,47 @@
 		<method name="fmod">
 			<return type="float">
 			</return>
-			<argument index="0" name="x" type="float">
+			<argument index="0" name="a" type="float">
 			</argument>
-			<argument index="1" name="y" type="float">
+			<argument index="1" name="b" type="float">
 			</argument>
 			<description>
-				Returns the floating-point remainder of [code]x/y[/code].
+				Returns the floating-point remainder of [code]a/b[/code], keeping the sign of [code]a[/code].
 				[codeblock]
 				# Remainder is 1.5
 				var remainder = fmod(7, 5.5)
 				[/codeblock]
+				For the integer remainder operation, use the % operator.
 			</description>
 		</method>
 		<method name="fposmod">
 			<return type="float">
 			</return>
-			<argument index="0" name="x" type="float">
+			<argument index="0" name="a" type="float">
 			</argument>
-			<argument index="1" name="y" type="float">
+			<argument index="1" name="b" type="float">
 			</argument>
 			<description>
-				Returns the floating-point remainder of [code]x/y[/code] that wraps equally in positive and negative.
+				Returns the floating-point modulus of [code]a/b[/code] that wraps equally in positive and negative.
 				[codeblock]
-				var i = -10
-				while i &lt; 0:
-				    prints(i, fposmod(i, 10))
+				var i = -6
+				while i &lt; 5:
+				    prints(i, fposmod(i, 3))
 				    i += 1
 				[/codeblock]
 				Produces:
 				[codeblock]
-				-10 10
-				-9 1
-				-8 2
-				-7 3
-				-6 4
-				-5 5
-				-4 6
-				-3 7
-				-2 8
-				-1 9
+				-6 0
+				-5 1
+				-4 2
+				-3 0
+				-2 1
+				-1 2
+				0 0
+				1 1
+				2 2
+				3 0
+				4 1
 				[/codeblock]
 			</description>
 		</method>
@@ -571,6 +574,29 @@
 				[/codeblock]
 			</description>
 		</method>
+		<method name="lerp_angle">
+			<return type="float">
+			</return>
+			<argument index="0" name="from" type="float">
+			</argument>
+			<argument index="1" name="to" type="float">
+			</argument>
+			<argument index="2" name="weight" type="float">
+			</argument>
+			<description>
+				Linearly interpolates between two angles (in radians) by a normalized value.
+				Similar to [method lerp] but interpolate correctly when the angles wrap around [constant @GDScript.TAU].
+				[codeblock]
+				extends Sprite
+				var elapsed = 0.0
+				func _process(delta):
+					var min_angle = deg2rad(0.0)
+					var max_angle = deg2rad(90.0)
+					rotation = lerp_angle(min_angle, max_angle, elapsed)
+					elapsed += delta
+				[/codeblock]
+			</description>
+		</method>
 		<method name="linear2db">
 			<return type="float">
 			</return>
@@ -697,12 +723,43 @@
 				Converts a 2D point expressed in the polar coordinate system (a distance from the origin [code]r[/code] and an angle [code]th[/code]) to the cartesian coordinate system (X and Y axis).
 			</description>
 		</method>
+		<method name="posmod">
+			<return type="int">
+			</return>
+			<argument index="0" name="a" type="int">
+			</argument>
+			<argument index="1" name="b" type="int">
+			</argument>
+			<description>
+				Returns the integer modulus of [code]a/b[/code] that wraps equally in positive and negative.
+				[codeblock]
+				var i = -6
+				while i &lt; 5:
+				    prints(i, posmod(i, 3))
+				    i += 1
+				[/codeblock]
+				Produces:
+				[codeblock]
+				-6 0
+				-5 1
+				-4 2
+				-3 0
+				-2 1
+				-1 2
+				0 0
+				1 1
+				2 2
+				3 0
+				4 1
+				[/codeblock]
+			</description>
+		</method>
 		<method name="pow">
 			<return type="float">
 			</return>
-			<argument index="0" name="x" type="float">
+			<argument index="0" name="base" type="float">
 			</argument>
-			<argument index="1" name="y" type="float">
+			<argument index="1" name="exp" type="float">
 			</argument>
 			<description>
 				Returns the result of [code]x[/code] raised to the power of [code]y[/code].
@@ -1039,7 +1096,7 @@
 			<argument index="0" name="step" type="float">
 			</argument>
 			<description>
-				Returns the position of the first non-zero digit, after the decimal point.
+				Returns the position of the first non-zero digit, after the decimal point. Note that the maximum return value is 10, which is a design decision in the implementation.
 				[codeblock]
 				# n is 0
 				n = step_decimals(5)

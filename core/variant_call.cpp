@@ -70,7 +70,7 @@ struct _VariantCall {
 
 			for (int i = 0; i < arg_count; i++) {
 
-				if (!tptr[i] || tptr[i] == p_args[i]->type)
+				if (tptr[i] == Variant::NIL || tptr[i] == p_args[i]->type)
 					continue; // all good
 				if (!Variant::can_convert(p_args[i]->type, tptr[i])) {
 					r_error.error = Variant::CallError::CALL_ERROR_INVALID_ARGUMENT;
@@ -237,6 +237,8 @@ struct _VariantCall {
 	VCALL_LOCALMEM1R(String, casecmp_to);
 	VCALL_LOCALMEM1R(String, nocasecmp_to);
 	VCALL_LOCALMEM0R(String, length);
+	VCALL_LOCALMEM3R(String, count);
+	VCALL_LOCALMEM3R(String, countn);
 	VCALL_LOCALMEM2R(String, substr);
 	VCALL_LOCALMEM2R(String, find);
 	VCALL_LOCALMEM1R(String, find_last);
@@ -912,7 +914,7 @@ struct _VariantCall {
 
 	static void Quat_init2(Variant &r_ret, const Variant **p_args) {
 
-		r_ret = Quat(((Vector3)(*p_args[0])), ((float)(*p_args[1])));
+		r_ret = Quat(((Vector3)(*p_args[0])), ((real_t)(*p_args[1])));
 	}
 
 	static void Quat_init3(Variant &r_ret, const Variant **p_args) {
@@ -1501,6 +1503,9 @@ void register_variant_methods() {
 	ADDFUNC2R(STRING, STRING, String, substr, INT, "from", INT, "len", varray(-1));
 
 	ADDFUNC2R(STRING, INT, String, find, STRING, "what", INT, "from", varray(0));
+
+	ADDFUNC3R(STRING, INT, String, count, STRING, "what", INT, "from", INT, "to", varray(0, 0));
+	ADDFUNC3R(STRING, INT, String, countn, STRING, "what", INT, "from", INT, "to", varray(0, 0));
 
 	ADDFUNC1R(STRING, INT, String, find_last, STRING, "what", varray());
 	ADDFUNC2R(STRING, INT, String, findn, STRING, "what", INT, "from", varray(0));
