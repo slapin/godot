@@ -28,6 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 #include "kdtree.h"
+#include <cmath>
 #include <nanoflann.hpp>
 
 using namespace nanoflann;
@@ -63,7 +64,7 @@ public:
 	std::vector<std::pair<size_t, real_t> > radius_search(const real_t *data, real_t radius) {
 		std::vector<std::pair<size_t, real_t> > ret_matches;
 		nanoflann::SearchParams params;
-		size_t nmatches = index.radiusSearch(data, radius, ret_matches, params);
+		index.radiusSearch(data, radius, ret_matches, params);
 		return ret_matches;
 	}
 };
@@ -118,7 +119,7 @@ Vector<Vector2> KDTree2D::KDTreeData2D::search(const Vector2 &coords, real_t rad
 	float search_data[] = { coords.x, coords.y };
 	std::vector<std::pair<size_t, real_t> > ret_matches = kddata->radius_search(search_data, radius);
 	ret.resize(ret_matches.size());
-	for (int i = 0; i < ret_matches.size(); i++)
+	for (unsigned int i = 0; i < ret_matches.size(); i++)
 		ret.write[i] = list[ret_matches[i].first];
 	return ret;
 }
@@ -126,7 +127,7 @@ Vector<Vector3> KDTree3D::KDTreeData3D::search(const Vector3 &coords, real_t rad
 	Vector<Vector3> ret;
 	std::vector<std::pair<size_t, real_t> > ret_matches = kddata->radius_search(&coords.coord[0], radius);
 	ret.resize(ret_matches.size());
-	for (int i = 0; i < ret_matches.size(); i++)
+	for (unsigned int i = 0; i < ret_matches.size(); i++)
 		ret.write[i] = list[ret_matches[i].first];
 	return ret;
 }
