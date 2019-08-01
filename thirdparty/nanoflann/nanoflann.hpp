@@ -51,7 +51,6 @@
 #include <algorithm>
 #include <stdexcept>
 #include <cstdio>  // for fwrite()
-#define _USE_MATH_DEFINES // Required by MSVC to define M_PI,etc. in <cmath>
 #include <cmath>   // for abs()
 #include <cstdlib> // for abs()
 #include <limits>
@@ -69,6 +68,11 @@ namespace nanoflann
 {
 /** @addtogroup nanoflann_grp nanoflann C++ library for ANN
   *  @{ */
+
+/** the PI constant (required to avoid MSVC missing symbols) */
+template <typename T> T pi_const() {
+  return static_cast<T>(3.14159265358979323846);
+}
 
   	/** Library version: 0xMmP (M=Major,m=minor,P=patch) */
 	#define NANOFLANN_VERSION 0x123
@@ -408,12 +412,12 @@ namespace nanoflann
 		template <typename U, typename V>
 		inline DistanceType accum_dist(const U a, const V b, int ) const
 		{
-			DistanceType result = DistanceType();
+			DistanceType result = DistanceType(), PI = pi_const<DistanceType>();
 			result = b - a;
-			if (result > M_PI)
-				result -= 2. * M_PI;
-			else if (result < -M_PI)
-				result += 2. * M_PI;
+			if (result > PI)
+				result -= 2 * PI;
+			else if (result < -PI)
+				result += 2 * M_PI;
 			return result;
 		}
 	};
