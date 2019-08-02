@@ -417,7 +417,7 @@ template <typename T> T pi_const() {
 			if (result > PI)
 				result -= 2 * PI;
 			else if (result < -PI)
-				result += 2 * M_PI;
+				result += 2 * PI;
 			return result;
 		}
 	};
