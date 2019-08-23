@@ -898,6 +898,10 @@ GDScriptParser::Node *GDScriptParser::_parse_expression(Node *p_parent, bool p_s
 
 		} else if (tokenizer->get_token() == GDScriptTokenizer::TK_PR_IS && tokenizer->get_token(1) == GDScriptTokenizer::TK_BUILT_IN_TYPE) {
 			// 'is' operator with built-in type
+			if (!expr) {
+				_set_error("Expected identifier before 'is' operator");
+				return NULL;
+			}
 			OperatorNode *op = alloc_node<OperatorNode>();
 			op->op = OperatorNode::OP_IS_BUILTIN;
 			op->arguments.push_back(expr);
@@ -1136,10 +1140,7 @@ GDScriptParser::Node *GDScriptParser::_parse_expression(Node *p_parent, bool p_s
 			return NULL; //nothing
 		}
 
-		if (!expr) {
-			ERR_EXPLAIN("GDScriptParser bug, couldn't figure out what expression is...");
-			ERR_FAIL_V(NULL);
-		}
+		ERR_FAIL_COND_V_MSG(!expr, NULL, "GDScriptParser bug, couldn't figure out what expression is.");
 
 		/******************/
 		/* Parse Indexing */
@@ -3487,6 +3488,7 @@ void GDScriptParser::_parse_class(ClassNode *p_class) {
 			} break;
 			case GDScriptTokenizer::TK_PR_CLASS_NAME: {
 
+				_mark_line_as_safe(tokenizer->get_token_line());
 				if (p_class->owner) {
 					_set_error("'class_name' is only valid for the main class namespace.");
 					return;
@@ -4018,8 +4020,7 @@ void GDScriptParser::_parse_class(ClassNode *p_class) {
 										tokenizer->advance();
 
 										if (tokenizer->get_token() == GDScriptTokenizer::TK_PARENTHESIS_CLOSE) {
-											ERR_EXPLAIN("Exporting bit flags hint requires string constants.");
-											WARN_DEPRECATED;
+											WARN_DEPRECATED_MSG("Exporting bit flags hint requires string constants.");
 											break;
 										}
 										if (tokenizer->get_token() != GDScriptTokenizer::TK_COMMA) {
@@ -5760,7 +5761,7 @@ GDScriptParser::DataType GDScriptParser::_type_from_gdtype(const GDScriptDataTyp
 
 	switch (p_gdtype.kind) {
 		case GDScriptDataType::UNINITIALIZED: {
-			ERR_EXPLAIN("Uninitialized datatype. Please report a bug.");
+			ERR_PRINT("Uninitialized datatype. Please report a bug.");
 		} break;
 		case GDScriptDataType::BUILTIN: {
 			result.kind = DataType::BUILTIN;
@@ -6694,8 +6695,7 @@ bool GDScriptParser::_get_function_signature(DataType &p_base_type, const String
 	}
 	if (!ClassDB::class_exists(native)) {
 		if (!check_types) return false;
-		ERR_EXPLAIN("Parser bug: Class '" + String(native) + "' not found.");
-		ERR_FAIL_V(false);
+		ERR_FAIL_V_MSG(false, "Parser bug: Class '" + String(native) + "' not found.");
 	}
 
 	MethodBind *method = ClassDB::get_method(native, p_function);
@@ -7203,8 +7203,7 @@ bool GDScriptParser::_get_member_type(const DataType &p_base_type, const StringN
 	}
 	if (!ClassDB::class_exists(native)) {
 		if (!check_types) return false;
-		ERR_EXPLAIN("Parser bug: Class '" + String(native) + "' not found.");
-		ERR_FAIL_V(false);
+		ERR_FAIL_V_MSG(false, "Parser bug: Class '" + String(native) + "' not found.");
 	}
 
 	bool valid = false;

@@ -270,10 +270,10 @@ void EditorAssetLibraryItemDescription::add_preview(int p_id, bool p_video, cons
 	if (!p_video) {
 		preview.image = get_icon("ThumbnailWait", "EditorIcons");
 	}
-	if (preview_images.size() == 0 && !p_video) {
+	preview_images.push_back(preview);
+	if (preview_images.size() == 1 && !p_video) {
 		_preview_click(p_id);
 	}
-	preview_images.push_back(preview);
 }
 
 EditorAssetLibraryItemDescription::EditorAssetLibraryItemDescription() {
@@ -333,18 +333,14 @@ void EditorAssetLibraryItemDownload::_http_download_completed(int p_status, int 
 
 	switch (p_status) {
 
-		case HTTPRequest::RESULT_CANT_RESOLVE: {
-			error_text = TTR("Can't resolve hostname:") + " " + host;
-			status->set_text(TTR("Can't resolve."));
-		} break;
-		case HTTPRequest::RESULT_BODY_SIZE_LIMIT_EXCEEDED:
+		case HTTPRequest::RESULT_CHUNKED_BODY_SIZE_MISMATCH:
 		case HTTPRequest::RESULT_CONNECTION_ERROR:
-		case HTTPRequest::RESULT_CHUNKED_BODY_SIZE_MISMATCH: {
+		case HTTPRequest::RESULT_BODY_SIZE_LIMIT_EXCEEDED: {
 			error_text = TTR("Connection error, please try again.");
 			status->set_text(TTR("Can't connect."));
 		} break;
-		case HTTPRequest::RESULT_SSL_HANDSHAKE_ERROR:
-		case HTTPRequest::RESULT_CANT_CONNECT: {
+		case HTTPRequest::RESULT_CANT_CONNECT:
+		case HTTPRequest::RESULT_SSL_HANDSHAKE_ERROR: {
 			error_text = TTR("Can't connect to host:") + " " + host;
 			status->set_text(TTR("Can't connect."));
 		} break;
@@ -352,13 +348,26 @@ void EditorAssetLibraryItemDownload::_http_download_completed(int p_status, int 
 			error_text = TTR("No response from host:") + " " + host;
 			status->set_text(TTR("No response."));
 		} break;
+		case HTTPRequest::RESULT_CANT_RESOLVE: {
+			error_text = TTR("Can't resolve hostname:") + " " + host;
+			status->set_text(TTR("Can't resolve."));
+		} break;
 		case HTTPRequest::RESULT_REQUEST_FAILED: {
 			error_text = TTR("Request failed, return code:") + " " + itos(p_code);
-			status->set_text(TTR("Request Failed."));
+			status->set_text(TTR("Request failed."));
+		} break;
+		case HTTPRequest::RESULT_DOWNLOAD_FILE_CANT_OPEN:
+		case HTTPRequest::RESULT_DOWNLOAD_FILE_WRITE_ERROR: {
+			error_text = TTR("Cannot save response to:") + " " + download->get_download_file();
+			status->set_text(TTR("Write error."));
 		} break;
 		case HTTPRequest::RESULT_REDIRECT_LIMIT_REACHED: {
 			error_text = TTR("Request failed, too many redirects");
-			status->set_text(TTR("Redirect Loop."));
+			status->set_text(TTR("Redirect loop."));
+		} break;
+		case HTTPRequest::RESULT_TIMEOUT: {
+			error_text = TTR("Request failed, timeout");
+			status->set_text(TTR("Timeout."));
 		} break;
 		default: {
 			if (p_code != 200) {
@@ -398,8 +407,6 @@ void EditorAssetLibraryItemDownload::configure(const String &p_title, int p_asse
 		icon->set_texture(get_icon("DefaultProjectIcon", "EditorIcons"));
 	host = p_download_url;
 	sha256 = p_sha256_hash;
-	asset_installer->connect("confirmed", this, "_close");
-	dismiss->set_normal_texture(get_icon("Close", "EditorIcons"));
 	_make_request();
 }
 
@@ -407,9 +414,11 @@ void EditorAssetLibraryItemDownload::_notification(int p_what) {
 
 	switch (p_what) {
 
-		case NOTIFICATION_READY: {
+		// FIXME: The editor crashes if 'NOTICATION_THEME_CHANGED' is used.
+		case NOTIFICATION_ENTER_TREE: {
 
 			add_style_override("panel", get_stylebox("panel", "TabContainer"));
+			dismiss->set_normal_texture(get_icon("Close", "EditorIcons"));
 		} break;
 		case NOTIFICATION_PROCESS: {
 
@@ -463,9 +472,8 @@ void EditorAssetLibraryItemDownload::_notification(int p_what) {
 }
 void EditorAssetLibraryItemDownload::_close() {
 
-	DirAccess *da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
-	da->remove(download->get_download_file()); //clean up removed file
-	memdelete(da);
+	// Clean up downloaded file.
+	DirAccess::remove_file_or_error(download->get_download_file());
 	queue_delete();
 }
 
@@ -562,6 +570,7 @@ EditorAssetLibraryItemDownload::EditorAssetLibraryItemDownload() {
 
 	asset_installer = memnew(EditorAssetInstaller);
 	add_child(asset_installer);
+	asset_installer->connect("confirmed", this, "_close");
 
 	prev_status = -1;
 
@@ -749,7 +758,7 @@ void EditorAssetLibrary::_image_update(bool use_cache, bool final, const PoolByt
 			switch (image_queue[p_queue_id].image_type) {
 				case IMAGE_QUEUE_ICON:
 
-					image->resize(64 * EDSCALE, 64 * EDSCALE, Image::INTERPOLATE_CUBIC);
+					image->resize(64 * EDSCALE, 64 * EDSCALE, Image::INTERPOLATE_LANCZOS);
 
 					break;
 				case IMAGE_QUEUE_THUMBNAIL: {

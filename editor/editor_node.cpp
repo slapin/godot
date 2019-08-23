@@ -334,6 +334,11 @@ void EditorNode::_notification(int p_what) {
 			OS::get_singleton()->set_low_processor_usage_mode_sleep_usec(int(EDITOR_GET("interface/editor/unfocused_low_processor_mode_sleep_usec")));
 		} break;
 
+		case MainLoop::NOTIFICATION_WM_ABOUT: {
+
+			show_about();
+		} break;
+
 		case MainLoop::NOTIFICATION_WM_QUIT_REQUEST: {
 
 			_menu_option_confirm(FILE_QUIT, false);
@@ -1576,6 +1581,7 @@ void EditorNode::push_item(Object *p_object, const String &p_property, bool p_in
 		get_inspector()->edit(NULL);
 		node_dock->set_node(NULL);
 		scene_tree_dock->set_selected(NULL);
+		inspector_dock->update(NULL);
 		return;
 	}
 
@@ -1664,9 +1670,10 @@ void EditorNode::_edit_current() {
 
 		Resource *current_res = Object::cast_to<Resource>(current_obj);
 		ERR_FAIL_COND(!current_res);
-		scene_tree_dock->set_selected(NULL);
 		get_inspector()->edit(current_res);
+		scene_tree_dock->set_selected(NULL);
 		node_dock->set_node(NULL);
+		inspector_dock->update(NULL);
 		EditorNode::get_singleton()->get_import_dock()->set_edit_path(current_res->get_path());
 
 		int subr_idx = current_res->get_path().find("::");
@@ -1693,9 +1700,11 @@ void EditorNode::_edit_current() {
 		if (current_node->is_inside_tree()) {
 			node_dock->set_node(current_node);
 			scene_tree_dock->set_selected(current_node);
+			inspector_dock->update(current_node);
 		} else {
 			node_dock->set_node(NULL);
 			scene_tree_dock->set_selected(NULL);
+			inspector_dock->update(NULL);
 		}
 
 		if (get_edited_scene() && get_edited_scene()->get_filename() != String()) {
@@ -1715,6 +1724,8 @@ void EditorNode::_edit_current() {
 
 		get_inspector()->edit(current_obj);
 		node_dock->set_node(NULL);
+		scene_tree_dock->set_selected(NULL);
+		inspector_dock->update(NULL);
 	}
 
 	inspector_dock->set_warning(editable_warning);
@@ -1915,10 +1926,7 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 	switch (p_option) {
 		case FILE_NEW_SCENE: {
 
-			int idx = editor_data.add_edited_scene(-1);
-			_scene_tab_changed(idx);
-			editor_data.clear_editor_states();
-			_update_scene_tabs();
+			new_scene();
 
 		} break;
 		case FILE_NEW_INHERITED_SCENE:
@@ -2640,7 +2648,9 @@ void EditorNode::_discard_changes(const String &p_str) {
 			Node *scene = editor_data.get_edited_scene_root(tab_closing);
 			if (scene != NULL) {
 				String scene_filename = scene->get_filename();
-				previous_scenes.push_back(scene_filename);
+				if (scene_filename != "") {
+					previous_scenes.push_back(scene_filename);
+				}
 			}
 
 			_remove_scene(tab_closing);
@@ -2775,6 +2785,19 @@ void EditorNode::_editor_select(int p_which) {
 	}
 }
 
+void EditorNode::select_editor_by_name(const String &p_name) {
+	ERR_FAIL_COND(p_name == "");
+
+	for (int i = 0; i < main_editor_buttons.size(); i++) {
+		if (main_editor_buttons[i]->get_text() == p_name) {
+			_editor_select(i);
+			return;
+		}
+	}
+
+	ERR_FAIL_MSG("The editor name '" + p_name + "' was not found.");
+}
+
 void EditorNode::add_editor_plugin(EditorPlugin *p_editor, bool p_config_changed) {
 
 	if (p_editor->has_main_screen()) {
@@ -2898,36 +2921,39 @@ void EditorNode::set_addon_plugin_enabled(const String &p_addon, bool p_enabled,
 		return;
 	}
 
-	String path = cf->get_value("plugin", "script");
-	path = String("res://addons").plus_file(p_addon).plus_file(path);
+	String script_path = cf->get_value("plugin", "script");
+	Ref<Script> script; // We need to save it for creating "ep" below.
 
-	Ref<Script> script = ResourceLoader::load(path);
+	// Only try to load the script if it has a name. Else, the plugin has no init script.
+	if (script_path.length() > 0) {
+		script_path = String("res://addons").plus_file(p_addon).plus_file(script_path);
+		script = ResourceLoader::load(script_path);
 
-	if (script.is_null()) {
-		show_warning(vformat(TTR("Unable to load addon script from path: '%s'."), path));
-		return;
-	}
+		if (script.is_null()) {
+			show_warning(vformat(TTR("Unable to load addon script from path: '%s'."), script_path));
+			return;
+		}
 
-	//errors in the script cause the base_type to be ""
-	if (String(script->get_instance_base_type()) == "") {
-		show_warning(vformat(TTR("Unable to load addon script from path: '%s' There seems to be an error in the code, please check the syntax."), path));
-		return;
-	}
+		// Errors in the script cause the base_type to be an empty string.
+		if (String(script->get_instance_base_type()) == "") {
+			show_warning(vformat(TTR("Unable to load addon script from path: '%s' There seems to be an error in the code, please check the syntax."), script_path));
+			return;
+		}
 
-	//could check inheritance..
-	if (String(script->get_instance_base_type()) != "EditorPlugin") {
-		show_warning(vformat(TTR("Unable to load addon script from path: '%s' Base type is not EditorPlugin."), path));
-		return;
-	}
+		// Plugin init scripts must inherit from EditorPlugin and be tools.
+		if (String(script->get_instance_base_type()) != "EditorPlugin") {
+			show_warning(vformat(TTR("Unable to load addon script from path: '%s' Base type is not EditorPlugin."), script_path));
+			return;
+		}
 
-	if (!script->is_tool()) {
-		show_warning(vformat(TTR("Unable to load addon script from path: '%s' Script is not in tool mode."), path));
-		return;
+		if (!script->is_tool()) {
+			show_warning(vformat(TTR("Unable to load addon script from path: '%s' Script is not in tool mode."), script_path));
+			return;
+		}
 	}
 
 	EditorPlugin *ep = memnew(EditorPlugin);
 	ep->set_script(script.get_ref_ptr());
-	ep->set_dir_cache(p_addon);
 	plugin_addons[p_addon] = ep;
 	add_editor_plugin(ep, p_config_changed);
 
@@ -3133,6 +3159,14 @@ bool EditorNode::is_scene_open(const String &p_path) {
 
 void EditorNode::fix_dependencies(const String &p_for_file) {
 	dependency_fixer->edit(p_for_file);
+}
+
+int EditorNode::new_scene() {
+	int idx = editor_data.add_edited_scene(-1);
+	_scene_tab_changed(idx);
+	editor_data.clear_editor_states();
+	_update_scene_tabs();
+	return idx;
 }
 
 Error EditorNode::load_scene(const String &p_scene, bool p_ignore_broken_deps, bool p_set_inherited, bool p_clear_errors, bool p_force_open_imported) {
@@ -3793,9 +3827,13 @@ void EditorNode::show_accept(const String &p_text, const String &p_title) {
 
 void EditorNode::show_warning(const String &p_text, const String &p_title) {
 
-	warning->set_text(p_text);
-	warning->set_title(p_title);
-	warning->popup_centered_minsize();
+	if (warning->is_inside_tree()) {
+		warning->set_text(p_text);
+		warning->set_title(p_title);
+		warning->popup_centered_minsize();
+	} else {
+		WARN_PRINTS(p_title + " " + p_text);
+	}
 }
 
 void EditorNode::_copy_warning(const String &p_str) {
@@ -4339,6 +4377,15 @@ bool EditorNode::ensure_main_scene(bool p_from_native) {
 	return true;
 }
 
+void EditorNode::run_play() {
+	_menu_option_confirm(RUN_STOP, true);
+	_run(false);
+}
+
+void EditorNode::run_stop() {
+	_menu_option_confirm(RUN_STOP, false);
+}
+
 int EditorNode::get_current_tab() {
 	return scene_tabs->get_current_tab();
 }
@@ -4756,8 +4803,7 @@ void EditorNode::remove_control_from_dock(Control *p_control) {
 		}
 	}
 
-	ERR_EXPLAIN("Control was not in dock");
-	ERR_FAIL_COND(!dock);
+	ERR_FAIL_COND_MSG(!dock, "Control was not in dock.");
 
 	dock->remove_child(p_control);
 	_update_dock_slots_visibility();
@@ -5469,6 +5515,9 @@ EditorNode::EditorNode() {
 		}
 	}
 
+	// Define a minimum window size to prevent UI elements from overlapping or being cut off
+	OS::get_singleton()->set_min_window_size(Size2(1024, 600) * EDSCALE);
+
 	ResourceLoader::set_abort_on_missing_resources(false);
 	FileDialog::set_default_show_hidden_files(EditorSettings::get_singleton()->get("filesystem/file_dialog/show_hidden_files"));
 	EditorFileDialog::set_default_show_hidden_files(EditorSettings::get_singleton()->get("filesystem/file_dialog/show_hidden_files"));
@@ -5907,19 +5956,19 @@ EditorNode::EditorNode() {
 	p->add_shortcut(ED_SHORTCUT("editor/new_scene", TTR("New Scene")), FILE_NEW_SCENE);
 	p->add_shortcut(ED_SHORTCUT("editor/new_inherited_scene", TTR("New Inherited Scene...")), FILE_NEW_INHERITED_SCENE);
 	p->add_shortcut(ED_SHORTCUT("editor/open_scene", TTR("Open Scene..."), KEY_MASK_CMD + KEY_O), FILE_OPEN_SCENE);
+	p->add_shortcut(ED_SHORTCUT("editor/reopen_closed_scene", TTR("Reopen Closed Scene"), KEY_MASK_CMD + KEY_MASK_SHIFT + KEY_T), FILE_OPEN_PREV);
+	p->add_submenu_item(TTR("Open Recent"), "RecentScenes", FILE_OPEN_RECENT);
+
 	p->add_separator();
 	p->add_shortcut(ED_SHORTCUT("editor/save_scene", TTR("Save Scene"), KEY_MASK_CMD + KEY_S), FILE_SAVE_SCENE);
 	p->add_shortcut(ED_SHORTCUT("editor/save_scene_as", TTR("Save Scene As..."), KEY_MASK_SHIFT + KEY_MASK_CMD + KEY_S), FILE_SAVE_AS_SCENE);
 	p->add_shortcut(ED_SHORTCUT("editor/save_all_scenes", TTR("Save All Scenes"), KEY_MASK_ALT + KEY_MASK_SHIFT + KEY_MASK_CMD + KEY_S), FILE_SAVE_ALL_SCENES);
-	p->add_separator();
-	p->add_shortcut(ED_SHORTCUT("editor/close_scene", TTR("Close Scene"), KEY_MASK_SHIFT + KEY_MASK_CMD + KEY_W), FILE_CLOSE);
-	p->add_separator();
-	p->add_submenu_item(TTR("Open Recent"), "RecentScenes", FILE_OPEN_RECENT);
-	p->add_shortcut(ED_SHORTCUT("editor/reopen_closed_scene", TTR("Reopen Closed Scene"), KEY_MASK_CMD + KEY_MASK_SHIFT + KEY_T), FILE_OPEN_PREV);
+
 	p->add_separator();
 	p->add_shortcut(ED_SHORTCUT("editor/quick_open", TTR("Quick Open..."), KEY_MASK_SHIFT + KEY_MASK_ALT + KEY_O), FILE_QUICK_OPEN);
 	p->add_shortcut(ED_SHORTCUT("editor/quick_open_scene", TTR("Quick Open Scene..."), KEY_MASK_SHIFT + KEY_MASK_CMD + KEY_O), FILE_QUICK_OPEN_SCENE);
 	p->add_shortcut(ED_SHORTCUT("editor/quick_open_script", TTR("Quick Open Script..."), KEY_MASK_ALT + KEY_MASK_CMD + KEY_O), FILE_QUICK_OPEN_SCRIPT);
+
 	p->add_separator();
 	PopupMenu *pm_export = memnew(PopupMenu);
 	pm_export->set_name("Export");
@@ -5932,8 +5981,10 @@ EditorNode::EditorNode() {
 	p->add_separator();
 	p->add_shortcut(ED_SHORTCUT("editor/undo", TTR("Undo"), KEY_MASK_CMD + KEY_Z), EDIT_UNDO, true);
 	p->add_shortcut(ED_SHORTCUT("editor/redo", TTR("Redo"), KEY_MASK_SHIFT + KEY_MASK_CMD + KEY_Z), EDIT_REDO, true);
+
 	p->add_separator();
 	p->add_shortcut(ED_SHORTCUT("editor/revert_scene", TTR("Revert Scene")), EDIT_REVERT);
+	p->add_shortcut(ED_SHORTCUT("editor/close_scene", TTR("Close Scene"), KEY_MASK_SHIFT + KEY_MASK_CMD + KEY_W), FILE_CLOSE);
 
 	recent_scenes = memnew(PopupMenu);
 	recent_scenes->set_name("RecentScenes");
@@ -5941,7 +5992,7 @@ EditorNode::EditorNode() {
 	recent_scenes->connect("id_pressed", this, "_open_recent_scene");
 
 	p->add_separator();
-	p->add_item(TTR("Quit"), FILE_QUIT, KEY_MASK_CMD + KEY_Q);
+	p->add_shortcut(ED_SHORTCUT("editor/file_quit", TTR("Quit"), KEY_MASK_CMD + KEY_Q), FILE_QUIT, true);
 
 	project_menu = memnew(MenuButton);
 	project_menu->set_flat(false);
@@ -5953,31 +6004,31 @@ EditorNode::EditorNode() {
 
 	p = project_menu->get_popup();
 	p->set_hide_on_window_lose_focus(true);
-	p->add_shortcut(ED_SHORTCUT("editor/project_settings", TTR("Project Settings")), RUN_SETTINGS);
-	p->add_separator();
+	p->add_shortcut(ED_SHORTCUT("editor/project_settings", TTR("Project Settings...")), RUN_SETTINGS);
 	p->connect("id_pressed", this, "_menu_option");
-	p->add_shortcut(ED_SHORTCUT("editor/export", TTR("Export")), FILE_EXPORT_PROJECT);
+
+	p->add_separator();
+	p->add_shortcut(ED_SHORTCUT("editor/export", TTR("Export...")), FILE_EXPORT_PROJECT);
+	p->add_item(TTR("Install Android Build Template..."), FILE_INSTALL_ANDROID_SOURCE);
+	p->add_item(TTR("Open Project Data Folder"), RUN_PROJECT_DATA_FOLDER);
 
 	plugin_config_dialog = memnew(PluginConfigDialog);
 	plugin_config_dialog->connect("plugin_ready", this, "_on_plugin_ready");
 	gui_base->add_child(plugin_config_dialog);
 
+	p->add_separator();
 	tool_menu = memnew(PopupMenu);
 	tool_menu->set_name("Tools");
 	tool_menu->connect("index_pressed", this, "_tool_menu_option");
-	p->add_separator();
 	p->add_child(tool_menu);
 	p->add_submenu_item(TTR("Tools"), "Tools");
-	tool_menu->add_item(TTR("Orphan Resource Explorer"), TOOLS_ORPHAN_RESOURCES);
-	tool_menu->add_item(TTR("Open Project Data Folder"), RUN_PROJECT_DATA_FOLDER);
-	p->add_separator();
-	p->add_item(TTR("Install Android Build Template"), FILE_INSTALL_ANDROID_SOURCE);
-	p->add_separator();
+	tool_menu->add_item(TTR("Orphan Resource Explorer..."), TOOLS_ORPHAN_RESOURCES);
 
+	p->add_separator();
 #ifdef OSX_ENABLED
-	p->add_item(TTR("Quit to Project List"), RUN_PROJECT_MANAGER, KEY_MASK_SHIFT + KEY_MASK_ALT + KEY_Q);
+	p->add_shortcut(ED_SHORTCUT("editor/quit_to_project_list", TTR("Quit to Project List"), KEY_MASK_SHIFT + KEY_MASK_ALT + KEY_Q), RUN_PROJECT_MANAGER, true);
 #else
-	p->add_item(TTR("Quit to Project List"), RUN_PROJECT_MANAGER, KEY_MASK_SHIFT + KEY_MASK_CMD + KEY_Q);
+	p->add_shortcut(ED_SHORTCUT("editor/quit_to_project_list", TTR("Quit to Project List"), KEY_MASK_SHIFT + KEY_MASK_CMD + KEY_Q), RUN_PROJECT_MANAGER, true);
 #endif
 
 	menu_hb->add_spacer();
@@ -6025,7 +6076,7 @@ EditorNode::EditorNode() {
 
 	p = settings_menu->get_popup();
 	p->set_hide_on_window_lose_focus(true);
-	p->add_shortcut(ED_SHORTCUT("editor/editor_settings", TTR("Editor Settings")), SETTINGS_PREFERENCES);
+	p->add_shortcut(ED_SHORTCUT("editor/editor_settings", TTR("Editor Settings...")), SETTINGS_PREFERENCES);
 	p->add_separator();
 
 	editor_layouts = memnew(PopupMenu);
@@ -6060,11 +6111,8 @@ EditorNode::EditorNode() {
 	}
 	p->add_separator();
 
-	p->add_item(TTR("Manage Editor Features"), SETTINGS_MANAGE_FEATURE_PROFILES);
-
-	p->add_separator();
-
-	p->add_item(TTR("Manage Export Templates"), SETTINGS_MANAGE_EXPORT_TEMPLATES);
+	p->add_item(TTR("Manage Editor Features..."), SETTINGS_MANAGE_FEATURE_PROFILES);
+	p->add_item(TTR("Manage Export Templates..."), SETTINGS_MANAGE_EXPORT_TEMPLATES);
 
 	// Help Menu
 	help_menu = memnew(MenuButton);

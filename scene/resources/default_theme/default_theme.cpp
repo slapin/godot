@@ -760,6 +760,7 @@ void fill_default_theme(Ref<Theme> &theme, const Ref<Font> &default_font, const 
 	// FileDialog
 
 	theme->set_icon("folder", "FileDialog", make_icon(icon_folder_png));
+	theme->set_color("folder_icon_modulate", "FileDialog", Color(1, 1, 1));
 	theme->set_color("files_disabled", "FileDialog", Color(0, 0, 0, 0.7));
 
 	// colorPicker
@@ -892,8 +893,9 @@ void make_default_theme(bool p_hidpi, Ref<Font> p_font) {
 
 void clear_default_theme() {
 
-	Theme::set_default(Ref<Theme>());
-	Theme::set_default_icon(Ref<Texture>());
-	Theme::set_default_style(Ref<StyleBox>());
-	Theme::set_default_font(Ref<Font>());
+	Theme::set_project_default(NULL);
+	Theme::set_default(NULL);
+	Theme::set_default_icon(NULL);
+	Theme::set_default_style(NULL);
+	Theme::set_default_font(NULL);
 }

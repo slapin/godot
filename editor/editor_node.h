@@ -86,10 +86,6 @@
 #include "scene/gui/tree.h"
 #include "scene/gui/viewport_container.h"
 
-/**
-	@author Juan Linietsky <reduzio@gmail.com>
-*/
-
 typedef void (*EditorNodeInitCallback)();
 typedef void (*EditorPluginInitializeCallback)();
 typedef bool (*EditorBuildCallback)();
@@ -732,6 +728,8 @@ public:
 	bool item_has_editor(Object *p_object);
 	void hide_top_editors();
 
+	void select_editor_by_name(const String &p_name);
+
 	void open_request(const String &p_path);
 
 	bool is_changing_scene() const;
@@ -747,6 +745,7 @@ public:
 
 	void fix_dependencies(const String &p_for_file);
 	void clear_scene() { _cleanup_scene(); }
+	int new_scene();
 	Error load_scene(const String &p_scene, bool p_ignore_broken_deps = false, bool p_set_inherited = false, bool p_clear_errors = true, bool p_force_open_imported = false);
 	Error load_resource(const String &p_resource, bool p_ignore_broken_deps = false);
 
@@ -867,6 +866,9 @@ public:
 	static void add_build_callback(EditorBuildCallback p_callback);
 
 	bool ensure_main_scene(bool p_from_native);
+
+	void run_play();
+	void run_stop();
 };
 
 struct EditorProgress {

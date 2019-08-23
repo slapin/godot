@@ -195,7 +195,7 @@ private:
 					unzFile pkg = unzOpen2(valid_path.utf8().get_data(), &io);
 					if (!pkg) {
 
-						set_message(TTR("Error opening package file, not in zip format."), MESSAGE_ERROR);
+						set_message(TTR("Error opening package file, not in ZIP format."), MESSAGE_ERROR);
 						memdelete(d);
 						get_ok()->set_disabled(true);
 						unzClose(pkg);
@@ -519,7 +519,7 @@ private:
 					unzFile pkg = unzOpen2(zip_path.utf8().get_data(), &io);
 					if (!pkg) {
 
-						dialog_error->set_text(TTR("Error opening package file, not in zip format."));
+						dialog_error->set_text(TTR("Error opening package file, not in ZIP format."));
 						dialog_error->popup_centered_minsize();
 						return;
 					}
@@ -997,7 +997,6 @@ public:
 
 	void load_projects();
 	void set_search_term(String p_search_term);
-	void set_filter_option(ProjectListFilter::FilterOption p_option);
 	void set_order_option(ProjectListFilter::FilterOption p_option);
 	void sort_projects();
 	int get_project_count() const;
@@ -1030,7 +1029,6 @@ private:
 	static void load_project_data(const String &p_property_key, Item &p_item, bool p_favorite);
 
 	String _search_term;
-	ProjectListFilter::FilterOption _filter_option;
 	ProjectListFilter::FilterOption _order_option;
 	Set<String> _selected_project_keys;
 	String _last_clicked; // Project key
@@ -1063,7 +1061,6 @@ struct ProjectListComparator {
 };
 
 ProjectList::ProjectList() {
-	_filter_option = ProjectListFilter::FILTER_NAME;
 	_order_option = ProjectListFilter::FILTER_MODIFIED;
 
 	_scroll_children = memnew(VBoxContainer);
@@ -1109,7 +1106,7 @@ void ProjectList::load_project_icon(int p_index) {
 		Error err = img->load(item.icon.replace_first("res://", item.path + "/"));
 		if (err == OK) {
 
-			img->resize(default_icon->get_width(), default_icon->get_height());
+			img->resize(default_icon->get_width(), default_icon->get_height(), Image::INTERPOLATE_LANCZOS);
 			Ref<ImageTexture> it = memnew(ImageTexture);
 			it->create_from_image(img);
 			icon = it;
@@ -1258,19 +1255,22 @@ void ProjectList::create_project_item_control(int p_index) {
 
 	TextureRect *tf = memnew(TextureRect);
 	tf->set_texture(get_icon("DefaultProjectIcon", "EditorIcons"));
+	if (item.missing) {
+		tf->set_modulate(Color(1, 1, 1, 0.5));
+	}
 	hb->add_child(tf);
 	hb->icon = tf;
 
 	VBoxContainer *vb = memnew(VBoxContainer);
 	if (item.grayed)
-		vb->set_modulate(Color(0.5, 0.5, 0.5));
+		vb->set_modulate(Color(1, 1, 1, 0.5));
 	vb->set_h_size_flags(SIZE_EXPAND_FILL);
 	hb->add_child(vb);
 	Control *ec = memnew(Control);
 	ec->set_custom_minimum_size(Size2(0, 1));
 	ec->set_mouse_filter(MOUSE_FILTER_PASS);
 	vb->add_child(ec);
-	Label *title = memnew(Label(item.project_name));
+	Label *title = memnew(Label(!item.missing ? item.project_name : TTR("Missing Project")));
 	title->add_font_override("font", get_font("title", "EditorFonts"));
 	title->add_color_override("font_color", font_color);
 	title->set_clip_text(true);
@@ -1281,12 +1281,21 @@ void ProjectList::create_project_item_control(int p_index) {
 	vb->add_child(path_hb);
 
 	Button *show = memnew(Button);
-	show->set_icon(get_icon("Load", "EditorIcons")); // Folder icon
+	// Display a folder icon if the project directory can be opened, or a "broken file" icon if it can't
+	show->set_icon(get_icon(!item.missing ? "Load" : "FileBroken", "EditorIcons"));
 	show->set_flat(true);
-	show->set_modulate(Color(1, 1, 1, 0.5));
+	if (!item.grayed) {
+		// Don't make the icon less prominent if the parent is already grayed out
+		show->set_modulate(Color(1, 1, 1, 0.5));
+	}
 	path_hb->add_child(show);
-	show->connect("pressed", this, "_show_project", varray(item.path));
-	show->set_tooltip(TTR("Show in File Manager"));
+
+	if (!item.missing) {
+		show->connect("pressed", this, "_show_project", varray(item.path));
+		show->set_tooltip(TTR("Show in File Manager"));
+	} else {
+		show->set_tooltip(TTR("Error: Project is missing on the filesystem."));
+	}
 
 	Label *fpath = memnew(Label(item.path));
 	path_hb->add_child(fpath);
@@ -1303,16 +1312,10 @@ void ProjectList::set_search_term(String p_search_term) {
 	_search_term = p_search_term;
 }
 
-void ProjectList::set_filter_option(ProjectListFilter::FilterOption p_option) {
-	if (_filter_option != p_option) {
-		_filter_option = p_option;
-	}
-}
-
 void ProjectList::set_order_option(ProjectListFilter::FilterOption p_option) {
 	if (_order_option != p_option) {
 		_order_option = p_option;
-		EditorSettings::get_singleton()->set("project_manager/sorting_order", (int)_filter_option);
+		EditorSettings::get_singleton()->set("project_manager/sorting_order", (int)_order_option);
 		EditorSettings::get_singleton()->save();
 	}
 }
@@ -1328,11 +1331,18 @@ void ProjectList::sort_projects() {
 
 		bool visible = true;
 		if (_search_term != "") {
-			if (_filter_option == ProjectListFilter::FILTER_PATH) {
-				visible = item.path.findn(_search_term) != -1;
-			} else if (_filter_option == ProjectListFilter::FILTER_NAME) {
-				visible = item.project_name.findn(_search_term) != -1;
+
+			String search_path;
+			if (_search_term.find("/") != -1) {
+				// Search path will match the whole path
+				search_path = item.path;
+			} else {
+				// Search path will only match the last path component to make searching more strict
+				search_path = item.path.get_file();
 			}
+
+			// When searching, display projects whose name or path contain the search term
+			visible = item.project_name.findn(_search_term) != -1 || search_path.findn(_search_term) != -1;
 		}
 
 		item.control->set_visible(visible);
@@ -1694,7 +1704,6 @@ void ProjectList::_bind_methods() {
 	ClassDB::bind_method("_panel_input", &ProjectList::_panel_input);
 	ClassDB::bind_method("_favorite_pressed", &ProjectList::_favorite_pressed);
 	ClassDB::bind_method("_show_project", &ProjectList::_show_project);
-	//ClassDB::bind_method("_unhandled_input", &ProjectList::_unhandled_input);
 
 	ADD_SIGNAL(MethodInfo(SIGNAL_SELECTION_CHANGED));
 	ADD_SIGNAL(MethodInfo(SIGNAL_PROJECT_ASK_OPEN));
@@ -1740,10 +1749,18 @@ void ProjectManager::_update_project_buttons() {
 	Vector<ProjectList::Item> selected_projects = _project_list->get_selected_projects();
 	bool empty_selection = selected_projects.empty();
 
+	bool is_missing_project_selected = false;
+	for (int i = 0; i < selected_projects.size(); ++i) {
+		if (selected_projects[i].missing) {
+			is_missing_project_selected = true;
+			break;
+		}
+	}
+
 	erase_btn->set_disabled(empty_selection);
-	open_btn->set_disabled(empty_selection);
-	rename_btn->set_disabled(empty_selection);
-	run_btn->set_disabled(empty_selection);
+	open_btn->set_disabled(empty_selection || is_missing_project_selected);
+	rename_btn->set_disabled(empty_selection || is_missing_project_selected);
+	run_btn->set_disabled(empty_selection || is_missing_project_selected);
 
 	erase_missing_btn->set_visible(_project_list->is_any_project_missing());
 }
@@ -1754,8 +1771,19 @@ void ProjectManager::_unhandled_input(const Ref<InputEvent> &p_ev) {
 
 	if (k.is_valid()) {
 
-		if (!k->is_pressed())
+		if (!k->is_pressed()) {
 			return;
+		}
+
+		// Pressing Command + Q quits the Project Manager
+		// This is handled by the platform implementation on macOS,
+		// so only define the shortcut on other platforms
+#ifndef OSX_ENABLED
+		if (k->get_scancode_with_modifiers() == (KEY_MASK_CMD | KEY_Q)) {
+			_dim_window();
+			get_tree()->quit();
+		}
+#endif
 
 		if (tabs->get_current_tab() != 0)
 			return;
@@ -1834,7 +1862,6 @@ void ProjectManager::_unhandled_input(const Ref<InputEvent> &p_ev) {
 
 void ProjectManager::_load_recent_projects() {
 
-	_project_list->set_filter_option(project_filter->get_filter_option());
 	_project_list->set_order_option(project_order_filter->get_filter_option());
 	_project_list->set_search_term(project_filter->get_search_term());
 	_project_list->load_projects();
@@ -1921,6 +1948,9 @@ void ProjectManager::_open_selected_projects_ask() {
 	}
 
 	ProjectList::Item project = _project_list->get_selected_projects()[0];
+	if (project.missing) {
+		return;
+	}
 
 	// Update the project settings or don't open
 	String conf = project.path.plus_file("project.godot");
@@ -2075,10 +2105,12 @@ void ProjectManager::_rename_project() {
 
 void ProjectManager::_erase_project_confirm() {
 	_project_list->erase_selected_projects();
+	_update_project_buttons();
 }
 
 void ProjectManager::_erase_missing_projects_confirm() {
 	_project_list->erase_missing_projects();
+	_update_project_buttons();
 }
 
 void ProjectManager::_erase_project() {
@@ -2101,7 +2133,7 @@ void ProjectManager::_erase_project() {
 
 void ProjectManager::_erase_missing_projects() {
 
-	erase_missing_ask->set_text(TTR("Remove all missing projects from the list? (Folders contents will not be modified)"));
+	erase_missing_ask->set_text(TTR("Remove all missing projects from the list?\nThe project folders' contents won't be modified."));
 	erase_missing_ask->popup_centered_minsize();
 }
 
@@ -2196,7 +2228,6 @@ void ProjectManager::_on_order_option_changed() {
 }
 
 void ProjectManager::_on_filter_option_changed() {
-	_project_list->set_filter_option(project_filter->get_filter_option());
 	_project_list->set_search_term(project_filter->get_search_term());
 	_project_list->sort_projects();
 }
@@ -2268,6 +2299,9 @@ ProjectManager::ProjectManager() {
 			} break;
 		}
 
+		// Define a minimum window size to prevent UI elements from overlapping or being cut off
+		OS::get_singleton()->set_min_window_size(Size2(750, 420) * EDSCALE);
+
 #ifndef OSX_ENABLED
 		// The macOS platform implementation uses its own hiDPI window resizing code
 		// TODO: Resize windows on hiDPI displays on Windows and Linux and remove the line below
@@ -2293,25 +2327,10 @@ ProjectManager::ProjectManager() {
 	VBoxContainer *vb = memnew(VBoxContainer);
 	panel->add_child(vb);
 	vb->set_anchors_and_margins_preset(Control::PRESET_WIDE, Control::PRESET_MODE_MINSIZE, 8 * EDSCALE);
-	vb->add_constant_override("separation", 8 * EDSCALE);
 
 	String cp;
 	cp += 0xA9;
 	OS::get_singleton()->set_window_title(VERSION_NAME + String(" - ") + TTR("Project Manager") + " - " + cp + " 2007-2019 Juan Linietsky, Ariel Manzur & Godot Contributors");
-
-	HBoxContainer *top_hb = memnew(HBoxContainer);
-	vb->add_child(top_hb);
-	Label *l = memnew(Label);
-	l->set_text(VERSION_NAME + String(" - ") + TTR("Project Manager"));
-	top_hb->add_child(l);
-	top_hb->add_spacer();
-	l = memnew(Label);
-	String hash = String(VERSION_HASH);
-	if (hash.length() != 0)
-		hash = "." + hash.left(9);
-	l->set_text("v" VERSION_FULL_BUILD "" + hash);
-	l->set_align(Label::ALIGN_CENTER);
-	top_hb->add_child(l);
 
 	Control *center_box = memnew(Control);
 	center_box->set_v_size_flags(SIZE_EXPAND_FILL);
@@ -2320,11 +2339,12 @@ ProjectManager::ProjectManager() {
 	tabs = memnew(TabContainer);
 	center_box->add_child(tabs);
 	tabs->set_anchors_and_margins_preset(Control::PRESET_WIDE);
+	tabs->set_tab_align(TabContainer::ALIGN_LEFT);
 
 	HBoxContainer *tree_hb = memnew(HBoxContainer);
 	projects_hb = tree_hb;
 
-	projects_hb->set_name(TTR("Project List"));
+	projects_hb->set_name(TTR("Projects"));
 
 	tabs->add_child(tree_hb);
 
@@ -2341,6 +2361,7 @@ ProjectManager::ProjectManager() {
 	sort_filter_titles.push_back("Path");
 	sort_filter_titles.push_back("Last Modified");
 	project_order_filter = memnew(ProjectListFilter);
+	project_order_filter->add_filter_option();
 	project_order_filter->_setup_filters(sort_filter_titles);
 	project_order_filter->set_filter_size(150);
 	sort_filters->add_child(project_order_filter);
@@ -2351,21 +2372,12 @@ ProjectManager::ProjectManager() {
 	project_order_filter->set_filter_option((ProjectListFilter::FilterOption)projects_sorting_order);
 
 	sort_filters->add_spacer(true);
-	Label *search_label = memnew(Label);
-	search_label->set_text(TTR("Search:"));
-	sort_filters->add_child(search_label);
 
-	HBoxContainer *search_filters = memnew(HBoxContainer);
-	Vector<String> vec2;
-	vec2.push_back("Name");
-	vec2.push_back("Path");
 	project_filter = memnew(ProjectListFilter);
-	project_filter->_setup_filters(vec2);
 	project_filter->add_search_box();
-	search_filters->add_child(project_filter);
 	project_filter->connect("filter_changed", this, "_on_filter_option_changed");
 	project_filter->set_custom_minimum_size(Size2(280, 10) * EDSCALE);
-	sort_filters->add_child(search_filters);
+	sort_filters->add_child(project_filter);
 
 	search_tree_vb->add_child(sort_filters);
 
@@ -2455,6 +2467,17 @@ ProjectManager::ProjectManager() {
 	settings_hb->set_alignment(BoxContainer::ALIGN_END);
 	settings_hb->set_h_grow_direction(Control::GROW_DIRECTION_BEGIN);
 
+	Label *version_label = memnew(Label);
+	String hash = String(VERSION_HASH);
+	if (hash.length() != 0) {
+		hash = "." + hash.left(9);
+	}
+	version_label->set_text("v" VERSION_FULL_BUILD "" + hash);
+	// Fade out the version label to be less prominent, but still readable
+	version_label->set_self_modulate(Color(1, 1, 1, 0.6));
+	version_label->set_align(Label::ALIGN_CENTER);
+	settings_hb->add_child(version_label);
+
 	language_btn = memnew(OptionButton);
 	language_btn->set_flat(true);
 	language_btn->set_focus_mode(Control::FOCUS_NONE);
@@ -2486,27 +2509,6 @@ ProjectManager::ProjectManager() {
 
 	center_box->add_child(settings_hb);
 	settings_hb->set_anchors_and_margins_preset(Control::PRESET_TOP_RIGHT);
-
-	CenterContainer *cc = memnew(CenterContainer);
-	Button *cancel = memnew(Button);
-	cancel->set_text(TTR("Exit"));
-	cancel->set_custom_minimum_size(Size2(100, 1) * EDSCALE);
-
-#ifndef OSX_ENABLED
-	// Pressing Command + Q quits the Project Manager
-	// This is handled by the platform implementation on macOS,
-	// so only define the shortcut on other platforms
-	InputEventKey *quit_key = memnew(InputEventKey);
-	quit_key->set_command(true);
-	quit_key->set_scancode(KEY_Q);
-	ShortCut *quit_shortcut = memnew(ShortCut);
-	quit_shortcut->set_shortcut(quit_key);
-	cancel->set_shortcut(quit_shortcut);
-#endif
-
-	cc->add_child(cancel);
-	cancel->connect("pressed", this, "_exit_dialog");
-	vb->add_child(cc);
 
 	//////////////////////////////////////////////////////////////
 
@@ -2628,11 +2630,20 @@ void ProjectListFilter::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("filter_changed"));
 }
 
+void ProjectListFilter::add_filter_option() {
+	filter_option = memnew(OptionButton);
+	filter_option->set_clip_text(true);
+	filter_option->connect("item_selected", this, "_filter_option_selected");
+	add_child(filter_option);
+}
+
 void ProjectListFilter::add_search_box() {
 	search_box = memnew(LineEdit);
+	search_box->set_placeholder(TTR("Search"));
 	search_box->connect("text_changed", this, "_search_text_changed");
 	search_box->set_h_size_flags(SIZE_EXPAND_FILL);
 	add_child(search_box);
+
 	has_search_box = true;
 }
 
@@ -2643,13 +2654,6 @@ void ProjectListFilter::set_filter_size(int h_size) {
 ProjectListFilter::ProjectListFilter() {
 
 	_current_filter = FILTER_NAME;
-
-	filter_option = memnew(OptionButton);
-	set_filter_size(80);
-	filter_option->set_clip_text(true);
-	filter_option->connect("item_selected", this, "_filter_option_selected");
-	add_child(filter_option);
-
 	has_search_box = false;
 }
 

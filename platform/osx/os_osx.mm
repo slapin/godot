@@ -1719,10 +1719,7 @@ Error OS_OSX::open_dynamic_library(const String p_path, void *&p_library_handle,
 	}
 
 	p_library_handle = dlopen(path.utf8().get_data(), RTLD_NOW);
-	if (!p_library_handle) {
-		ERR_EXPLAIN("Can't open dynamic library: " + p_path + ". Error: " + dlerror());
-		ERR_FAIL_V(ERR_CANT_OPEN);
-	}
+	ERR_FAIL_COND_V_MSG(!p_library_handle, ERR_CANT_OPEN, "Can't open dynamic library: " + p_path + ", error: " + dlerror() + ".");
 	return OK;
 }
 
@@ -1962,15 +1959,10 @@ void OS_OSX::set_native_icon(const String &p_filename) {
 	memdelete(f);
 
 	NSData *icon_data = [[[NSData alloc] initWithBytes:&data.write[0] length:len] autorelease];
-	if (!icon_data) {
-		ERR_EXPLAIN("Error reading icon data");
-		ERR_FAIL();
-	}
+	ERR_FAIL_COND_MSG(!icon_data, "Error reading icon data.");
+
 	NSImage *icon = [[[NSImage alloc] initWithData:icon_data] autorelease];
-	if (!icon) {
-		ERR_EXPLAIN("Error loading icon");
-		ERR_FAIL();
-	}
+	ERR_FAIL_COND_MSG(!icon, "Error loading icon.");
 
 	[NSApp setApplicationIconImage:icon];
 }
@@ -2411,7 +2403,7 @@ Size2 OS_OSX::get_min_window_size() const {
 void OS_OSX::set_min_window_size(const Size2 p_size) {
 
 	if ((p_size != Size2()) && (max_size != Size2()) && ((p_size.x > max_size.x) || (p_size.y > max_size.y))) {
-		WARN_PRINT("Minimum window size can't be larger than maximum window size!");
+		ERR_PRINT("Minimum window size can't be larger than maximum window size!");
 		return;
 	}
 	min_size = p_size;
@@ -2427,7 +2419,7 @@ void OS_OSX::set_min_window_size(const Size2 p_size) {
 void OS_OSX::set_max_window_size(const Size2 p_size) {
 
 	if ((p_size != Size2()) && ((p_size.x < min_size.x) || (p_size.y < min_size.y))) {
-		WARN_PRINT("Maximum window size can't be smaller than minimum window size!");
+		ERR_PRINT("Maximum window size can't be smaller than minimum window size!");
 		return;
 	}
 	max_size = p_size;

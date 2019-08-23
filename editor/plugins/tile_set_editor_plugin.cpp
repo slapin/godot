@@ -646,8 +646,7 @@ void TileSetEditor::_on_textures_added(const PoolStringArray &p_paths) {
 	for (int i = 0; i < p_paths.size(); i++) {
 		Ref<Texture> t = Ref<Texture>(ResourceLoader::load(p_paths[i]));
 
-		ERR_EXPLAIN("'" + p_paths[i] + "' is not a valid texture.");
-		ERR_CONTINUE(!t.is_valid());
+		ERR_CONTINUE_MSG(!t.is_valid(), "'" + p_paths[i] + "' is not a valid texture.");
 
 		if (texture_map.has(t->get_rid())) {
 			invalid_count++;
@@ -924,8 +923,7 @@ void TileSetEditor::_on_workspace_draw() {
 			case EDITMODE_OCCLUSION:
 			case EDITMODE_NAVIGATION: {
 				if (tileset->tile_get_tile_mode(get_current_tile()) == TileSet::AUTO_TILE || tileset->tile_get_tile_mode(get_current_tile()) == TileSet::ATLAS_TILE) {
-					Vector2 coord = edited_shape_coord;
-					draw_highlight_subtile(coord);
+					draw_highlight_subtile(edited_shape_coord);
 				}
 				draw_polygon_shapes();
 				draw_grid_snap();
@@ -1519,6 +1517,8 @@ void TileSetEditor::_on_workspace_input(const Ref<InputEvent> &p_ie) {
 										undo_redo->create_action(TTR("Edit Navigation Polygon"));
 										undo_redo->add_do_method(edited_navigation_shape.ptr(), "set_vertices", polygon);
 										undo_redo->add_undo_method(edited_navigation_shape.ptr(), "set_vertices", edited_navigation_shape->get_vertices());
+										undo_redo->add_do_method(edited_navigation_shape.ptr(), "clear_polygons");
+										undo_redo->add_undo_method(edited_navigation_shape.ptr(), "clear_polygons");
 										undo_redo->add_do_method(edited_navigation_shape.ptr(), "add_polygon", indices);
 										undo_redo->add_undo_method(edited_navigation_shape.ptr(), "add_polygon", edited_navigation_shape->get_polygon(0));
 										undo_redo->add_do_method(this, "_select_edited_shape_coord");
@@ -1872,7 +1872,7 @@ void TileSetEditor::_update_tile_data() {
 	} else {
 		int spacing = tileset->autotile_get_spacing(get_current_tile());
 		Vector2 size = tileset->tile_get_region(get_current_tile()).size;
-		Vector2i cell_count = size / (tileset->autotile_get_size(get_current_tile()) + Vector2(spacing, spacing));
+		Vector2 cell_count = (size / (tileset->autotile_get_size(get_current_tile()) + Vector2(spacing, spacing))).floor();
 		for (int y = 0; y < cell_count.y; y++) {
 			for (int x = 0; x < cell_count.x; x++) {
 				SubtileData data;
@@ -1974,7 +1974,7 @@ void TileSetEditor::_select_previous_tile() {
 			case EDITMODE_Z_INDEX: {
 				int spacing = tileset->autotile_get_spacing(get_current_tile());
 				Vector2 size = tileset->tile_get_region(get_current_tile()).size;
-				Vector2i cell_count = size / (tileset->autotile_get_size(get_current_tile()) + Vector2(spacing, spacing));
+				Vector2 cell_count = (size / (tileset->autotile_get_size(get_current_tile()) + Vector2(spacing, spacing))).floor();
 				cell_count -= Vector2(1, 1);
 				edited_shape_coord = cell_count;
 				_select_edited_shape_coord();
@@ -2031,7 +2031,7 @@ void TileSetEditor::_select_next_subtile() {
 	} else {
 		int spacing = tileset->autotile_get_spacing(get_current_tile());
 		Vector2 size = tileset->tile_get_region(get_current_tile()).size;
-		Vector2i cell_count = size / (tileset->autotile_get_size(get_current_tile()) + Vector2(spacing, spacing));
+		Vector2 cell_count = (size / (tileset->autotile_get_size(get_current_tile()) + Vector2(spacing, spacing))).floor();
 		if (edited_shape_coord.x >= cell_count.x - 1 && edited_shape_coord.y >= cell_count.y - 1) {
 			_select_next_tile();
 		} else {
@@ -2057,7 +2057,7 @@ void TileSetEditor::_select_previous_subtile() {
 	} else {
 		int spacing = tileset->autotile_get_spacing(get_current_tile());
 		Vector2 size = tileset->tile_get_region(get_current_tile()).size;
-		Vector2i cell_count = size / (tileset->autotile_get_size(get_current_tile()) + Vector2(spacing, spacing));
+		Vector2 cell_count = (size / (tileset->autotile_get_size(get_current_tile()) + Vector2(spacing, spacing))).floor();
 		if (edited_shape_coord.x <= 0 && edited_shape_coord.y <= 0) {
 			_select_previous_tile();
 		} else {
@@ -2077,9 +2077,9 @@ void TileSetEditor::_select_next_shape() {
 	} else if (edit_mode != EDITMODE_COLLISION) {
 		_select_next_subtile();
 	} else {
-		Vector2i edited_coord = Vector2();
+		Vector2i edited_coord = Vector2i();
 		if (tileset->tile_get_tile_mode(get_current_tile()) != TileSet::SINGLE_TILE) {
-			edited_coord = edited_shape_coord;
+			edited_coord = Vector2i(edited_shape_coord);
 		}
 		SubtileData data = current_tile_data[edited_coord];
 		if (data.collisions.size() == 0) {
@@ -2130,9 +2130,9 @@ void TileSetEditor::_select_previous_shape() {
 	} else if (edit_mode != EDITMODE_COLLISION) {
 		_select_previous_subtile();
 	} else {
-		Vector2i edited_coord = Vector2();
+		Vector2i edited_coord = Vector2i();
 		if (tileset->tile_get_tile_mode(get_current_tile()) != TileSet::SINGLE_TILE) {
-			edited_coord = edited_shape_coord;
+			edited_coord = Vector2i(edited_shape_coord);
 		}
 		SubtileData data = current_tile_data[edited_coord];
 		if (data.collisions.size() == 0) {

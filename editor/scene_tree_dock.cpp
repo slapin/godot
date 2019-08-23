@@ -399,6 +399,9 @@ void SceneTreeDock::_tool_selected(int p_tool, bool p_confirm_override) {
 			}
 
 			Node *selected = scene_tree->get_selected();
+			if (!selected && !editor_selection->get_selected_node_list().empty())
+				selected = editor_selection->get_selected_node_list().front()->get();
+
 			if (selected)
 				create_dialog->popup_create(false, true, selected->get_class());
 
@@ -983,9 +986,10 @@ void SceneTreeDock::_tool_selected(int p_tool, bool p_confirm_override) {
 				} else {
 					new_node = Object::cast_to<Node>(ClassDB::instance(selected_favorite_root));
 				}
+
 				if (!new_node) {
-					ERR_EXPLAIN("Creating root from favorite '" + selected_favorite_root + "' failed. Creating 'Node' instead.");
 					new_node = memnew(Node);
+					ERR_PRINTS("Creating root from favorite '" + selected_favorite_root + "' failed. Creating 'Node' instead.");
 				}
 			} else {
 				switch (p_tool) {
@@ -1534,10 +1538,7 @@ void SceneTreeDock::_do_reparent(Node *p_new_parent, int p_position_in_parent, V
 	Node *validate = new_parent;
 	while (validate) {
 
-		if (p_nodes.find(validate) != -1) {
-			ERR_EXPLAIN("Selection changed at some point.. can't reparent");
-			ERR_FAIL();
-		}
+		ERR_FAIL_COND_MSG(p_nodes.find(validate) != -1, "Selection changed at some point.. can't reparent.");
 		validate = validate->get_parent();
 	}
 	//ok all valid
@@ -1983,6 +1984,10 @@ void SceneTreeDock::_create() {
 	} else if (current_option == TOOL_REPLACE) {
 		List<Node *> selection = editor_selection->get_selected_node_list();
 		ERR_FAIL_COND(selection.size() <= 0);
+
+		UndoRedo *ur = EditorNode::get_singleton()->get_undo_redo();
+		ur->create_action(TTR("Change type of node(s)"));
+
 		for (List<Node *>::Element *E = selection.front(); E; E = E->next()) {
 			Node *n = E->get();
 			ERR_FAIL_COND(!n);
@@ -1993,8 +1998,13 @@ void SceneTreeDock::_create() {
 			Node *newnode = Object::cast_to<Node>(c);
 			ERR_FAIL_COND(!newnode);
 
-			replace_node(n, newnode);
+			ur->add_do_method(this, "replace_node", n, newnode, true, false);
+			ur->add_do_reference(newnode);
+			ur->add_undo_method(this, "replace_node", newnode, n, false, false);
+			ur->add_undo_reference(n);
 		}
+
+		ur->commit_action();
 	} else if (current_option == TOOL_REPARENT_TO_NEW_NODE) {
 		List<Node *> selection = editor_selection->get_selected_node_list();
 		ERR_FAIL_COND(selection.size() <= 0);
@@ -2241,8 +2251,7 @@ void SceneTreeDock::_normalize_drop(Node *&to_node, int &to_pos, int p_type) {
 		//drop at above selected node
 		if (to_node == EditorNode::get_singleton()->get_edited_scene()) {
 			to_node = NULL;
-			ERR_EXPLAIN("Cannot perform drop above the root node!");
-			ERR_FAIL();
+			ERR_FAIL_MSG("Cannot perform drop above the root node!");
 		}
 
 		to_pos = to_node->get_index();
@@ -2700,6 +2709,7 @@ void SceneTreeDock::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_feature_profile_changed"), &SceneTreeDock::_feature_profile_changed);
 
 	ClassDB::bind_method(D_METHOD("instance"), &SceneTreeDock::instance);
+	ClassDB::bind_method(D_METHOD("get_tree_editor"), &SceneTreeDock::get_tree_editor);
 	ClassDB::bind_method(D_METHOD("replace_node"), &SceneTreeDock::replace_node);
 
 	ADD_SIGNAL(MethodInfo("remote_tree_selected"));

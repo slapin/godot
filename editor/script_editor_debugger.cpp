@@ -418,6 +418,13 @@ int ScriptEditorDebugger::_update_scene_tree(TreeItem *parent, const Array &node
 	}
 	item->set_metadata(0, id);
 
+	// Set current item as collapsed if necessary
+	if (parent) {
+		if (!unfold_cache.has(id)) {
+			item->set_collapsed(true);
+		}
+	}
+
 	int children_count = nodes[current_index];
 	// Tracks the total number of items parsed in nodes, this is used to skips nodes that
 	// are not direct children of the current node since we can't know in advance the total
@@ -1369,7 +1376,7 @@ void ScriptEditorDebugger::stop() {
 	profiler->set_enabled(true);
 
 	inspect_scene_tree->clear();
-	inspector->edit(NULL);
+	EditorNode::get_singleton()->edit_current();
 	EditorNode::get_singleton()->get_pause_button()->set_pressed(false);
 	EditorNode::get_singleton()->get_pause_button()->set_disabled(true);
 	EditorNode::get_singleton()->get_scene_tree_dock()->hide_remote_tree();
