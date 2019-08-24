@@ -972,6 +972,7 @@ void VisualServer::mesh_add_surface_from_arrays(RID p_mesh, PrimitiveType p_prim
 
 	ERR_FAIL_COND((format & VS::ARRAY_FORMAT_VERTEX) == 0); // mandatory
 
+#if 0
 	if (p_blend_shapes.size()) {
 		//validate format for morphs
 		for (int i = 0; i < p_blend_shapes.size(); i++) {
@@ -987,6 +988,7 @@ void VisualServer::mesh_add_surface_from_arrays(RID p_mesh, PrimitiveType p_prim
 			ERR_FAIL_COND((bsformat) != (format & (VS::ARRAY_FORMAT_INDEX - 1)));
 		}
 	}
+#endif
 
 	uint32_t offsets[VS::ARRAY_MAX];
 
