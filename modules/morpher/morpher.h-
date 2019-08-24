@@ -1,0 +1,16 @@
+#include "morpher.h"
+
+DNA_::DNA_(String *path)
+{
+}
+~DNA_::DNA_()
+{
+}
+void DNA_::add_mesh(const String &part, const ArrayMesh &mesh, const Dictionary &same_verts)
+{
+}
+void DNA_::_bind_methods()
+{
+	ClassDB::bind_method(D_METHOD("add_mesh", "part", "mesh", "same_verts"), &DNA_::add_mesh);
+}
+
