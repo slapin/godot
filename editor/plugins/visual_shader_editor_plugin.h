@@ -70,7 +70,11 @@ class VisualShaderEditor : public VBoxContainer {
 	PanelContainer *error_panel;
 	Label *error_label;
 
+	bool pending_update_preview;
+	bool shader_error;
+	VBoxContainer *preview_vbox;
 	TextEdit *preview_text;
+	Label *error_text;
 
 	UndoRedo *undo_redo;
 	Point2 saved_node_pos;
@@ -154,6 +158,7 @@ class VisualShaderEditor : public VBoxContainer {
 
 	void _show_preview_text();
 	void _update_preview();
+	String _get_description(int p_idx);
 
 	static VisualShaderEditor *singleton;
 

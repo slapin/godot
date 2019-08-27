@@ -41,6 +41,7 @@
 #include "scene/gui/panel.h"
 #include "scene/main/viewport.h"
 #include "scene/resources/visual_shader_nodes.h"
+#include "servers/visual/shader_types.h"
 
 Control *VisualShaderNodePlugin::create_editor(const Ref<Resource> &p_parent_resource, const Ref<VisualShaderNode> &p_node) {
 
@@ -229,6 +230,14 @@ void VisualShaderEditor::_update_custom_nodes() {
 	}
 }
 
+String VisualShaderEditor::_get_description(int p_idx) {
+	if (add_options[p_idx].highend) {
+		return TTR("(GLES3 only)") + " " + add_options[p_idx].description; // TODO: change it to (Vulkan Only) when its ready
+	} else {
+		return add_options[p_idx].description;
+	}
+}
+
 void VisualShaderEditor::_update_options_menu() {
 
 	node_desc->set_text("");
@@ -332,11 +341,10 @@ void VisualShaderEditor::_update_options_menu() {
 				else if (add_options[i].highend)
 					item->set_custom_color(0, supported_color);
 				item->set_text(0, add_options[i].name);
-				if (p_category == sub_category) {
-					if (is_first_item) {
-						item->select(0);
-						is_first_item = false;
-					}
+				if (is_first_item && use_filter) {
+					item->select(0);
+					node_desc->set_text(_get_description(i));
+					is_first_item = false;
 				}
 				switch (add_options[i].return_type) {
 					case VisualShaderNode::PORT_TYPE_SCALAR:
@@ -1598,6 +1606,9 @@ void VisualShaderEditor::_notification(int p_what) {
 			preview_text->add_color_override("symbol_color", symbol_color);
 			preview_text->add_color_region("/*", "*/", comment_color, false);
 			preview_text->add_color_region("//", "", comment_color, false);
+
+			error_text->add_font_override("font", get_font("status_source", "EditorFonts"));
+			error_text->add_color_override("font_color", get_color("error_color", "Editor"));
 		}
 
 		tools->set_icon(EditorNode::get_singleton()->get_gui_base()->get_icon("Tools", "EditorIcons"));
@@ -1926,11 +1937,7 @@ void VisualShaderEditor::_member_selected() {
 
 	if (item != NULL && item->has_meta("id")) {
 		members_dialog->get_ok()->set_disabled(false);
-		if (add_options[item->get_meta("id")].highend) {
-			node_desc->set_text(TTR("(GLES3 only)") + " " + add_options[item->get_meta("id")].description); // TODO: change it to (Vulkan Only) when its ready
-		} else {
-			node_desc->set_text(add_options[item->get_meta("id")].description);
-		}
+		node_desc->set_text(_get_description(item->get_meta("id")));
 	} else {
 		members_dialog->get_ok()->set_disabled(true);
 		node_desc->set_text("");
@@ -2052,11 +2059,44 @@ void VisualShaderEditor::drop_data_fw(const Point2 &p_point, const Variant &p_da
 
 void VisualShaderEditor::_show_preview_text() {
 	preview_showed = !preview_showed;
-	preview_text->set_visible(preview_showed);
+	preview_vbox->set_visible(preview_showed);
+	if (preview_showed) {
+		if (pending_update_preview) {
+			_update_preview();
+			pending_update_preview = false;
+		}
+	}
 }
 
 void VisualShaderEditor::_update_preview() {
-	preview_text->set_text(visual_shader->get_code());
+
+	if (!preview_showed) {
+		pending_update_preview = true;
+		return;
+	}
+
+	String code = visual_shader->get_code();
+
+	preview_text->set_text(code);
+
+	ShaderLanguage sl;
+
+	Error err = sl.compile(code, ShaderTypes::get_singleton()->get_functions(VisualServer::ShaderMode(visual_shader->get_mode())), ShaderTypes::get_singleton()->get_modes(VisualServer::ShaderMode(visual_shader->get_mode())), ShaderTypes::get_singleton()->get_types());
+
+	for (int i = 0; i < preview_text->get_line_count(); i++) {
+		preview_text->set_line_as_marked(i, false);
+	}
+	if (err != OK) {
+		preview_text->set_line_as_marked(sl.get_error_line() - 1, true);
+		error_text->set_visible(true);
+
+		String text = "error(" + itos(sl.get_error_line()) + "): " + sl.get_error_text();
+		error_text->set_text(text);
+		shader_error = true;
+	} else {
+		error_text->set_visible(false);
+		shader_error = false;
+	}
 }
 
 void VisualShaderEditor::_bind_methods() {
@@ -2127,6 +2167,8 @@ VisualShaderEditor::VisualShaderEditor() {
 	ShaderLanguage::get_keyword_list(&keyword_list);
 
 	preview_showed = false;
+	pending_update_preview = false;
+	shader_error = false;
 
 	to_node = -1;
 	to_slot = -1;
@@ -2201,14 +2243,21 @@ VisualShaderEditor::VisualShaderEditor() {
 	// PREVIEW PANEL
 	///////////////////////////////////////
 
+	preview_vbox = memnew(VBoxContainer);
+	preview_vbox->set_visible(preview_showed);
+	main_box->add_child(preview_vbox);
 	preview_text = memnew(TextEdit);
-	main_box->add_child(preview_text);
+	preview_vbox->add_child(preview_text);
 	preview_text->set_h_size_flags(SIZE_EXPAND_FILL);
 	preview_text->set_v_size_flags(SIZE_EXPAND_FILL);
-	preview_text->set_visible(preview_showed);
 	preview_text->set_custom_minimum_size(Size2(400 * EDSCALE, 0));
 	preview_text->set_syntax_coloring(true);
+	preview_text->set_show_line_numbers(true);
 	preview_text->set_readonly(true);
+
+	error_text = memnew(Label);
+	preview_vbox->add_child(error_text);
+	error_text->set_visible(false);
 
 	///////////////////////////////////////
 	// SHADER NODES TREE
@@ -2520,7 +2569,7 @@ VisualShaderEditor::VisualShaderEditor() {
 	add_options.push_back(AddOption("TransformDecompose", "Transform", "Composition", "VisualShaderNodeTransformDecompose", TTR("Decomposes transform to four vectors.")));
 
 	add_options.push_back(AddOption("Determinant", "Transform", "Functions", "VisualShaderNodeDeterminant", TTR("Calculates the determinant of a transform."), -1, VisualShaderNode::PORT_TYPE_SCALAR));
-	add_options.push_back(AddOption("Inverse", "Transform", "Functions", "VisualShaderNodeTransformFunc", TTR("Calculates the inverse of a transform."), VisualShaderNodeTransformFunc::FUNC_INVERSE, VisualShaderNode::PORT_TYPE_TRANSFORM, -1, -1, -1, true));
+	add_options.push_back(AddOption("Inverse", "Transform", "Functions", "VisualShaderNodeTransformFunc", TTR("Calculates the inverse of a transform."), VisualShaderNodeTransformFunc::FUNC_INVERSE, VisualShaderNode::PORT_TYPE_TRANSFORM));
 	add_options.push_back(AddOption("Transpose", "Transform", "Functions", "VisualShaderNodeTransformFunc", TTR("Calculates the transpose of a transform."), VisualShaderNodeTransformFunc::FUNC_TRANSPOSE, VisualShaderNode::PORT_TYPE_TRANSFORM));
 
 	add_options.push_back(AddOption("TransformMult", "Transform", "Operators", "VisualShaderNodeTransformMult", TTR("Multiplies transform by transform."), -1, VisualShaderNode::PORT_TYPE_TRANSFORM));
