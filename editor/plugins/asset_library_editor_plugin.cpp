@@ -101,7 +101,7 @@ EditorAssetLibraryItem::EditorAssetLibraryItem() {
 	add_style_override("panel", border);
 
 	HBoxContainer *hb = memnew(HBoxContainer);
-	// Add some spacing to visually separate the icon from the asset details
+	// Add some spacing to visually separate the icon from the asset details.
 	hb->add_constant_override("separation", 15 * EDSCALE);
 	add_child(hb);
 
@@ -118,25 +118,21 @@ EditorAssetLibraryItem::EditorAssetLibraryItem() {
 	vb->set_h_size_flags(SIZE_EXPAND_FILL);
 
 	title = memnew(LinkButton);
-	title->set_text("My Awesome Addon");
 	title->set_underline_mode(LinkButton::UNDERLINE_MODE_ON_HOVER);
 	title->connect("pressed", this, "_asset_clicked");
 	vb->add_child(title);
 
 	category = memnew(LinkButton);
-	category->set_text("Editor Tools");
 	category->set_underline_mode(LinkButton::UNDERLINE_MODE_ON_HOVER);
 	category->connect("pressed", this, "_category_clicked");
 	vb->add_child(category);
 
 	author = memnew(LinkButton);
-	author->set_text("Johny Tolengo");
 	author->set_underline_mode(LinkButton::UNDERLINE_MODE_ON_HOVER);
 	author->connect("pressed", this, "_author_clicked");
 	vb->add_child(author);
 
 	price = memnew(Label);
-	price->set_text(TTR("Free"));
 	vb->add_child(price);
 
 	set_custom_minimum_size(Size2(250, 100) * EDSCALE);
@@ -200,14 +196,15 @@ void EditorAssetLibraryItemDescription::set_image(int p_type, int p_index, const
 		} break;
 	}
 }
+
 void EditorAssetLibraryItemDescription::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_ENTER_TREE: {
 			previews_bg->add_style_override("panel", get_stylebox("normal", "TextEdit"));
-			desc_bg->add_style_override("panel", get_stylebox("normal", "TextEdit"));
 		} break;
 	}
 }
+
 void EditorAssetLibraryItemDescription::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_image"), &EditorAssetLibraryItemDescription::set_image);
 	ClassDB::bind_method(D_METHOD("_link_click"), &EditorAssetLibraryItemDescription::_link_click);
@@ -278,12 +275,8 @@ void EditorAssetLibraryItemDescription::add_preview(int p_id, bool p_video, cons
 
 EditorAssetLibraryItemDescription::EditorAssetLibraryItemDescription() {
 
-	VBoxContainer *vbox = memnew(VBoxContainer);
-	add_child(vbox);
-
 	HBoxContainer *hbox = memnew(HBoxContainer);
-	vbox->add_child(hbox);
-	vbox->add_constant_override("separation", 15 * EDSCALE);
+	add_child(hbox);
 	VBoxContainer *desc_vbox = memnew(VBoxContainer);
 	hbox->add_child(desc_vbox);
 	hbox->add_constant_override("separation", 15 * EDSCALE);
@@ -291,24 +284,23 @@ EditorAssetLibraryItemDescription::EditorAssetLibraryItemDescription() {
 	item = memnew(EditorAssetLibraryItem);
 
 	desc_vbox->add_child(item);
-	desc_vbox->set_custom_minimum_size(Size2(300 * EDSCALE, 0));
-
-	desc_bg = memnew(PanelContainer);
-	desc_vbox->add_child(desc_bg);
-	desc_bg->set_v_size_flags(SIZE_EXPAND_FILL);
+	desc_vbox->set_custom_minimum_size(Size2(440 * EDSCALE, 0));
 
 	description = memnew(RichTextLabel);
+	desc_vbox->add_child(description);
+	description->set_v_size_flags(SIZE_EXPAND_FILL);
 	description->connect("meta_clicked", this, "_link_click");
-	description->set_custom_minimum_size(Size2(440 * EDSCALE, 300 * EDSCALE));
-	desc_bg->add_child(description);
 
 	VBoxContainer *previews_vbox = memnew(VBoxContainer);
 	hbox->add_child(previews_vbox);
 	previews_vbox->add_constant_override("separation", 15 * EDSCALE);
+	previews_vbox->set_v_size_flags(SIZE_EXPAND_FILL);
 
 	preview = memnew(TextureRect);
-	preview->set_custom_minimum_size(Size2(640 * EDSCALE, 345 * EDSCALE));
 	previews_vbox->add_child(preview);
+	preview->set_expand(true);
+	preview->set_stretch_mode(TextureRect::STRETCH_KEEP_ASPECT_CENTERED);
+	preview->set_custom_minimum_size(Size2(640 * EDSCALE, 345 * EDSCALE));
 
 	previews_bg = memnew(PanelContainer);
 	previews_vbox->add_child(previews_bg);
@@ -392,7 +384,7 @@ void EditorAssetLibraryItemDownload::_http_download_completed(int p_status, int 
 
 	install->set_disabled(false);
 	status->set_text(TTR("Success!"));
-	// Make the progress bar invisible but don't reflow other Controls around it
+	// Make the progress bar invisible but don't reflow other Controls around it.
 	progress->set_modulate(Color(0, 0, 0, 0));
 
 	set_process(false);
@@ -661,7 +653,7 @@ const char *EditorAssetLibrary::sort_key[SORT_MAX] = {
 const char *EditorAssetLibrary::sort_text[SORT_MAX] = {
 	"Downloads",
 	"Name",
-	"License", // "cost" stores the SPDX license name in the Godot Asset Library
+	"License", // "cost" stores the SPDX license name in the Godot Asset Library.
 	"Updated"
 };
 
@@ -673,7 +665,7 @@ const char *EditorAssetLibrary::support_key[SUPPORT_MAX] = {
 
 void EditorAssetLibrary::_select_author(int p_id) {
 
-	// Open author window
+	// Open author window.
 }
 
 void EditorAssetLibrary::_select_category(int p_id) {
@@ -1345,7 +1337,6 @@ EditorAssetLibrary::EditorAssetLibrary(bool p_templates_only) {
 	library_main->add_child(search_hb);
 	library_main->add_constant_override("separation", 10 * EDSCALE);
 
-	search_hb->add_child(memnew(Label(TTR("Search:") + " ")));
 	filter = memnew(LineEdit);
 	search_hb->add_child(filter);
 	filter->set_h_size_flags(SIZE_EXPAND_FILL);
@@ -1358,12 +1349,12 @@ EditorAssetLibrary::EditorAssetLibrary(bool p_templates_only) {
 		search_hb->add_child(memnew(VSeparator));
 
 	Button *open_asset = memnew(Button);
-	open_asset->set_text(TTR("Import"));
+	open_asset->set_text(TTR("Import..."));
 	search_hb->add_child(open_asset);
 	open_asset->connect("pressed", this, "_asset_open");
 
 	Button *plugins = memnew(Button);
-	plugins->set_text(TTR("Plugins"));
+	plugins->set_text(TTR("Plugins..."));
 	search_hb->add_child(plugins);
 	plugins->connect("pressed", this, "_manage_plugins");
 
@@ -1420,7 +1411,7 @@ EditorAssetLibrary::EditorAssetLibrary(bool p_templates_only) {
 
 	support = memnew(MenuButton);
 	search_hb2->add_child(support);
-	support->set_text(TTR("Support..."));
+	support->set_text(TTR("Support"));
 	support->get_popup()->add_check_item(TTR("Official"), SUPPORT_OFFICIAL);
 	support->get_popup()->add_check_item(TTR("Community"), SUPPORT_COMMUNITY);
 	support->get_popup()->add_check_item(TTR("Testing"), SUPPORT_TESTING);

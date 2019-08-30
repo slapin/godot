@@ -2767,12 +2767,12 @@ void GDScriptParser::_parse_block(BlockNode *p_block, bool p_static) {
 				_mark_line_as_safe(tokenizer->get_token_line());
 				tokenizer->advance();
 				if (tokenizer->get_token() == GDScriptTokenizer::TK_SEMICOLON) {
-					// Ignore semicolon after 'pass'
+					// Ignore semicolon after 'pass'.
 					tokenizer->advance();
 				}
 			} break;
 			case GDScriptTokenizer::TK_PR_VAR: {
-				//variale declaration and (eventual) initialization
+				// Variable declaration and (eventual) initialization.
 
 				tokenizer->advance();
 				int var_line = tokenizer->get_token_line();
@@ -3171,6 +3171,7 @@ void GDScriptParser::_parse_block(BlockNode *p_block, bool p_static) {
 			} break;
 			case GDScriptTokenizer::TK_CF_CONTINUE: {
 
+				_mark_line_as_safe(tokenizer->get_token_line());
 				tokenizer->advance();
 				ControlFlowNode *cf_continue = alloc_node<ControlFlowNode>();
 				cf_continue->cf_type = ControlFlowNode::CF_CONTINUE;
@@ -3182,6 +3183,7 @@ void GDScriptParser::_parse_block(BlockNode *p_block, bool p_static) {
 			} break;
 			case GDScriptTokenizer::TK_CF_BREAK: {
 
+				_mark_line_as_safe(tokenizer->get_token_line());
 				tokenizer->advance();
 				ControlFlowNode *cf_break = alloc_node<ControlFlowNode>();
 				cf_break->cf_type = ControlFlowNode::CF_BREAK;
@@ -3364,7 +3366,7 @@ void GDScriptParser::_parse_extends(ClassNode *p_class) {
 		return;
 	}
 
-	if (!p_class->constant_expressions.empty() || !p_class->subclasses.empty() || !p_class->functions.empty() || !p_class->variables.empty() || p_class->classname_used) {
+	if (!p_class->constant_expressions.empty() || !p_class->subclasses.empty() || !p_class->functions.empty() || !p_class->variables.empty()) {
 
 		_set_error("\"extends\" must be used before anything else.");
 		return;
@@ -8253,6 +8255,10 @@ int GDScriptParser::get_error_line() const {
 int GDScriptParser::get_error_column() const {
 
 	return error_column;
+}
+
+bool GDScriptParser::has_error() const {
+	return error_set;
 }
 
 Error GDScriptParser::_parse(const String &p_base_path) {
