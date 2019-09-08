@@ -33,6 +33,7 @@
 #include "core/io/marshalls.h"
 #include "core/io/resource_loader.h"
 #include "core/message_queue.h"
+#include "core/os/dir_access.h"
 #include "core/os/keyboard.h"
 #include "core/os/os.h"
 #include "core/print_string.h"
@@ -1953,6 +1954,38 @@ bool SceneTree::is_using_font_oversampling() const {
 	return use_font_oversampling;
 }
 
+void SceneTree::get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const {
+
+	if (p_function == "change_scene") {
+		DirAccessRef dir_access = DirAccess::create(DirAccess::ACCESS_RESOURCES);
+		List<String> directories;
+		directories.push_back(dir_access->get_current_dir());
+
+		while (!directories.empty()) {
+			dir_access->change_dir(directories.back()->get());
+			directories.pop_back();
+
+			dir_access->list_dir_begin();
+			String filename = dir_access->get_next();
+
+			while (filename != "") {
+				if (filename == "." || filename == "..") {
+					filename = dir_access->get_next();
+					continue;
+				}
+
+				if (dir_access->dir_exists(filename)) {
+					directories.push_back(dir_access->get_current_dir().plus_file(filename));
+				} else if (filename.ends_with(".tscn") || filename.ends_with(".scn")) {
+					r_options->push_back("\"" + dir_access->get_current_dir().plus_file(filename) + "\"");
+				}
+
+				filename = dir_access->get_next();
+			}
+		}
+	}
+}
+
 SceneTree::SceneTree() {
 
 	if (singleton == NULL) singleton = this;
@@ -2063,6 +2096,7 @@ SceneTree::SceneTree() {
 
 	if (ScriptDebugger::get_singleton()) {
 		ScriptDebugger::get_singleton()->set_request_scene_tree_message_func(_debugger_request_tree, this);
+		ScriptDebugger::get_singleton()->set_multiplayer(multiplayer);
 	}
 
 	root->set_physics_object_picking(GLOBAL_DEF("physics/common/enable_object_picking", true));

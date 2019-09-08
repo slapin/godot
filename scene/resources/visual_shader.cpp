@@ -1083,7 +1083,7 @@ Error VisualShader::_write_node(Type type, StringBuilder &global_code, StringBui
 			} else if (defval.get_type() == Variant::BOOL) {
 				bool val = defval;
 				inputs[i] = "n_in" + itos(node) + "p" + itos(i);
-				code += "\nbool " + inputs[i] + " = " + (val ? "true" : "false") + ";\n";
+				code += "\tbool " + inputs[i] + " = " + (val ? "true" : "false") + ";\n";
 			} else if (defval.get_type() == Variant::VECTOR3) {
 				Vector3 val = defval;
 				inputs[i] = "n_in" + itos(node) + "p" + itos(i);
@@ -1399,6 +1399,7 @@ const VisualShaderNodeInput::Port VisualShaderNodeInput::ports[] = {
 	{ Shader::MODE_SPATIAL, VisualShader::TYPE_VERTEX, VisualShaderNode::PORT_TYPE_TRANSFORM, "inv_projection", "INV_PROJECTION_MATRIX" },
 	{ Shader::MODE_SPATIAL, VisualShader::TYPE_VERTEX, VisualShaderNode::PORT_TYPE_SCALAR, "time", "TIME" },
 	{ Shader::MODE_SPATIAL, VisualShader::TYPE_VERTEX, VisualShaderNode::PORT_TYPE_VECTOR, "viewport_size", "vec3(VIEWPORT_SIZE, 0)" },
+	{ Shader::MODE_SPATIAL, VisualShader::TYPE_VERTEX, VisualShaderNode::PORT_TYPE_BOOLEAN, "output_is_srgb", "OUTPUT_IS_SRGB" },
 
 	// Spatial, Fragment
 	{ Shader::MODE_SPATIAL, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_VECTOR, "fragcoord", "FRAGCOORD.xyz" },
@@ -1423,6 +1424,8 @@ const VisualShaderNodeInput::Port VisualShaderNodeInput::ports[] = {
 	{ Shader::MODE_SPATIAL, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_TRANSFORM, "inv_projection", "INV_PROJECTION_MATRIX" },
 	{ Shader::MODE_SPATIAL, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_SCALAR, "time", "TIME" },
 	{ Shader::MODE_SPATIAL, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_VECTOR, "viewport_size", "vec3(VIEWPORT_SIZE, 0.0)" },
+	{ Shader::MODE_SPATIAL, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_BOOLEAN, "output_is_srgb", "OUTPUT_IS_SRGB" },
+	{ Shader::MODE_SPATIAL, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_BOOLEAN, "front_facing", "FRONT_FACING" },
 
 	// Spatial, Light
 	{ Shader::MODE_SPATIAL, VisualShader::TYPE_LIGHT, VisualShaderNode::PORT_TYPE_VECTOR, "fragcoord", "FRAGCOORD.xyz" },
@@ -1444,6 +1447,7 @@ const VisualShaderNodeInput::Port VisualShaderNodeInput::ports[] = {
 	{ Shader::MODE_SPATIAL, VisualShader::TYPE_LIGHT, VisualShaderNode::PORT_TYPE_TRANSFORM, "inv_projection", "INV_PROJECTION_MATRIX" },
 	{ Shader::MODE_SPATIAL, VisualShader::TYPE_LIGHT, VisualShaderNode::PORT_TYPE_SCALAR, "time", "TIME" },
 	{ Shader::MODE_SPATIAL, VisualShader::TYPE_LIGHT, VisualShaderNode::PORT_TYPE_VECTOR, "viewport_size", "vec3(VIEWPORT_SIZE, 0.0)" },
+	{ Shader::MODE_SPATIAL, VisualShader::TYPE_LIGHT, VisualShaderNode::PORT_TYPE_BOOLEAN, "output_is_srgb", "OUTPUT_IS_SRGB" },
 	// Canvas Item, Vertex
 	{ Shader::MODE_CANVAS_ITEM, VisualShader::TYPE_VERTEX, VisualShaderNode::PORT_TYPE_VECTOR, "vertex", "vec3(VERTEX,0.0)" },
 	{ Shader::MODE_CANVAS_ITEM, VisualShader::TYPE_VERTEX, VisualShaderNode::PORT_TYPE_VECTOR, "uv", "vec3(UV,0.0)" },
@@ -2463,8 +2467,10 @@ String VisualShaderNodeExpression::generate_code(Shader::Mode p_mode, VisualShad
 	if (pre_symbols.empty()) {
 		pre_symbols.push_back("\t");
 		pre_symbols.push_back(",");
+		pre_symbols.push_back(";");
 		pre_symbols.push_back("{");
 		pre_symbols.push_back("[");
+		pre_symbols.push_back("]");
 		pre_symbols.push_back("(");
 		pre_symbols.push_back(" ");
 		pre_symbols.push_back("-");
@@ -2479,11 +2485,12 @@ String VisualShaderNodeExpression::generate_code(Shader::Mode p_mode, VisualShad
 
 	static Vector<String> post_symbols;
 	if (post_symbols.empty()) {
-		post_symbols.push_back("\0");
 		post_symbols.push_back("\t");
 		post_symbols.push_back("\n");
+		post_symbols.push_back(",");
 		post_symbols.push_back(";");
 		post_symbols.push_back("}");
+		post_symbols.push_back("[");
 		post_symbols.push_back("]");
 		post_symbols.push_back(")");
 		post_symbols.push_back(" ");

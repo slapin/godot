@@ -252,6 +252,16 @@ GDScriptParser::Node *GDScriptParser::_parse_expression(Node *p_parent, bool p_s
 			}
 		}
 
+		// Check that the next token is not TK_CURSOR and if it is, the offset should be incremented.
+		int next_valid_offset = 1;
+		if (tokenizer->get_token(next_valid_offset) == GDScriptTokenizer::TK_CURSOR) {
+			next_valid_offset++;
+			// There is a chunk of the identifier that also needs to be ignored (not always there!)
+			if (tokenizer->get_token(next_valid_offset) == GDScriptTokenizer::TK_IDENTIFIER) {
+				next_valid_offset++;
+			}
+		}
+
 		if (tokenizer->get_token() == GDScriptTokenizer::TK_PARENTHESIS_OPEN) {
 			//subexpression ()
 			tokenizer->advance();
@@ -668,7 +678,7 @@ GDScriptParser::Node *GDScriptParser::_parse_expression(Node *p_parent, bool p_s
 				expr = cn;
 			}
 
-		} else if (tokenizer->get_token(1) == GDScriptTokenizer::TK_PARENTHESIS_OPEN && tokenizer->is_token_literal()) {
+		} else if (tokenizer->get_token(next_valid_offset) == GDScriptTokenizer::TK_PARENTHESIS_OPEN && tokenizer->is_token_literal()) {
 			// We check with is_token_literal, as this allows us to use match/sync/etc. as a name
 			//function or constructor
 
@@ -5245,6 +5255,31 @@ void GDScriptParser::_determine_inheritance(ClassNode *p_class, bool p_recursive
 					return;
 				}
 				p = NULL;
+			} else {
+				List<PropertyInfo> props;
+				ProjectSettings::get_singleton()->get_property_list(&props);
+				for (List<PropertyInfo>::Element *E = props.front(); E; E = E->next()) {
+					String s = E->get().name;
+					if (!s.begins_with("autoload/")) {
+						continue;
+					}
+					String name = s.get_slice("/", 1);
+					if (name == base) {
+						String singleton_path = ProjectSettings::get_singleton()->get(s);
+						if (singleton_path.begins_with("*")) {
+							singleton_path = singleton_path.right(1);
+						}
+						if (!singleton_path.begins_with("res://")) {
+							singleton_path = "res://" + singleton_path;
+						}
+						base_script = ResourceLoader::load(singleton_path);
+						if (!base_script.is_valid()) {
+							_set_error("Class '" + base + "' could not be fully loaded (script error or cyclic inheritance).", p_class->line);
+							return;
+						}
+						p = NULL;
+					}
+				}
 			}
 
 			while (p) {
@@ -5589,9 +5624,49 @@ GDScriptParser::DataType GDScriptParser::_resolve_type(const DataType &p_source,
 				}
 				name_part++;
 				continue;
-			} else {
-				p = current_class;
 			}
+			List<PropertyInfo> props;
+			ProjectSettings::get_singleton()->get_property_list(&props);
+			String singleton_path;
+			for (List<PropertyInfo>::Element *E = props.front(); E; E = E->next()) {
+				String s = E->get().name;
+				if (!s.begins_with("autoload/")) {
+					continue;
+				}
+				String name = s.get_slice("/", 1);
+				if (name == id) {
+					singleton_path = ProjectSettings::get_singleton()->get(s);
+					if (singleton_path.begins_with("*")) {
+						singleton_path = singleton_path.right(1);
+					}
+					if (!singleton_path.begins_with("res://")) {
+						singleton_path = "res://" + singleton_path;
+					}
+					break;
+				}
+			}
+			if (!singleton_path.empty()) {
+				Ref<Script> script = ResourceLoader::load(singleton_path);
+				Ref<GDScript> gds = script;
+				if (gds.is_valid()) {
+					if (!gds->is_valid()) {
+						_set_error("Class '" + id + "' could not be fully loaded (script error or cyclic inheritance).", p_line);
+						return DataType();
+					}
+					result.kind = DataType::GDSCRIPT;
+					result.script_type = gds;
+				} else if (script.is_valid()) {
+					result.kind = DataType::SCRIPT;
+					result.script_type = script;
+				} else {
+					_set_error("Couldn't fully load singleton script '" + id + "' (possible cyclic reference or parse error).", p_line);
+					return DataType();
+				}
+				name_part++;
+				continue;
+			}
+
+			p = current_class;
 		} else if (base_type.kind == DataType::CLASS) {
 			p = base_type.class_type;
 		}
@@ -6510,7 +6585,7 @@ GDScriptParser::DataType GDScriptParser::_reduce_node_type(Node *p_node) {
 							return DataType();
 						}
 					}
-					if (check_types && !node_type.has_type) {
+					if (check_types && !node_type.has_type && base_type.kind == DataType::BUILTIN) {
 						// Can infer indexing type for some variant types
 						DataType result;
 						result.has_type = true;
