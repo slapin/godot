@@ -30,9 +30,11 @@
 
 #include "register_types.h"
 #include "morpher.h"
+#include "triangle.h"
 
 void register_morpher_types() {
 	ClassDB::register_class<DNA_>();
+	ClassDB::register_class<TriangleSet>();
 }
 
 void unregister_morpher_types() {
