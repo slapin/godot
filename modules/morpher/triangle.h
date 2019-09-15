@@ -9,6 +9,7 @@ class TriangleSet: public Reference {
 	GDCLASS(TriangleSet, Reference)
 protected:
 	PoolVector<Vector3> vertices;
+	PoolVector<Vector3> normals;
 	PoolVector<Vector2> uvs1;
 	PoolVector<Vector2> uvs2;
 	PoolVector<int> indices;
@@ -16,6 +17,9 @@ protected:
 	float minp[3];
 	float maxp[3];
 	float cd[3];
+	float minn[3];
+	float maxn[3];
+	float cdn[3];
 	static inline void draw_hline(Image *image, const float *v1, const float *v2)
 	{
 		if (v1[0] < 0 && v2[0] < 0)
@@ -35,27 +39,6 @@ protected:
 			image->set_pixel(i, v1[1], c);
 		}
 	}
-#if 0
-	static inline void draw_hline(Image *image, float x1, float x2, int y,
-			Color c1, Color c2)
-	{
-		assert(y >= 0 && y < image->get_height());
-		if (x1 < 0 && x2 < 0)
-			return;
-		if (x1 >= x2)
-			return;
-		assert(x1 <= x2);
-		if (x1 >= image->get_width())
-			return;
-		float l = (x2 - x1);
-		for (int i = MAX(0, (int)x1 - 1); i <= MIN(image->get_width() - 1, (int)x2 + 1); i++) {
-			float t = ((float)i - x1 + 1)/ (l + 2.0f);
-			t = CLAMP(t, 0.0f, 1.0f);
-			image->set_pixel(i, y, c1.linear_interpolate(c2, t));
-		}
-
-	}
-#endif
 	static inline void flat_bottom_triangle(Image *image,
 			const float *v1, const float *v2, const float *v3)
 	{
@@ -81,35 +64,6 @@ protected:
 			draw_hline(image, cx1, cx2);
 		}
 	}
-#if 0
-	static inline void flat_bottom_triangle(Image *image,
-			const Vector2 &v1, const Vector2 &v2, const Vector2 &v3,
-			const Color &c1, const Color &c2, const Color& c3)
-	{
-		if ((v2.y - v1.y) < 1.0)
-			return;
-		float invslope1 = (v2.x - v1.x) / (v2.y - v1.y);
-		float invslope2 = (v3.x - v1.x) / (v3.y - v1.y);
-		double bdiv = (v2.y - v1.y);
-
-		float curx1 = v1.x;
-		float curx2 = v1.x;
-
-		for (int scanlineY = v1.y; scanlineY <= v2.y; scanlineY++) {
-			float t = ((double)((double)scanlineY - v1.y)) / bdiv;
-			t = CLAMP(t, 0.0f, 1.0f);
-			if (scanlineY < 0 || scanlineY >= image->get_height())
-				continue;
-			Color cx1 = c1.linear_interpolate(c2, t);
-			Color cx2 = c1.linear_interpolate(c3, t);
-			curx1 = Math::lerp(v1.x, v2.x, t);
-			curx2 = Math::lerp(v1.x, v3.x, t);
-			draw_hline(image, curx1, curx2, scanlineY, cx1, cx2);
-			curx1 += invslope1;
-			curx2 += invslope2;
-		}
-	}
-#endif
 	static inline void flat_top_triangle(Image *image,
 			const float *v1, const float *v2, const float *v3)
 	{
@@ -135,37 +89,6 @@ protected:
 			draw_hline(image, cx1, cx2);
 		}
 	}
-#if 0
-	static inline void flat_top_triangle(Image *image,
-			const Vector2 &v1, const Vector2 &v2, const Vector2 &v3,
-			const Color &c1, const Color &c2, const Color& c3)
-	{
-		if ((v3.y - v1.y) < 1.0)
-			return;
-		float invslope1 = (v3.x - v1.x) / (v3.y - v1.y);
-		float invslope2 = (v3.x - v2.x) / (v3.y - v2.y);
-
-		double bdiv = (v3.y - v1.y);
-
-		float curx1 = v3.x;
-		float curx2 = v3.x;
-
-		for (int scanlineY = v3.y; scanlineY > v1.y - 1; scanlineY--) {
-			float t = (double)(v3.y - (double)scanlineY) / bdiv;
-			t = CLAMP(t, 0.0f, 1.0f);
-			if (scanlineY < 0 || scanlineY >= image->get_height())
-				continue;
-			Color cx1 = c3.linear_interpolate(c1, t);
-			Color cx2 = c3.linear_interpolate(c2, t);
-			curx1 = Math::lerp(v3.x, v1.x, t);
-			curx2 = Math::lerp(v3.x, v2.x, t);
-			assert(curx1 <= curx2);
-			draw_hline(image, curx1, curx2, scanlineY, cx1, cx2);
-			curx1 -= invslope1;
-			curx2 -= invslope2;
-		}
-	}
-#endif
 	inline float distance_squared(const float *v1, const float *v2)
 	{
 		return Vector2(v1[0], v1[1]).distance_squared_to(Vector2(v2[0], v2[1]));
@@ -220,97 +143,6 @@ protected:
 				flat_top_triangle(image, points[1], p4, points[2]);
 		}
 	}
-#if 0
-	inline void draw_triangle(Image *image,
-			Vector2 p1,
-			Vector2 p2,
-			Vector2 p3,
-			Color c1,
-			Color c2,
-			Color c3)
-	{
-		int i, j;
-		Vector2 points[] = {p1, p2, p3};
-		Color colors[] = {c1, c2, c3};
-		if (p1.y==p2.y && p1.y==p3.y)
-			return;
-		float min_edge_size = 1.9f;
-		float min_edge_sq = min_edge_size * min_edge_size;
-		float d12 = p1.distance_squared_to(p2);
-		float d13 = p1.distance_squared_to(p3);
-
-		if (d12 < min_edge_sq && d13 < min_edge_sq)
-			return;
-
-		Vector2 center = (p1 + p2 + p3) / 3.0f;
-#if 0
-		float extra_pixels = 0.0f;
-		Vector2 d1 = (p1 - center).normalized() * extra_pixels;
-		Vector2 d2 = (p2 - center).normalized() * extra_pixels;
-		Vector2 d3 = (p3 - center).normalized() * extra_pixels;
-		if (p1.y == p2.y) {
-			float d = MAX(d1.y, d2.y);
-			d1.y = d2.y = d;
-		}
-		if (p1.y == p3.y) {
-			float d = MAX(d1.y, d3.y);
-			d1.y = d3.y = d;
-		}
-		if (p2.y == p3.y) {
-			float d = MAX(d2.y, d3.y);
-			d2.y = d3.y = d;
-		}
-		points[0] += d1;
-		points[1] += d2;
-		points[2] += d3;
-#endif
-		for (i = 0; i < 3; i++)
-			for (j = 0; j < 3; j++) {
-				if (i == j)
-					continue;
-				if (points[i].y < points[j].y) {
-					SWAP(points[i], points[j]);
-					SWAP(colors[i], colors[j]);
-				}
-			}
-		if (points[0].y == points[1].y) {
-			if (points[2].x - points[0].x < points[2].x - points[1].x) {
-				SWAP(points[0], points[1]);
-				SWAP(colors[0], colors[1]);
-			}
-			flat_top_triangle(image, points[0], points[1], points[2], colors[0], colors[1], colors[2]);
-		} else if (points[1].y == points[2].y) {
-			if (points[1].x - points[0].x > points[2].x - points[0].x) {
-				SWAP(points[1], points[2]);
-				SWAP(colors[1], colors[2]);
-			}
-			flat_bottom_triangle(image, points[0], points[1], points[2], colors[0], colors[1], colors[2]);
-		} else {
-			float y01 = points[1].y - points[0].y;
-			float y02 = points[2].y - points[0].y;
-			Vector2 p4(points[0].x + (y01 / y02) * (points[2].x - points[0].x), points[1].y);
-			float t = y01 / y02;
-			assert(t <= 1.0f && t >= 0.0f);
-			Color c4 = colors[0].linear_interpolate(colors[2], t);
-			if (points[1].x - points[0].x > p4.x - points[0].x)
-				flat_bottom_triangle(image, points[0], p4, points[1], colors[0], colors[1], c4);
-			else
-				flat_bottom_triangle(image, points[0], points[1], p4, colors[0], colors[1], c4);
-			if (points[2].x - points[1].x < points[2].x - p4.x)
-				flat_top_triangle(image, p4, points[1], points[2], c4, colors[1], colors[2]);
-			else
-				flat_top_triangle(image, points[1], p4, points[2], colors[1], c4, colors[2]);
-		}
-
-#if 0
-		printf("sorted: %ls %ls %ls\n",
-				String(points[0]).c_str(), 
-				String(points[1]).c_str(), 
-				String(points[2]).c_str()
-		      );
-#endif
-	}
-#endif
 public:
 	TriangleSet()
 	{
@@ -352,6 +184,22 @@ public:
 	void create_from_array_shape(const Array &arrays_base, const Array &arrays_shape);
 	/* Close but not the same topology */
 	void create_from_array_difference(const Array &arrays_base, int uv_index1, const Array &arrays_shape, int uv_index2);
-	void draw(Ref<Image> image, int uv_index);
+	void draw(Ref<Image> vimage, Ref<Image> nimage, int uv_index);
+	Vector3 get_min()
+	{
+		return Vector3(minp[0], minp[1], minp[2]);
+	}
+	Vector3 get_max()
+	{
+		return Vector3(maxp[0], maxp[1], maxp[2]);
+	}
+	Vector3 get_min_normal()
+	{
+		return Vector3(minn[0], minn[1], minn[2]);
+	}
+	Vector3 get_max_normal()
+	{
+		return Vector3(maxn[0], maxn[1], maxn[2]);
+	}
 };
 #endif

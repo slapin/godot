@@ -31,10 +31,12 @@
 #include "register_types.h"
 #include "morpher.h"
 #include "triangle.h"
+#include "modifierset.h"
 
 void register_morpher_types() {
 	ClassDB::register_class<DNA_>();
 	ClassDB::register_class<TriangleSet>();
+	ClassDB::register_class<ModifierSet>();
 }
 
 void unregister_morpher_types() {
