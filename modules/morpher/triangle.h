@@ -20,6 +20,58 @@ protected:
 	float minn[3];
 	float maxn[3];
 	float cdn[3];
+	int minx, miny, maxx, maxy;
+	PoolVector<uint8_t> get_data(const Ref<Image> &vimage, const Ref<Image> &nimage)
+	{
+		int i, j, width = vimage->get_width(), height = vimage->get_height();
+		const PoolVector<uint8_t> &vdata = vimage->get_data(), &ndata = nimage->get_data();
+		assert(vdata.size() == ndata.size());
+		uint32_t *h_table = memnew_arr(uint32_t, height + 1);
+		h_table[0] = (uint32_t) height;
+		uint64_t *src_buffer = memnew_arr(uint64_t, width);
+		uint8_t *dst_buffer = memnew_arr(uint8_t, width * 9);
+		PoolVector<uint8_t> ret;
+		if (minx == maxx || miny == maxy)
+			return ret;
+		/* map of height offsets */
+		ret.resize(ret.size() + height * 4 + 4);
+		const uint32_t *pxdata = (const uint32_t *)vdata.read().ptr();
+		const uint32_t *npxdata = (const uint32_t *)vdata.read().ptr();
+		int out_count = ret.size();
+		for (i = miny; i < maxy + 1; i++) {
+			h_table[i + 1] = out_count;
+			for (j = minx; j < maxx + 1; j++) {
+				uint64_t data_l = (pxdata[i * width + j] & 0xFFFFFFU);
+				uint64_t data_h = (npxdata[i * width + j] & 0xFFFFFFU);
+				src_buffer[j] = (data_l | (data_h << 24)) & 0xFFFFFFFFFFFFULL;
+			}
+			uint8_t count = 1;
+			uint64_t cur = src_buffer[0];
+			int dst_count = 0;
+			for (j = minx + 1; j < maxx + 1; j++) {
+				if (cur == src_buffer[j] && count < 255 && j < maxx)
+					count++;
+				else {
+					int k;
+					for (k = 0; k < 6; k++) {
+						dst_buffer[dst_count++] = (uint8_t)(cur & 0xff);
+						cur >>= 8;
+					}
+					dst_buffer[dst_count++] = count;
+					cur = src_buffer[j];
+					count = 1;
+				}
+			}
+			if (ret.size() < out_count + dst_count)
+				ret.resize(out_count + dst_count * 2);
+			uint8_t *dptr = ret.write().ptr();
+			memcpy(&dptr[out_count], dst_buffer, dst_count);
+			out_count += dst_count;
+		}
+		uint32_t *table_p = (uint32_t *)ret.read().ptr();
+		memcpy(table_p, h_table, (height + 1) * 4);
+		return ret;
+	}
 	static inline void draw_hline(Image *image, const float *v1, const float *v2)
 	{
 		if (v1[0] < 0 && v2[0] < 0)
@@ -184,6 +236,17 @@ public:
 	void create_from_array_shape(const Array &arrays_base, const Array &arrays_shape);
 	/* Close but not the same topology */
 	void create_from_array_difference(const Array &arrays_base, int uv_index1, const Array &arrays_shape, int uv_index2);
+	inline void update_bounds(float x, float y)
+	{
+		if (minx > (int)x)
+			minx = (int)x;
+		if (miny > (int)y)
+			miny = (int)y;
+		if (maxx < ceil(x))
+			maxx = (int)(ceil(x));
+		if (maxy < ceil(y))
+			maxy = (int)(ceil(y));
+	}
 	void draw(Ref<Image> vimage, Ref<Image> nimage, int uv_index);
 	Vector3 get_min()
 	{

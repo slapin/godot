@@ -4,6 +4,7 @@ void TriangleSet::_bind_methods()
 	ClassDB::bind_method(D_METHOD("create_from_array_shape", "arrays_base", "shape_arrays"), &TriangleSet::create_from_array_shape);
 	ClassDB::bind_method(D_METHOD("create_from_mesh_difference", "arrays_base", "uv_index1", "arrays_shape", "uv_index2"), &TriangleSet::create_from_array_difference);
 	ClassDB::bind_method(D_METHOD("draw", "vimage", "nimage", "uv_index"), &TriangleSet::draw);
+	ClassDB::bind_method(D_METHOD("get_data", "vimage", "nimage"), &TriangleSet::get_data);
 	ClassDB::bind_method(D_METHOD("get_min"), &TriangleSet::get_min);
 	ClassDB::bind_method(D_METHOD("get_max"), &TriangleSet::get_max);
 	ClassDB::bind_method(D_METHOD("get_min_normal"), &TriangleSet::get_min_normal);
@@ -125,6 +126,10 @@ void TriangleSet::draw(Ref<Image> vimage, Ref<Image> nimage, int uv_index)
 	int height = vimage->get_height();
 	int nwidth = nimage->get_width();
 	int nheight = nimage->get_height();
+	minx = width;
+	miny = height;
+	maxx = -1;
+	minx = -1;
 	Vector2 mulv(width, height);
 	Vector2 muln(nwidth, nheight);
 	normalize_deltas();
@@ -152,6 +157,7 @@ void TriangleSet::draw(Ref<Image> vimage, Ref<Image> nimage, int uv_index)
 		const Vector2 &vp1 = uvs_r[indices_r[i + 0]];
 		const Vector2 &vp2 = uvs_r[indices_r[i + 1]];
 		const Vector2 &vp3 = uvs_r[indices_r[i + 2]];
+		const float eps = 0.001f;
 		Vector2 center = (vp1 + vp2 + vp3) / 3.0;
 		Vector2 c1 = (vp1 - center).normalized() * 8.0;
 		Vector2 c2 = (vp2 - center).normalized() * 8.0;
@@ -159,6 +165,11 @@ void TriangleSet::draw(Ref<Image> vimage, Ref<Image> nimage, int uv_index)
 		const Vector3 &vc1 = vertices_r[indices_r[i + 0]];
 		const Vector3 &vc2 = vertices_r[indices_r[i + 1]];
 		const Vector3 &vc3 = vertices_r[indices_r[i + 2]];
+		if (vc1.length_squared() + vc2.length_squared() + vc3.length_squared() > eps * eps) {
+			update_bounds(vp1.x * mulv.x, vp1.y *mulv.y);
+			update_bounds(vp2.x * mulv.x, vp2.y *mulv.y);
+			update_bounds(vp3.x * mulv.x, vp3.y *mulv.y);
+		}
 		const Vector3 &nc1 = normals_r[indices_r[i + 0]];
 		const Vector3 &nc2 = normals_r[indices_r[i + 1]];
 		const Vector3 &nc3 = normals_r[indices_r[i + 2]];
@@ -190,6 +201,14 @@ void TriangleSet::draw(Ref<Image> vimage, Ref<Image> nimage, int uv_index)
 		draw_triangle(vimage.ptr(), v1, v2, v3);
 		draw_triangle(nimage.ptr(), n1, n2, n3);
 	}
+	if (maxx >= width)
+		maxx = width - 1;
+	if (maxy >= height)
+		maxy = height - 1;
+	if (minx < 0)
+		minx = 0;
+	if (miny < 0)
+		miny = 0;
 	vimage->unlock();
 	nimage->unlock();
 }
