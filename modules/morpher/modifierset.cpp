@@ -1,6 +1,6 @@
 #include "modifierset.h"
 
-void Modifier::modify(float *data, int vertex_count)
+void Modifier::modify(float *data, int vertex_count, float value)
 {
 	for (int i = 0; i < mod_indices.size(); i++) {
 		int index = mod_indices[i];
@@ -63,12 +63,28 @@ void ModifierSet::add_modifier(const String &name, Ref<Image> vimage, Ref<Image>
 	name2mod[name] = mod_count;
 	mod_count++;
 }
-void ModifierSet::add_mesh(const String &name, Ref<ArrayMesh> mesh)
+int ModifierSet::add_work_mesh(Ref<ArrayMesh> mesh)
+{
+	struct work_mesh wm;
+	int i;
+	int ret = work_meshes.size();
+	wm.mat = mesh->surface_get_material(0);
+	wm.work_mesh = mesh;
+	for (i = 0; i < mod_count; i++)
+		wm.mod_values[i] = 0.0f;
+	work_meshes.push_back(wm);
+	return ret;
+}
+void ModifierSet::remove_work_mesh(int id)
+{
+	if (id < 0 || id >= work_meshes.size())
+		return;
+	work_meshes.remove(id);
+}
+void ModifierSet::add_mesh(const String &name, const Ref<ArrayMesh> mesh)
 {
 	int i, j;
-	work_mesh = mesh;
 	surface = mesh->surface_get_arrays(0);
-	mat = mesh->surface_get_material(0);
 	const PoolVector<Vector2> &uvdata = surface[uv_index];
 	const PoolVector<Vector3> &vdata = surface[Mesh::ARRAY_VERTEX];
 	const PoolVector<Vector3> &normal = surface[Mesh::ARRAY_NORMAL];
@@ -111,79 +127,88 @@ void ModifierSet::_bind_methods()
 {
 	ClassDB::bind_method(D_METHOD("add_modifier", "name", "vimage", "nimage", "minmax"), &ModifierSet::add_modifier);
 	ClassDB::bind_method(D_METHOD("add_mesh", "name", "mesh"), &ModifierSet::add_mesh);
-	ClassDB::bind_method(D_METHOD("set_modifier_value", "name", "value"), &ModifierSet::set_modifier_value);
-	ClassDB::bind_method(D_METHOD("get_modifier_value", "name"), &ModifierSet::get_modifier_value);
+	ClassDB::bind_method(D_METHOD("add_mesh_scene", "node", "name"), &ModifierSet::add_mesh_scene);
+	ClassDB::bind_method(D_METHOD("add_work_mesh", "mesh"), &ModifierSet::add_work_mesh);
+	ClassDB::bind_method(D_METHOD("add_work_mesh_scene", "node", "name"), &ModifierSet::add_work_mesh_scene);
+	ClassDB::bind_method(D_METHOD("set_modifier_value", "id", "name", "value"), &ModifierSet::set_modifier_value);
+	ClassDB::bind_method(D_METHOD("get_modifier_value", "id", "name"), &ModifierSet::get_modifier_value);
 	ClassDB::bind_method(D_METHOD("set_uv_index", "index"), &ModifierSet::set_uv_index);
 	ClassDB::bind_method(D_METHOD("modify"), &ModifierSet::modify);
 }
 
 void ModifierSet::modify()
 {
-	int i, j;
+	int i, j, k;
 	if (!dirty)
 		return;
-	for (i = 0; i < vertex_count; i++) {
-		meshdata[i * 14 + 2] =  meshdata[i * 14 + 8];
-		meshdata[i * 14 + 3] =  meshdata[i * 14 + 9];
-		meshdata[i * 14 + 4] =  meshdata[i * 14 + 10];
-		meshdata[i * 14 + 5] =  meshdata[i * 14 + 11];
-		meshdata[i * 14 + 6] =  meshdata[i * 14 + 12];
-		meshdata[i * 14 + 7] =  meshdata[i * 14 + 13];
-	}
-	for (i = 0; i < mod_count; i++)
-		modifiers[i].modify(meshdata, vertex_count);
-	for (i = 0; i < vertex_count; i++) {
-		if (same_verts.has(i)) {
-			float vx = meshdata[i * 14 + 2];
-			float vy = meshdata[i * 14 + 3];
-			float vz = meshdata[i * 14 + 4];
-			float nx = meshdata[i * 14 + 5];
-			float ny = meshdata[i * 14 + 6];
-			float nz = meshdata[i * 14 + 7];
-			for (j = 0; j < same_verts[i].size(); j++) {
-				vx = Math::lerp(vx, meshdata[same_verts[i][j] * 14 + 2], 0.5f);
-				vy = Math::lerp(vy, meshdata[same_verts[i][j] * 14 + 3], 0.5f);
-				vz = Math::lerp(vz, meshdata[same_verts[i][j] * 14 + 4], 0.5f);
-				nx = Math::lerp(nx, meshdata[same_verts[i][j] * 14 + 5], 0.5f);
-				ny = Math::lerp(ny, meshdata[same_verts[i][j] * 14 + 6], 0.5f);
-				nz = Math::lerp(nz, meshdata[same_verts[i][j] * 14 + 7], 0.5f);
-			}
-			meshdata[i * 14 + 2] = vx;
-			meshdata[i * 14 + 3] = vy;
-			meshdata[i * 14 + 4] = vz;
-			meshdata[i * 14 + 5] = nx;
-			meshdata[i * 14 + 6] = ny;
-			meshdata[i * 14 + 7] = nz;
-			for (j = 0; j < same_verts[i].size(); j++) {
-				meshdata[same_verts[i][j] * 14 + 2] = vx;
-				meshdata[same_verts[i][j] * 14 + 3] = vy;
-				meshdata[same_verts[i][j] * 14 + 4] = vz;
-				meshdata[same_verts[i][j] * 14 + 5] = nx;
-				meshdata[same_verts[i][j] * 14 + 6] = ny;
-				meshdata[same_verts[i][j] * 14 + 7] = nz;
+	for (k = 0; k < work_meshes.size(); k++) {
+		for (i = 0; i < vertex_count; i++) {
+			meshdata[i * 14 + 2] =  meshdata[i * 14 + 8];
+			meshdata[i * 14 + 3] =  meshdata[i * 14 + 9];
+			meshdata[i * 14 + 4] =  meshdata[i * 14 + 10];
+			meshdata[i * 14 + 5] =  meshdata[i * 14 + 11];
+			meshdata[i * 14 + 6] =  meshdata[i * 14 + 12];
+			meshdata[i * 14 + 7] =  meshdata[i * 14 + 13];
+		}
+		for (i = 0; i < mod_count; i++)
+			if (work_meshes[k].mod_values.has(i))
+				if (work_meshes[k].mod_values[i] >= 0.001f)
+					modifiers[i].modify(meshdata, vertex_count, work_meshes[k].mod_values[i]);
+		for (i = 0; i < vertex_count; i++) {
+			if (same_verts.has(i)) {
+				float vx = meshdata[i * 14 + 2];
+				float vy = meshdata[i * 14 + 3];
+				float vz = meshdata[i * 14 + 4];
+				float nx = meshdata[i * 14 + 5];
+				float ny = meshdata[i * 14 + 6];
+				float nz = meshdata[i * 14 + 7];
+				for (j = 0; j < same_verts[i].size(); j++) {
+					vx = Math::lerp(vx, meshdata[same_verts[i][j] * 14 + 2], 0.5f);
+					vy = Math::lerp(vy, meshdata[same_verts[i][j] * 14 + 3], 0.5f);
+					vz = Math::lerp(vz, meshdata[same_verts[i][j] * 14 + 4], 0.5f);
+					nx = Math::lerp(nx, meshdata[same_verts[i][j] * 14 + 5], 0.5f);
+					ny = Math::lerp(ny, meshdata[same_verts[i][j] * 14 + 6], 0.5f);
+					nz = Math::lerp(nz, meshdata[same_verts[i][j] * 14 + 7], 0.5f);
+				}
+				meshdata[i * 14 + 2] = vx;
+				meshdata[i * 14 + 3] = vy;
+				meshdata[i * 14 + 4] = vz;
+				meshdata[i * 14 + 5] = nx;
+				meshdata[i * 14 + 6] = ny;
+				meshdata[i * 14 + 7] = nz;
+				for (j = 0; j < same_verts[i].size(); j++) {
+					meshdata[same_verts[i][j] * 14 + 2] = vx;
+					meshdata[same_verts[i][j] * 14 + 3] = vy;
+					meshdata[same_verts[i][j] * 14 + 4] = vz;
+					meshdata[same_verts[i][j] * 14 + 5] = nx;
+					meshdata[same_verts[i][j] * 14 + 6] = ny;
+					meshdata[same_verts[i][j] * 14 + 7] = nz;
+				}
 			}
 		}
+		PoolVector<Vector3> vertices = surface[Mesh::ARRAY_VERTEX];
+		PoolVector<Vector3> normals = surface[Mesh::ARRAY_NORMAL];
+		PoolVector<Vector3>::Write vertex_w = vertices.write();
+		PoolVector<Vector3>::Write normal_w = normals.write();
+		for (i = 0; i < vertex_count; i++) {
+			vertex_w[i].x = meshdata[i * 14 + 2];
+			vertex_w[i].y = meshdata[i * 14 + 3];
+			vertex_w[i].z = meshdata[i * 14 + 4];
+			normal_w[i].x = meshdata[i * 14 + 5];
+			normal_w[i].y = meshdata[i * 14 + 6];
+			normal_w[i].z = meshdata[i * 14 + 7];
+		}
+		vertex_w.release();
+		normal_w.release();
+		surface[Mesh::ARRAY_VERTEX] = vertices;
+		surface[Mesh::ARRAY_NORMAL] = normals;
+		work_meshes[k].work_mesh->surface_remove(0);
+		work_meshes[k].work_mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, surface);
+		work_meshes[k].work_mesh->surface_set_material(0, work_meshes[k].mat);
 	}
-	PoolVector<Vector3> vertices = surface[Mesh::ARRAY_VERTEX];
-	PoolVector<Vector3> normals = surface[Mesh::ARRAY_NORMAL];
-	PoolVector<Vector3>::Write vertex_w = vertices.write();
-	PoolVector<Vector3>::Write normal_w = normals.write();
-	for (i = 0; i < vertex_count; i++) {
-		vertex_w[i].x = meshdata[i * 14 + 2];
-		vertex_w[i].y = meshdata[i * 14 + 3];
-		vertex_w[i].z = meshdata[i * 14 + 4];
-		normal_w[i].x = meshdata[i * 14 + 5];
-		normal_w[i].y = meshdata[i * 14 + 6];
-		normal_w[i].z = meshdata[i * 14 + 7];
-	}
-	vertex_w.release();
-	normal_w.release();
-	surface[Mesh::ARRAY_VERTEX] = vertices;
-	surface[Mesh::ARRAY_NORMAL] = normals;
-	work_mesh->surface_remove(0);
-	work_mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, surface);
-	work_mesh->surface_set_material(0, mat);
-
 	dirty = false;
 }
 
+void ModifierSet::create_uv(int id, Ref<ArrayMesh> mesh, int src_id, Ref<ArrayMesh> src_mesh)
+{
+}
