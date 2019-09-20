@@ -4,14 +4,19 @@
 #include <cassert>
 #include <core/reference.h>
 #include <core/resource.h>
+#include <core/bind/core_bind.h>
+#include <core/os/file_access.h>
 #include <scene/resources/mesh.h>
 #include <scene/3d/mesh_instance.h>
+#include <scene/3d/skeleton.h>
 
 #undef MORPH_DEBUG
 
 class Modifier {
 protected:
 	friend class ModifierSet;
+	friend class ModifierGroup;
+	String mod_name;
 	static void _bind_methods();
 	float minp[3];
 	float maxp[3];
@@ -25,7 +30,8 @@ protected:
 	Modifier() : empty(true)
 	{
 	}
-	void create_from_images(const float *meshdata,
+	void create_from_images(const String &name,
+			const float *meshdata,
 			int count,
 			Image *vdata,
 			Image *ndata,
@@ -35,19 +41,91 @@ protected:
 			const Vector3 &nmax);
 	void modify(float * data, int vertex_count, float value);
 };
+
+class ModifierGroup {
+	friend class ModifierSet;
+	String group_name;
+	Modifier mod_minus;
+	Modifier mod_plus;
+	bool empty;
+	inline void modify(float * data, int vertex_count, float value)
+	{
+		if (value > 0.0f) {
+			if (!mod_plus.empty)
+				mod_plus.modify(data, vertex_count, value);
+		} else if (value < 0.0f ){
+			if (!mod_minus.empty)
+				mod_minus.modify(data, vertex_count, -value);
+		}
+
+	}
+	inline void create_from_images(const String &name,
+			const float *meshdata,
+			int count,
+			Image *vdata,
+			Image *ndata,
+			const Vector3 &vmin,
+			const Vector3 &vmax,
+			const Vector3 &nmin,
+			const Vector3 &nmax)
+	{
+		if (name.ends_with("_plus")) {
+				if (empty)
+					group_name = name.replace("_plus", "");
+				mod_plus.create_from_images(name,
+					meshdata,
+					count,
+					vdata,
+					ndata,
+					vmin,
+					vmax,
+					nmin,
+					nmax);
+		} else if (name.ends_with("_minus")) {
+				if (empty)
+					group_name = name.replace("_minus", "");
+				mod_minus.create_from_images(name,
+					meshdata,
+					count,
+					vdata,
+					ndata,
+					vmin,
+					vmax,
+					nmin,
+					nmax);
+		} else {
+				if (empty)
+					group_name = name.replace("_plus", "");
+				mod_plus.create_from_images(name,
+					meshdata,
+					count,
+					vdata,
+					ndata,
+					vmin,
+					vmax,
+					nmin,
+					nmax);
+		}
+		empty = false;
+	}
+	ModifierGroup(): empty(true)
+	{
+	}
+};
+
 class ModifierSet: public Reference {
 	GDCLASS(ModifierSet, Reference)
 protected:
-	static void _bind_methods();
-	Modifier modifiers[256];
+	ModifierGroup modifiers[256];
 	int mod_count;
-	HashMap<String, int> name2mod;
 	float *meshdata;
+	HashMap<String, int> name2mod;
 	int uv_index;
 	HashMap<int, PoolVector<int> > same_verts;
 	int vertex_count;
 	bool dirty;
 	Array surface;
+	static void _bind_methods();
 	struct work_mesh {
 		Ref<Material> mat;
 		Ref<ArrayMesh> work_mesh;
@@ -81,6 +159,7 @@ public:
 	{
 	}
 	void add_modifier(const String &name, Ref<Image> vimage, Ref<Image> nimage, const PoolVector<float> &minmax);
+	void _add_modifier(const String &name, Image *vimage, Image *nimage, const float *minmax);
 	void add_mesh(const String &name, Ref<ArrayMesh> mesh);
 	void add_mesh_scene(const Node *node, const String &name)
 	{
@@ -162,6 +241,14 @@ public:
 	void remove_work_mesh(int id);
 	void modify();
 	void create_uv(int id, Ref<ArrayMesh> mesh, int src_id, Ref<ArrayMesh> src_mesh);
+	PoolVector<String> get_modifier_list()
+	{
+		PoolVector<String> ret;
+		for (const String *key = name2mod.next(NULL); key; key = name2mod.next(key)) {
+			ret.push_back(*key);
+		}
+		return ret;
+	}
 	~ModifierSet()
 	{
 		if (meshdata)
@@ -169,3 +256,82 @@ public:
 	}
 };
 #endif
+
+class CharacterModifierSet: public Reference {
+	GDCLASS(CharacterModifierSet, Reference)
+protected:
+	HashMap<String, ModifierSet *> mods;
+	String base_name;
+	static void _bind_methods();
+	bool dirty;
+	HashMap<String, String> helpers;
+public:
+	CharacterModifierSet(): base_name("base"), dirty(false)
+	{
+	}
+	void set_base_name(const String &name)
+	{
+		base_name = name;
+	}
+	Ref<ModifierSet> create(const String &name)
+	{
+		mods[name] = memnew(ModifierSet);
+		Ref<ModifierSet> ret = mods[name];
+		return ret;
+	}
+	void add_mesh_scene(Node *node)
+	{
+		for (const String *key = mods.next(NULL);
+				key;
+				key = mods.next(key)) {
+			mods[*key]->add_mesh_scene(node, *key);
+		}
+	}
+	int add_work_mesh_scene(Node *node)
+	{
+		int ret = -1;
+		for (const String *key = mods.next(NULL);
+				key;
+				key = mods.next(key)) {
+			ret = mods[*key]->add_work_mesh_scene(node, *key);
+		}
+		return ret;
+	}
+	void set_modifier_value(int id, const String &name, float value)
+	{
+		for (const String *key = mods.next(NULL);
+				key;
+				key = mods.next(key)) {
+			if (key)
+				mods[*key]->set_modifier_value(id, name, value);
+		}
+		dirty = true;
+	}
+	float get_modifier_value(int id, const String &name)
+	{
+		assert(mods.has(base_name));
+		return mods[base_name]->get_modifier_value(id, name);
+	}
+	PoolVector<String> get_modifier_list()
+	{
+		assert(mods.has(base_name));
+		return mods[base_name]->get_modifier_list();
+	}
+	void modify()
+	{
+		if (!dirty)
+			return;
+		for (const String *key = mods.next(NULL);
+				key;
+				key = mods.next(key)) {
+			mods[*key]->modify();
+		}
+		dirty = false;
+	}
+	void load(Ref<_File> fd);
+	void set_helper(const String &mod_name, const String &name)
+	{
+		helpers[mod_name] = name;
+	}
+};
+

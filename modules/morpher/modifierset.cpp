@@ -17,8 +17,12 @@ void Modifier::modify(float *data, int vertex_count, float value)
 		data[index * 14 + 6] -= ny * value;
 		data[index * 14 + 7] -= nz * value;
 	}
+#ifdef MORPH_DEBUG
+	printf("mod: %ls val %f\n", mod_name.c_str(), value);
+#endif
 }
-void Modifier::create_from_images(const float *meshdata, int count, 
+void Modifier::create_from_images(const String &name,
+		const float *meshdata, int count, 
 		Image *vdata, Image *ndata, const Vector3 &vmin,
 		const Vector3 &vmax, const Vector3 &nmin, const Vector3 &nmax)
 {
@@ -52,14 +56,38 @@ void Modifier::create_from_images(const float *meshdata, int count,
 	}
 	ndata->unlock();
 	vdata->unlock();
+	empty = false;
+	mod_name = name;
+#ifdef MORPH_DEBUG
+	printf("Created %ls\n", mod_name.c_str());
+#endif
 }
 void ModifierSet::add_modifier(const String &name, Ref<Image> vimage, Ref<Image> nimage, const PoolVector<float> &minmax)
+{
+	printf("adding modifier %ls\n", name.c_str());
+	_add_modifier(name, vimage.ptr(), nimage.ptr(), minmax.read().ptr());
+}
+void ModifierSet::_add_modifier(const String &name, Image *vimage, Image *nimage, const float *minmax)
 {
 	Vector3 vmin(minmax[0], minmax[1], minmax[2]);
 	Vector3 vmax(minmax[3], minmax[4], minmax[5]);
 	Vector3 nmin(minmax[6], minmax[7], minmax[8]);
 	Vector3 nmax(minmax[9], minmax[10], minmax[11]);
-	modifiers[mod_count].create_from_images(meshdata, vertex_count, vimage.ptr(), nimage.ptr(), vmin, vmax, nmin, nmax);
+	if (name.ends_with("_plus") || name.ends_with("_minus")) {
+		String gname = name.replace("_plus", "").replace("_minus", "");
+		if (name2mod.has(gname)) {
+			modifiers[name2mod[gname]].create_from_images(name,
+					meshdata, vertex_count, vimage,
+					nimage, vmin, vmax, nmin, nmax);
+			return;
+		} else {
+			modifiers[mod_count].create_from_images(name, meshdata, vertex_count, vimage, nimage, vmin, vmax, nmin, nmax);
+			name2mod[gname] = mod_count;
+			mod_count++;
+			return;
+		}
+	}
+	modifiers[mod_count].create_from_images(name, meshdata, vertex_count, vimage, nimage, vmin, vmax, nmin, nmax);
 	name2mod[name] = mod_count;
 	mod_count++;
 }
@@ -134,6 +162,7 @@ void ModifierSet::_bind_methods()
 	ClassDB::bind_method(D_METHOD("get_modifier_value", "id", "name"), &ModifierSet::get_modifier_value);
 	ClassDB::bind_method(D_METHOD("set_uv_index", "index"), &ModifierSet::set_uv_index);
 	ClassDB::bind_method(D_METHOD("modify"), &ModifierSet::modify);
+	ClassDB::bind_method(D_METHOD("get_modifier_list"), &ModifierSet::get_modifier_list);
 }
 
 void ModifierSet::modify()
@@ -152,7 +181,7 @@ void ModifierSet::modify()
 		}
 		for (i = 0; i < mod_count; i++)
 			if (work_meshes[k].mod_values.has(i))
-				if (work_meshes[k].mod_values[i] >= 0.001f)
+				if (fabs(work_meshes[k].mod_values[i]) >= 0.001f)
 					modifiers[i].modify(meshdata, vertex_count, work_meshes[k].mod_values[i]);
 		for (i = 0; i < vertex_count; i++) {
 			if (same_verts.has(i)) {
@@ -212,3 +241,76 @@ void ModifierSet::modify()
 void ModifierSet::create_uv(int id, Ref<ArrayMesh> mesh, int src_id, Ref<ArrayMesh> src_mesh)
 {
 }
+void CharacterModifierSet::load(Ref<_File> fd)
+{
+	int i;
+	float minp[3], maxp[3], min_normal[3], max_normal[3];
+	int width, height, format;
+	int nwidth, nheight, nformat;
+	int dec_size, comp_size;
+
+	String shape_name = fd->get_pascal_string();
+	printf("shape: %ls\n", shape_name.c_str());
+	for (i = 0; i < 3; i++)
+		minp[i] = fd->get_float();
+	for (i = 0; i < 3; i++)
+		maxp[i] = fd->get_float();
+	width = fd->get_32();
+	height = fd->get_32();
+	format = fd->get_32();
+	dec_size = fd->get_32();
+	comp_size = fd->get_32();
+	PoolVector<uint8_t> imgbuf = fd->get_buffer(comp_size);
+	PoolVector<uint8_t> imgdecbuf;
+	imgdecbuf.resize(dec_size);
+	Compression::decompress(imgdecbuf.write().ptr(), dec_size, imgbuf.read().ptr(), comp_size, Compression::MODE_DEFLATE);
+	Image img = Image();
+	img.create(width, height, false, (Image::Format)format, imgdecbuf);
+	for (i = 0; i < 3; i++)
+		min_normal[i] = fd->get_float();
+	for (i = 0; i < 3; i++)
+		max_normal[i] = fd->get_float();
+	nwidth = fd->get_32();
+	nheight = fd->get_32();
+	nformat = fd->get_32();
+	dec_size = fd->get_32();
+	comp_size = fd->get_32();
+	PoolVector<uint8_t> imgbufn = fd->get_buffer(comp_size);
+	PoolVector<uint8_t> imgdecbufn;
+	imgdecbufn.resize(dec_size);
+	Compression::decompress(imgdecbufn.write().ptr(), dec_size, imgbufn.read().ptr(), comp_size, Compression::MODE_DEFLATE);
+	Image imgn = Image();
+	imgn.create(nwidth, nheight, false, (Image::Format)nformat, imgdecbufn);
+	Vector<String> splitname = shape_name.split(":");
+	PoolVector<float> minmax;
+	minmax.resize(12);
+	for (i = 0; i < 3; i++)
+		minmax.write()[i] = minp[i];
+	for (i = 0; i < 3; i++)
+		minmax.write()[i + 3] = maxp[i];
+	for (i = 0; i < 3; i++)
+		minmax.write()[i + 6] = min_normal[i];
+	for (i = 0; i < 3; i++)
+		minmax.write()[i + 9] = max_normal[i];
+	for (const String *key = mods.next(NULL);
+			key;
+			key = mods.next(key)) {
+		if (helpers[*key] == splitname[0])
+			mods[*key]->_add_modifier(splitname[1],
+				&img, &imgn, minmax.read().ptr());
+	}
+}
+void CharacterModifierSet::_bind_methods()
+{
+	ClassDB::bind_method(D_METHOD("set_base_name", "name"), &CharacterModifierSet::set_base_name);
+	ClassDB::bind_method(D_METHOD("create", "name"), &CharacterModifierSet::create);
+	ClassDB::bind_method(D_METHOD("add_mesh_scene", "node"), &CharacterModifierSet::add_mesh_scene);
+	ClassDB::bind_method(D_METHOD("add_work_mesh_scene", "node"), &CharacterModifierSet::add_work_mesh_scene);
+	ClassDB::bind_method(D_METHOD("set_modifier_value", "id", "name", "value"), &CharacterModifierSet::set_modifier_value);
+	ClassDB::bind_method(D_METHOD("get_modifier_value", "id", "name"), &CharacterModifierSet::get_modifier_value);
+	ClassDB::bind_method(D_METHOD("modify"), &CharacterModifierSet::modify);
+	ClassDB::bind_method(D_METHOD("get_modifier_list"), &CharacterModifierSet::get_modifier_list);
+	ClassDB::bind_method(D_METHOD("load", "fd"), &CharacterModifierSet::load);
+	ClassDB::bind_method(D_METHOD("set_helper", "mod_name", "name"), &CharacterModifierSet::set_helper);
+}
+

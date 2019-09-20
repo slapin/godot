@@ -9,6 +9,7 @@ void TriangleSet::_bind_methods()
 	ClassDB::bind_method(D_METHOD("get_max"), &TriangleSet::get_max);
 	ClassDB::bind_method(D_METHOD("get_min_normal"), &TriangleSet::get_min_normal);
 	ClassDB::bind_method(D_METHOD("get_max_normal"), &TriangleSet::get_max_normal);
+	ClassDB::bind_method(D_METHOD("save", "fd"), &TriangleSet::save);
 }
 void TriangleSet::create_from_array_shape(const Array &arrays_base, const Array &shape_array)
 {
@@ -258,3 +259,47 @@ void TriangleSet::normalize_deltas()
 				normals_w[i][j] = (normals_w[i][j] - minn[j]) / cdn[j];
 		}
 }
+void TriangleSet::save(Ref<_File> fd, const String &shape_name, Ref<Image> vimage, Ref<Image> nimage)
+{
+	int csize;
+	fd->store_pascal_string(shape_name);
+	fd->store_float(minp[0]);
+	fd->store_float(minp[1]);
+	fd->store_float(minp[2]);
+	fd->store_float(maxp[0]);
+	fd->store_float(maxp[1]);
+	fd->store_float(maxp[2]);
+	fd->store_32(vimage->get_width());
+	fd->store_32(vimage->get_height());
+	fd->store_32(vimage->get_format());
+	PoolVector<uint8_t> imgbuf = vimage->get_data();
+	fd->store_32(imgbuf.size());
+	PoolVector<uint8_t> imgbuf_comp;
+	imgbuf_comp.resize(imgbuf.size());
+	csize = Compression::compress(imgbuf_comp.write().ptr(),
+			imgbuf.read().ptr(), imgbuf.size(),
+			Compression::MODE_DEFLATE);
+	imgbuf_comp.resize(csize);
+	fd->store_32(csize);
+	fd->store_buffer(imgbuf_comp);
+	fd->store_float(minn[0]);
+	fd->store_float(minn[1]);
+	fd->store_float(minn[2]);
+	fd->store_float(maxn[0]);
+	fd->store_float(maxn[1]);
+	fd->store_float(maxn[2]);
+	fd->store_32(nimage->get_width());
+	fd->store_32(nimage->get_height());
+	fd->store_32(nimage->get_format());
+	PoolVector<uint8_t> imgbufn = nimage->get_data();
+	fd->store_32(imgbufn.size());
+	PoolVector<uint8_t> imgbuf_compn;
+	imgbuf_compn.resize(imgbufn.size());
+	csize = Compression::compress(imgbuf_compn.write().ptr(),
+			imgbufn.read().ptr(), imgbufn.size(),
+			Compression::MODE_DEFLATE);
+	imgbuf_compn.resize(csize);
+	fd->store_32(csize);
+	fd->store_buffer(imgbuf_compn);
+}
+

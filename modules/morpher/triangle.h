@@ -3,6 +3,8 @@
 #include <cassert>
 #include <core/reference.h>
 #include <core/resource.h>
+#include <core/bind/core_bind.h>
+#include <core/os/file_access.h>
 #include <scene/resources/mesh.h>
 
 class TriangleSet: public Reference {
@@ -264,5 +266,6 @@ public:
 	{
 		return Vector3(maxn[0], maxn[1], maxn[2]);
 	}
+	void save(Ref<_File> fd, const String &shape_name, Ref<Image> vimage, Ref<Image> nimage);
 };
 #endif
