@@ -21,6 +21,22 @@ void Modifier::modify(float *data, int vertex_count, float value)
 	printf("mod: %ls val %f\n", mod_name.c_str(), value);
 #endif
 }
+
+void Modifier::modify(Skeleton *skel, float value)
+{
+	if (bone_id >= 0)
+		skel->set_bone_custom_pose(bone_id,
+			skel->get_bone_custom_pose(bone_id).interpolate_with(xform,
+			value));
+}
+
+void Modifier::create_from_bone(const Skeleton *skel, const String &bone, const Transform &xform)
+{
+	type = TYPE_BONE;
+	bone_id = skel->find_bone(bone);
+	this->xform = xform;
+	empty = false;
+}
 void Modifier::create_from_images(const String &name,
 		const float *meshdata, int count, 
 		Image *vdata, Image *ndata, const Vector3 &vmin,
@@ -58,6 +74,7 @@ void Modifier::create_from_images(const String &name,
 	vdata->unlock();
 	empty = false;
 	mod_name = name;
+	type = TYPE_BLEND;
 #ifdef MORPH_DEBUG
 	printf("Created %ls\n", mod_name.c_str());
 #endif
@@ -66,6 +83,15 @@ void ModifierSet::add_modifier(const String &name, Ref<Image> vimage, Ref<Image>
 {
 	printf("adding modifier %ls\n", name.c_str());
 	_add_modifier(name, vimage.ptr(), nimage.ptr(), minmax.read().ptr());
+}
+void ModifierSet::_add_modifier(const String &name, const Skeleton *skel,
+		const String &bone, const Transform &xform)
+{
+	if (name2mod.has(name))
+		return;
+	modifiers[mod_count].create_from_bone(name, skel, bone, xform);
+	name2mod[name] = mod_count;
+	mod_count++;
 }
 void ModifierSet::_add_modifier(const String &name, Image *vimage, Image *nimage, const float *minmax)
 {
@@ -91,23 +117,28 @@ void ModifierSet::_add_modifier(const String &name, Image *vimage, Image *nimage
 	name2mod[name] = mod_count;
 	mod_count++;
 }
-int ModifierSet::add_work_mesh(Ref<ArrayMesh> mesh)
+int ModifierSet::add_work_mesh(Ref<ArrayMesh> mesh, const NodePath &skel)
 {
 	struct work_mesh wm;
 	int i;
 	int ret = work_meshes.size();
+	printf("pre add %d\n", work_meshes.size());
 	wm.mat = mesh->surface_get_material(0);
 	wm.work_mesh = mesh;
+	wm.skeleton = skel;
 	for (i = 0; i < mod_count; i++)
 		wm.mod_values[i] = 0.0f;
 	work_meshes.push_back(wm);
+	printf("post add %d\n", work_meshes.size());
 	return ret;
 }
 void ModifierSet::remove_work_mesh(int id)
 {
 	if (id < 0 || id >= work_meshes.size())
 		return;
+	printf("pre remove %d\n", work_meshes.size());
 	work_meshes.remove(id);
+	printf("post remove %d\n", work_meshes.size());
 }
 void ModifierSet::add_mesh(const String &name, const Ref<ArrayMesh> mesh)
 {
@@ -154,23 +185,36 @@ void ModifierSet::add_mesh(const String &name, const Ref<ArrayMesh> mesh)
 void ModifierSet::_bind_methods()
 {
 	ClassDB::bind_method(D_METHOD("add_modifier", "name", "vimage", "nimage", "minmax"), &ModifierSet::add_modifier);
-	ClassDB::bind_method(D_METHOD("add_mesh", "name", "mesh"), &ModifierSet::add_mesh);
 	ClassDB::bind_method(D_METHOD("add_mesh_scene", "node", "name"), &ModifierSet::add_mesh_scene);
-	ClassDB::bind_method(D_METHOD("add_work_mesh", "mesh"), &ModifierSet::add_work_mesh);
 	ClassDB::bind_method(D_METHOD("add_work_mesh_scene", "node", "name"), &ModifierSet::add_work_mesh_scene);
 	ClassDB::bind_method(D_METHOD("set_modifier_value", "id", "name", "value"), &ModifierSet::set_modifier_value);
 	ClassDB::bind_method(D_METHOD("get_modifier_value", "id", "name"), &ModifierSet::get_modifier_value);
 	ClassDB::bind_method(D_METHOD("set_uv_index", "index"), &ModifierSet::set_uv_index);
-	ClassDB::bind_method(D_METHOD("modify"), &ModifierSet::modify);
 	ClassDB::bind_method(D_METHOD("get_modifier_list"), &ModifierSet::get_modifier_list);
 }
 
-void ModifierSet::modify()
+void ModifierSet::modify(Node *scene)
 {
 	int i, j, k;
 	if (!dirty)
 		return;
+	if (work_meshes.size() == 0)
+		return;
+	Skeleton *skel = find_node<Skeleton>(scene);
 	for (k = 0; k < work_meshes.size(); k++) {
+#if 0
+		NodePath skel_path = work_meshes[k].skeleton;
+		Skeleton *skel = (Skeleton *)scene->get_node(skel_path);
+#endif
+		for (i = 0; i < skel->get_bone_count(); i++) {
+			skel->set_bone_custom_pose(i, Transform());
+			skel->set_bone_pose(i, Transform());
+		}
+		int left_foot = skel->find_bone("foot_L");
+		int pelvis = skel->find_bone("pelvis");
+		assert(left_foot >= 0 && pelvis >= 0);
+		Vector3 lf_orig_pos = skel->get_bone_global_pose(left_foot).origin;
+
 		for (i = 0; i < vertex_count; i++) {
 			meshdata[i * 14 + 2] =  meshdata[i * 14 + 8];
 			meshdata[i * 14 + 3] =  meshdata[i * 14 + 9];
@@ -181,8 +225,13 @@ void ModifierSet::modify()
 		}
 		for (i = 0; i < mod_count; i++)
 			if (work_meshes[k].mod_values.has(i))
-				if (fabs(work_meshes[k].mod_values[i]) >= 0.001f)
-					modifiers[i].modify(meshdata, vertex_count, work_meshes[k].mod_values[i]);
+				if (fabs(work_meshes[k].mod_values[i]) >= 0.001f) {
+					if (modifiers[i].type == Modifier::TYPE_BLEND)
+						modifiers[i].modify(meshdata, vertex_count, work_meshes[k].mod_values[i]);
+					else if (modifiers[i].type == Modifier::TYPE_BONE) {
+						modifiers[i].modify(skel, work_meshes[k].mod_values[i]);
+					}
+				}
 		for (i = 0; i < vertex_count; i++) {
 			if (same_verts.has(i)) {
 				float vx = meshdata[i * 14 + 2];
@@ -215,6 +264,10 @@ void ModifierSet::modify()
 				}
 			}
 		}
+		Vector3 lf_pos = skel->get_bone_global_pose(left_foot).origin;
+		Transform pelvis_xform = skel->get_bone_custom_pose(pelvis);
+		pelvis_xform.origin += lf_pos - lf_orig_pos;
+		skel->set_bone_custom_pose(pelvis, pelvis_xform);
 		PoolVector<Vector3> vertices = surface[Mesh::ARRAY_VERTEX];
 		PoolVector<Vector3> normals = surface[Mesh::ARRAY_NORMAL];
 		PoolVector<Vector3>::Write vertex_w = vertices.write();
@@ -302,15 +355,28 @@ void CharacterModifierSet::load(Ref<_File> fd)
 }
 void CharacterModifierSet::_bind_methods()
 {
-	ClassDB::bind_method(D_METHOD("set_base_name", "name"), &CharacterModifierSet::set_base_name);
-	ClassDB::bind_method(D_METHOD("create", "name"), &CharacterModifierSet::create);
-	ClassDB::bind_method(D_METHOD("add_mesh_scene", "node"), &CharacterModifierSet::add_mesh_scene);
-	ClassDB::bind_method(D_METHOD("add_work_mesh_scene", "node"), &CharacterModifierSet::add_work_mesh_scene);
-	ClassDB::bind_method(D_METHOD("set_modifier_value", "id", "name", "value"), &CharacterModifierSet::set_modifier_value);
-	ClassDB::bind_method(D_METHOD("get_modifier_value", "id", "name"), &CharacterModifierSet::get_modifier_value);
-	ClassDB::bind_method(D_METHOD("modify"), &CharacterModifierSet::modify);
-	ClassDB::bind_method(D_METHOD("get_modifier_list"), &CharacterModifierSet::get_modifier_list);
-	ClassDB::bind_method(D_METHOD("load", "fd"), &CharacterModifierSet::load);
-	ClassDB::bind_method(D_METHOD("set_helper", "mod_name", "name"), &CharacterModifierSet::set_helper);
+	ClassDB::bind_method(D_METHOD("set_base_name", "name"),
+			&CharacterModifierSet::set_base_name);
+	ClassDB::bind_method(D_METHOD("create", "name"),
+			&CharacterModifierSet::create);
+	ClassDB::bind_method(D_METHOD("add_mesh_scene", "node"),
+			&CharacterModifierSet::add_mesh_scene);
+	ClassDB::bind_method(D_METHOD("add_work_mesh_scene", "node"),
+			&CharacterModifierSet::add_work_mesh_scene);
+	ClassDB::bind_method(D_METHOD("remove_work_meshes", "id"),
+			&CharacterModifierSet::remove_work_meshes);
+	ClassDB::bind_method(D_METHOD("set_modifier_value", "id", "name", "value"),
+			&CharacterModifierSet::set_modifier_value);
+	ClassDB::bind_method(D_METHOD("get_modifier_value", "id", "name"),
+			&CharacterModifierSet::get_modifier_value);
+	ClassDB::bind_method(D_METHOD("modify", "scene"), &CharacterModifierSet::modify);
+	ClassDB::bind_method(D_METHOD("get_modifier_list"),
+			&CharacterModifierSet::get_modifier_list);
+	ClassDB::bind_method(D_METHOD("load", "fd"),
+			&CharacterModifierSet::load);
+	ClassDB::bind_method(D_METHOD("set_helper", "mod_name", "name"),
+			&CharacterModifierSet::set_helper);
+	ClassDB::bind_method(D_METHOD("add_bone_modifier", "name", "scene", "bone_name", "xform"),
+			&CharacterModifierSet::add_bone_modifier);
 }
 

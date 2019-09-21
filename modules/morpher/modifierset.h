@@ -14,6 +14,9 @@
 
 class Modifier {
 protected:
+	int type;
+	static const int TYPE_BLEND = 1;
+	static const int TYPE_BONE = 2;
 	friend class ModifierSet;
 	friend class ModifierGroup;
 	String mod_name;
@@ -25,6 +28,8 @@ protected:
 	float maxn[3];
 	float cdn[3];
 	bool empty;
+	Transform xform;
+	int bone_id;
 	PoolVector<int> mod_indices;
 	PoolVector<float> mod_data;
 	Modifier() : empty(true)
@@ -39,7 +44,9 @@ protected:
 			const Vector3 &vmax,
 			const Vector3 &nmin,
 			const Vector3 &nmax);
+	void create_from_bone(const Skeleton *skel, const String &bone, const Transform &xform);
 	void modify(float * data, int vertex_count, float value);
+	void modify(Skeleton *skel, float value);
 };
 
 class ModifierGroup {
@@ -48,6 +55,7 @@ class ModifierGroup {
 	Modifier mod_minus;
 	Modifier mod_plus;
 	bool empty;
+	int type;
 	inline void modify(float * data, int vertex_count, float value)
 	{
 		if (value > 0.0f) {
@@ -107,6 +115,17 @@ class ModifierGroup {
 					nmax);
 		}
 		empty = false;
+		type = Modifier::TYPE_BLEND;
+	}
+	void create_from_bone(const String &name, const Skeleton *skel, const String &bone, const Transform &xform)
+	{
+		mod_plus.create_from_bone(skel, bone, xform);
+		empty = false;
+		type = Modifier::TYPE_BONE;
+	}
+	inline void modify(Skeleton *skel, float value)
+	{
+		mod_plus.modify(skel, value);
 	}
 	ModifierGroup(): empty(true)
 	{
@@ -127,6 +146,7 @@ protected:
 	Array surface;
 	static void _bind_methods();
 	struct work_mesh {
+		NodePath skeleton;
 		Ref<Material> mat;
 		Ref<ArrayMesh> work_mesh;
 		HashMap<int, float> mod_values;
@@ -160,6 +180,7 @@ public:
 	}
 	void add_modifier(const String &name, Ref<Image> vimage, Ref<Image> nimage, const PoolVector<float> &minmax);
 	void _add_modifier(const String &name, Image *vimage, Image *nimage, const float *minmax);
+	void _add_modifier(const String &name, const Skeleton *skel, const String &bone, const Transform &xform);
 	void add_mesh(const String &name, Ref<ArrayMesh> mesh);
 	void add_mesh_scene(const Node *node, const String &name)
 	{
@@ -212,13 +233,32 @@ public:
 			return 0.0f;
 		return work_meshes[id].mod_values[name2mod[name]];
 	}
-	int add_work_mesh(Ref<ArrayMesh> mesh);
+	int add_work_mesh(Ref<ArrayMesh> mesh, const NodePath &skel);
+	template <class T>
+	T * find_node(Node * node, const String &name = "")
+	{
+		int i;
+		T *ret = NULL;
+		List<Node *> queue;
+		queue.push_back(node);
+		while(!queue.empty()) {
+			Node *item = queue.front()->get();
+			queue.pop_front();
+			ret = dynamic_cast<T *>(item);
+			if (ret && (name.length() == 0 || ret->get_name() == name))
+				break;
+			for (i = 0; i < item->get_child_count(); i++)
+				queue.push_back(item->get_child(i));
+		}
+		return ret;
+	}
 	int add_work_mesh_scene(Node *node, const String &name)
 	{
 		int i;
 		List<Node *> queue;
 		queue.push_back(node);
 		Ref<ArrayMesh> mesh;
+		NodePath skel_path;
 		bool found = false;
 		while(!queue.empty()) {
 			Node *item = queue.front()->get();
@@ -227,6 +267,9 @@ public:
 			if (mi && item->get_name() == name) {
 				mesh = mi->get_mesh()->duplicate();
 				mi->set_mesh(mesh);
+				skel_path = mi->get_skeleton_path();
+				Node *skel_node = mi->get_node(skel_path);
+				skel_path = skel_node->get_owner()->get_path_to(skel_node);
 				found = true;
 				break;
 			}
@@ -234,12 +277,12 @@ public:
 				queue.push_back(item->get_child(i));
 		}
 		if (found)
-			return add_work_mesh(mesh);
+			return add_work_mesh(mesh, skel_path);
 		else
 			return -1;
 	}
 	void remove_work_mesh(int id);
-	void modify();
+	void modify(Node *scene);
 	void create_uv(int id, Ref<ArrayMesh> mesh, int src_id, Ref<ArrayMesh> src_mesh);
 	PoolVector<String> get_modifier_list()
 	{
@@ -293,9 +336,22 @@ public:
 		for (const String *key = mods.next(NULL);
 				key;
 				key = mods.next(key)) {
-			ret = mods[*key]->add_work_mesh_scene(node, *key);
+			int nret = mods[*key]->add_work_mesh_scene(node, *key);
+			if (ret >= 0)
+				assert(nret == ret);
+			else
+				ret = nret;
 		}
 		return ret;
+	}
+	void remove_work_meshes(int id)
+	{
+		for (const String *key = mods.next(NULL);
+				key;
+				key = mods.next(key)) {
+			printf("%ls\n", key->c_str());
+			mods[*key]->remove_work_mesh(id);
+		}
 	}
 	void set_modifier_value(int id, const String &name, float value)
 	{
@@ -317,14 +373,14 @@ public:
 		assert(mods.has(base_name));
 		return mods[base_name]->get_modifier_list();
 	}
-	void modify()
+	void modify(Node *scene)
 	{
 		if (!dirty)
 			return;
 		for (const String *key = mods.next(NULL);
 				key;
 				key = mods.next(key)) {
-			mods[*key]->modify();
+			mods[*key]->modify(scene);
 		}
 		dirty = false;
 	}
@@ -332,6 +388,27 @@ public:
 	void set_helper(const String &mod_name, const String &name)
 	{
 		helpers[mod_name] = name;
+	}
+	void add_bone_modifier(const String &name, const Node *scene, const String &bone_name, const Transform &xform)
+	{
+		int i;
+		List<const Node *> queue;
+		queue.push_back(scene);
+		const Skeleton *skel;
+		bool found = false;
+		while(!queue.empty()) {
+			const Node *item = queue.front()->get();
+			queue.pop_front();
+			skel = dynamic_cast<const Skeleton *>(item);
+			if (skel) {
+				found = true;
+				break;
+			}
+			for (i = 0; i < item->get_child_count(); i++)
+				queue.push_back(item->get_child(i));
+		}
+		if (found)
+			mods[base_name]->_add_modifier(name, skel, bone_name, xform);
 	}
 };
 
