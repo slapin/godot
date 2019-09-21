@@ -119,6 +119,7 @@ class ModifierGroup {
 	}
 	void create_from_bone(const String &name, const Skeleton *skel, const String &bone, const Transform &xform)
 	{
+		assert(skel);
 		mod_plus.create_from_bone(skel, bone, xform);
 		empty = false;
 		type = Modifier::TYPE_BONE;
@@ -192,7 +193,7 @@ public:
 		while(!queue.empty()) {
 			const Node *item = queue.front()->get();
 			queue.pop_front();
-			const MeshInstance *mi = dynamic_cast<const MeshInstance *>(item);
+			const MeshInstance *mi = Object::cast_to<MeshInstance>(item);
 			if (mi && item->get_name() == name) {
 				mesh = mi->get_mesh();
 				found = true;
@@ -244,7 +245,7 @@ public:
 		while(!queue.empty()) {
 			Node *item = queue.front()->get();
 			queue.pop_front();
-			ret = dynamic_cast<T *>(item);
+			ret = Object::cast_to<T>(item);
 			if (ret && (name.length() == 0 || ret->get_name() == name))
 				break;
 			for (i = 0; i < item->get_child_count(); i++)
@@ -263,7 +264,7 @@ public:
 		while(!queue.empty()) {
 			Node *item = queue.front()->get();
 			queue.pop_front();
-			MeshInstance *mi = dynamic_cast<MeshInstance *>(item);
+			MeshInstance *mi = Object::cast_to<MeshInstance>(item);
 			if (mi && item->get_name() == name) {
 				mesh = mi->get_mesh()->duplicate();
 				mi->set_mesh(mesh);
@@ -394,12 +395,12 @@ public:
 		int i;
 		List<const Node *> queue;
 		queue.push_back(scene);
-		const Skeleton *skel;
+		const Skeleton *skel = NULL;
 		bool found = false;
 		while(!queue.empty()) {
 			const Node *item = queue.front()->get();
 			queue.pop_front();
-			skel = dynamic_cast<const Skeleton *>(item);
+			skel = Object::cast_to<Skeleton>(item);
 			if (skel) {
 				found = true;
 				break;

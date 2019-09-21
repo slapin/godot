@@ -32,6 +32,7 @@ void Modifier::modify(Skeleton *skel, float value)
 
 void Modifier::create_from_bone(const Skeleton *skel, const String &bone, const Transform &xform)
 {
+	assert(skel);
 	type = TYPE_BONE;
 	bone_id = skel->find_bone(bone);
 	this->xform = xform;
@@ -89,6 +90,7 @@ void ModifierSet::_add_modifier(const String &name, const Skeleton *skel,
 {
 	if (name2mod.has(name))
 		return;
+	assert(skel);
 	modifiers[mod_count].create_from_bone(name, skel, bone, xform);
 	name2mod[name] = mod_count;
 	mod_count++;
