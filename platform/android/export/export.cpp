@@ -794,6 +794,10 @@ class EditorExportPlatformAndroid : public EditorExportPlatform {
 								string_table.write[attr_value] = version_name;
 						}
 
+						if (tname == "instrumentation" && attrname == "targetPackage") {
+							string_table.write[attr_value] = get_package_name(package_name);
+						}
+
 						if (tname == "activity" && attrname == "screenOrientation") {
 
 							encode_uint32(orientation == 0 ? 0 : 1, &p_manifest.write[iofs + 16]);
@@ -1470,8 +1474,8 @@ public:
 		if (use_remote) {
 			if (use_reverse) {
 
-				static const char *const msg = "** Device API >= 21; debugging over USB **";
-				EditorNode::get_singleton()->get_log()->add_message(msg);
+				static const char *const msg = "--- Device API >= 21; debugging over USB ---";
+				EditorNode::get_singleton()->get_log()->add_message(msg, EditorLog::MSG_TYPE_EDITOR);
 				print_line(String(msg).to_upper());
 
 				args.clear();
@@ -1511,8 +1515,8 @@ public:
 				}
 			} else {
 
-				static const char *const msg = "** Device API < 21; debugging over Wi-Fi **";
-				EditorNode::get_singleton()->get_log()->add_message(msg);
+				static const char *const msg = "--- Device API < 21; debugging over Wi-Fi ---";
+				EditorNode::get_singleton()->get_log()->add_message(msg, EditorLog::MSG_TYPE_EDITOR);
 				print_line(String(msg).to_upper());
 			}
 		}

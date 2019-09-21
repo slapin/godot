@@ -2466,6 +2466,7 @@ void AnimationTrackEdit::update_play_position() {
 void AnimationTrackEdit::set_root(Node *p_root) {
 	root = p_root;
 }
+
 void AnimationTrackEdit::_zoom_changed() {
 	update();
 	play_position->update();
@@ -3305,6 +3306,7 @@ Ref<Animation> AnimationTrackEditor::get_current_animation() const {
 
 	return animation;
 }
+
 void AnimationTrackEditor::_root_removed(Node *p_root) {
 	root = NULL;
 }
@@ -3400,15 +3402,14 @@ void AnimationTrackEditor::_track_remove_request(int p_track) {
 
 	int idx = p_track;
 	if (idx >= 0 && idx < animation->get_track_count()) {
-		selection.clear();
-		_clear_key_edit();
-		//all will be updated after remove anyway, and triggering update here raises error on tracks already removed
 
 		undo_redo->create_action(TTR("Remove Anim Track"));
+		undo_redo->add_do_method(this, "_clear_selection", false);
 		undo_redo->add_do_method(animation.ptr(), "remove_track", idx);
 		undo_redo->add_undo_method(animation.ptr(), "add_track", animation->track_get_type(idx), idx);
 		undo_redo->add_undo_method(animation.ptr(), "track_set_path", idx, animation->track_get_path(idx));
-		//todo interpolation
+
+		// TODO interpolation.
 		for (int i = 0; i < animation->track_get_key_count(idx); i++) {
 
 			Variant v = animation->track_get_key_value(idx, i);
@@ -3491,7 +3492,7 @@ void AnimationTrackEditor::_query_insert(const InsertData &p_id) {
 					case Variant::QUAT:
 					case Variant::PLANE:
 					case Variant::COLOR: {
-						//good
+						// Valid.
 					} break;
 					default: {
 						all_bezier = false;
@@ -3954,7 +3955,9 @@ int AnimationTrackEditor::_confirm_insert(InsertData p_id, int p_last_track, boo
 	bool created = false;
 	if (p_id.track_idx < 0) {
 
-		if (p_create_beziers && (p_id.value.get_type() == Variant::VECTOR2 ||
+		if (p_create_beziers && (p_id.value.get_type() == Variant::INT ||
+										p_id.value.get_type() == Variant::REAL ||
+										p_id.value.get_type() == Variant::VECTOR2 ||
 										p_id.value.get_type() == Variant::VECTOR3 ||
 										p_id.value.get_type() == Variant::QUAT ||
 										p_id.value.get_type() == Variant::COLOR ||
@@ -3977,10 +3980,10 @@ int AnimationTrackEditor::_confirm_insert(InsertData p_id, int p_last_track, boo
 		Animation::UpdateMode update_mode = Animation::UPDATE_DISCRETE;
 
 		if (p_id.type == Animation::TYPE_VALUE || p_id.type == Animation::TYPE_BEZIER) {
-			//wants a new tack
+			// Wants a new track.
 
 			{
-				//hack
+				// Hack.
 				NodePath np;
 				animation->add_track(p_id.type);
 				animation->track_set_path(animation->get_track_count() - 1, p_id.path);
@@ -4034,7 +4037,7 @@ int AnimationTrackEditor::_confirm_insert(InsertData p_id, int p_last_track, boo
 			Dictionary d;
 			d["location"] = tr.origin;
 			d["scale"] = tr.basis.get_scale();
-			d["rotation"] = Quat(tr.basis); //.orthonormalized();
+			d["rotation"] = Quat(tr.basis);
 			value = d;
 		} break;
 		case Animation::TYPE_BEZIER: {
@@ -4059,7 +4062,8 @@ int AnimationTrackEditor::_confirm_insert(InsertData p_id, int p_last_track, boo
 
 	if (created) {
 
-		//just remove the track
+		// Just remove the track.
+		undo_redo->add_undo_method(this, "_clear_selection", false);
 		undo_redo->add_undo_method(animation.ptr(), "remove_track", p_last_track);
 		p_last_track++;
 	} else {
@@ -4079,6 +4083,8 @@ int AnimationTrackEditor::_confirm_insert(InsertData p_id, int p_last_track, boo
 }
 
 void AnimationTrackEditor::show_select_node_warning(bool p_show) {
+
+	info_message->set_visible(p_show);
 }
 
 bool AnimationTrackEditor::is_key_selected(int p_track, int p_key) const {
@@ -4661,6 +4667,7 @@ void AnimationTrackEditor::_insert_key_from_track(float p_ofs, int p_track) {
 
 			undo_redo->create_action(TTR("Add Track Key"));
 			undo_redo->add_do_method(animation.ptr(), "track_insert_key", p_track, p_ofs, value);
+			undo_redo->add_undo_method(this, "_clear_selection_for_anim", animation);
 			undo_redo->add_undo_method(animation.ptr(), "track_remove_key_at_position", p_track, p_ofs);
 			undo_redo->commit_action();
 
@@ -4868,11 +4875,16 @@ void AnimationTrackEditor::_clear_key_edit() {
 	}
 }
 
-void AnimationTrackEditor::_clear_selection() {
+void AnimationTrackEditor::_clear_selection(bool p_update) {
+
 	selection.clear();
-	for (int i = 0; i < track_edits.size(); i++) {
-		track_edits[i]->update();
+
+	if (p_update) {
+		for (int i = 0; i < track_edits.size(); i++) {
+			track_edits[i]->update();
+		}
 	}
+
 	_clear_key_edit();
 }
 
@@ -5543,7 +5555,6 @@ void AnimationTrackEditor::_edit_menu_pressed(int p_option) {
 				undo_redo->add_do_method(this, "_clear_selection_for_anim", animation);
 				undo_redo->add_undo_method(this, "_clear_selection_for_anim", animation);
 				undo_redo->commit_action();
-				//selection.clear();
 				_update_key_edit();
 			}
 		} break;
@@ -5793,6 +5804,14 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	timeline_vbox->set_v_size_flags(SIZE_EXPAND_FILL);
 	timeline_vbox->set_h_size_flags(SIZE_EXPAND_FILL);
 	timeline_vbox->add_constant_override("separation", 0);
+
+	info_message = memnew(Label);
+	info_message->set_text(TTR("Select an AnimationPlayer node to create and edit animations."));
+	info_message->set_valign(Label::VALIGN_CENTER);
+	info_message->set_align(Label::ALIGN_CENTER);
+	info_message->set_autowrap(true);
+	info_message->set_anchors_and_margins_preset(PRESET_WIDE, PRESET_MODE_KEEP_SIZE, 8 * EDSCALE);
+	main_panel->add_child(info_message);
 
 	timeline = memnew(AnimationTimelineEdit);
 	timeline->set_undo_redo(undo_redo);
