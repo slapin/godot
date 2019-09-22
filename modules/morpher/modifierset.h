@@ -12,29 +12,30 @@
 
 #undef MORPH_DEBUG
 
-class Modifier {
+class ModifierBase {
 protected:
 	int type;
 	static const int TYPE_BLEND = 1;
 	static const int TYPE_BONE = 2;
-	friend class ModifierSet;
-	friend class ModifierGroup;
+	static const int TYPE_SYMMETRY = 3;
 	String mod_name;
-	static void _bind_methods();
+	bool empty;
+	ModifierBase() : empty(true)
+	{
+	}
+};
+
+class ModifierBlend: public ModifierBase {
+protected:
 	float minp[3];
 	float maxp[3];
 	float cd[3];
 	float minn[3];
 	float maxn[3];
 	float cdn[3];
-	bool empty;
-	Transform xform;
-	int bone_id;
 	PoolVector<int> mod_indices;
 	PoolVector<float> mod_data;
-	Modifier() : empty(true)
-	{
-	}
+	void modify(float * data, int vertex_count, float value);
 	void create_from_images(const String &name,
 			const float *meshdata,
 			int count,
@@ -44,16 +45,39 @@ protected:
 			const Vector3 &vmax,
 			const Vector3 &nmin,
 			const Vector3 &nmax);
-	void create_from_bone(const Skeleton *skel, const String &bone, const Transform &xform);
-	void modify(float * data, int vertex_count, float value);
+};
+class ModifierBone: public ModifierBase {
+protected:
+	int bone_id;
+	Transform xform;
 	void modify(Skeleton *skel, float value);
+	void create_from_bone(const Skeleton *skel, const String &bone, const Transform &xform);
+};
+class ModifierSymmetry: public ModifierBase  {
+protected:
+	int bone_from_id;
+	int bone_to_id;
+	void modify(Skeleton *skel);
+	void create_from_symmetry(const Skeleton * skel,
+			const String &bone_left,
+			const String &bone_right);
+};
+
+template <class M>
+class Modifier: public M {
+protected:
+	friend class ModifierSet;
+	friend class ModifierGroup;
+	String mod_name;
 };
 
 class ModifierGroup {
 	friend class ModifierSet;
 	String group_name;
-	Modifier mod_minus;
-	Modifier mod_plus;
+	Modifier<ModifierBlend> mod_minus;
+	Modifier<ModifierBlend> mod_plus;
+	Modifier<ModifierBone> bone;
+	Modifier<ModifierSymmetry> symmetry;
 	bool empty;
 	int type;
 	inline void modify(float * data, int vertex_count, float value)
@@ -115,18 +139,28 @@ class ModifierGroup {
 					nmax);
 		}
 		empty = false;
-		type = Modifier::TYPE_BLEND;
+		type = ModifierBase::TYPE_BLEND;
 	}
-	void create_from_bone(const String &name, const Skeleton *skel, const String &bone, const Transform &xform)
+	void create_from_bone(const String &name, const Skeleton *skel, const String &bone_name, const Transform &xform)
 	{
 		assert(skel);
-		mod_plus.create_from_bone(skel, bone, xform);
+		bone.create_from_bone(skel, bone_name, xform);
 		empty = false;
-		type = Modifier::TYPE_BONE;
+		type = ModifierBase::TYPE_BONE;
+	}
+	void create_from_symmetry(const String &name, const Skeleton * skel,
+			const String &bone_left,
+			const String &bone_right) {
+		symmetry.create_from_symmetry(skel, bone_left, bone_right);
+		type = ModifierBase::TYPE_SYMMETRY;
 	}
 	inline void modify(Skeleton *skel, float value)
 	{
-		mod_plus.modify(skel, value);
+		bone.modify(skel, value);
+	}
+	inline void modify(Skeleton *skel)
+	{
+		symmetry.modify(skel);
 	}
 	ModifierGroup(): empty(true)
 	{
@@ -179,9 +213,14 @@ public:
 		vertex_count(0), dirty(false)
 	{
 	}
-	void add_modifier(const String &name, Ref<Image> vimage, Ref<Image> nimage, const PoolVector<float> &minmax);
-	void _add_modifier(const String &name, Image *vimage, Image *nimage, const float *minmax);
-	void _add_modifier(const String &name, const Skeleton *skel, const String &bone, const Transform &xform);
+	void add_modifier(const String &name, Ref<Image> vimage,
+			Ref<Image> nimage, const PoolVector<float> &minmax);
+	void _add_modifier(const String &name, Image *vimage,
+			Image *nimage, const float *minmax);
+	void _add_modifier(const String &name, const Skeleton *skel,
+			const String &bone, const Transform &xform);
+	void _add_modifier(const String &name, const Skeleton *skel,
+		const String &bone_from, const String &bone_to);
 	void add_mesh(const String &name, Ref<ArrayMesh> mesh);
 	void add_mesh_scene(const Node *node, const String &name)
 	{
@@ -236,7 +275,7 @@ public:
 	}
 	int add_work_mesh(Ref<ArrayMesh> mesh, const NodePath &skel);
 	template <class T>
-	T * find_node(Node * node, const String &name = "")
+	static inline T * find_node(Node * node, const String &name = "")
 	{
 		int i;
 		T *ret = NULL;
@@ -289,7 +328,8 @@ public:
 	{
 		PoolVector<String> ret;
 		for (const String *key = name2mod.next(NULL); key; key = name2mod.next(key)) {
-			ret.push_back(*key);
+			if (modifiers[name2mod[*key]].type != ModifierBase::TYPE_SYMMETRY)
+				ret.push_back(*key);
 		}
 		return ret;
 	}
@@ -390,26 +430,22 @@ public:
 	{
 		helpers[mod_name] = name;
 	}
-	void add_bone_modifier(const String &name, const Node *scene, const String &bone_name, const Transform &xform)
+	void add_bone_modifier(const String &name, Node *scene, const String &bone_name, const Transform &xform)
 	{
-		int i;
 		List<const Node *> queue;
 		queue.push_back(scene);
-		const Skeleton *skel = NULL;
-		bool found = false;
-		while(!queue.empty()) {
-			const Node *item = queue.front()->get();
-			queue.pop_front();
-			skel = Object::cast_to<Skeleton>(item);
-			if (skel) {
-				found = true;
-				break;
-			}
-			for (i = 0; i < item->get_child_count(); i++)
-				queue.push_back(item->get_child(i));
-		}
-		if (found)
+		Skeleton *skel = ModifierSet::find_node<Skeleton>(scene);
+		if (skel)
 			mods[base_name]->_add_modifier(name, skel, bone_name, xform);
+	}
+	void add_bone_modifier_symmetry(const String &name,
+			Node *scene,
+			const String &bone_left,
+			const String &bone_right)
+	{
+		Skeleton *skel = ModifierSet::find_node<Skeleton>(scene);
+		if (skel)
+			mods[base_name]->_add_modifier(name, skel, bone_left, bone_right);
 	}
 };
 

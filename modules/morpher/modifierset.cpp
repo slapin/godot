@@ -1,6 +1,6 @@
 #include "modifierset.h"
 
-void Modifier::modify(float *data, int vertex_count, float value)
+void ModifierBlend::modify(float *data, int vertex_count, float value)
 {
 	for (int i = 0; i < mod_indices.size(); i++) {
 		int index = mod_indices[i];
@@ -22,7 +22,7 @@ void Modifier::modify(float *data, int vertex_count, float value)
 #endif
 }
 
-void Modifier::modify(Skeleton *skel, float value)
+void ModifierBone::modify(Skeleton *skel, float value)
 {
 	if (bone_id >= 0)
 		skel->set_bone_custom_pose(bone_id,
@@ -30,7 +30,13 @@ void Modifier::modify(Skeleton *skel, float value)
 			value));
 }
 
-void Modifier::create_from_bone(const Skeleton *skel, const String &bone, const Transform &xform)
+void ModifierSymmetry::modify(Skeleton *skel)
+{
+	const Transform &xform = skel->get_bone_custom_pose(bone_from_id);
+	skel->set_bone_custom_pose(bone_to_id, xform);
+}
+
+void ModifierBone::create_from_bone(const Skeleton *skel, const String &bone, const Transform &xform)
 {
 	assert(skel);
 	type = TYPE_BONE;
@@ -38,7 +44,7 @@ void Modifier::create_from_bone(const Skeleton *skel, const String &bone, const 
 	this->xform = xform;
 	empty = false;
 }
-void Modifier::create_from_images(const String &name,
+void ModifierBlend::create_from_images(const String &name,
 		const float *meshdata, int count, 
 		Image *vdata, Image *ndata, const Vector3 &vmin,
 		const Vector3 &vmax, const Vector3 &nmin, const Vector3 &nmax)
@@ -80,6 +86,15 @@ void Modifier::create_from_images(const String &name,
 	printf("Created %ls\n", mod_name.c_str());
 #endif
 }
+void ModifierSymmetry::create_from_symmetry(const Skeleton *skel,
+		const String &bone_left,
+		const String &bone_right)
+{
+	bone_from_id = skel->find_bone(bone_left);
+	bone_to_id = skel->find_bone(bone_right);
+	assert(bone_from_id >= 0);
+	assert(bone_to_id >= 0);
+}
 void ModifierSet::add_modifier(const String &name, Ref<Image> vimage, Ref<Image> nimage, const PoolVector<float> &minmax)
 {
 	printf("adding modifier %ls\n", name.c_str());
@@ -92,6 +107,16 @@ void ModifierSet::_add_modifier(const String &name, const Skeleton *skel,
 		return;
 	assert(skel);
 	modifiers[mod_count].create_from_bone(name, skel, bone, xform);
+	name2mod[name] = mod_count;
+	mod_count++;
+}
+void ModifierSet::_add_modifier(const String &name, const Skeleton *skel,
+		const String &bone_from, const String &bone_to)
+{
+	if (name2mod.has(name))
+		return;
+	assert(skel);
+	modifiers[mod_count].create_from_symmetry(name, skel, bone_from, bone_to);
 	name2mod[name] = mod_count;
 	mod_count++;
 }
@@ -228,11 +253,12 @@ void ModifierSet::modify(Node *scene)
 		for (i = 0; i < mod_count; i++)
 			if (work_meshes[k].mod_values.has(i))
 				if (fabs(work_meshes[k].mod_values[i]) >= 0.001f) {
-					if (modifiers[i].type == Modifier::TYPE_BLEND)
+					if (modifiers[i].type == ModifierBase::TYPE_BLEND)
 						modifiers[i].modify(meshdata, vertex_count, work_meshes[k].mod_values[i]);
-					else if (modifiers[i].type == Modifier::TYPE_BONE) {
+					else if (modifiers[i].type == ModifierBase::TYPE_BONE)
 						modifiers[i].modify(skel, work_meshes[k].mod_values[i]);
-					}
+					else if (modifiers[i].type == ModifierBase::TYPE_SYMMETRY)
+						modifiers[i].modify(skel);
 				}
 		for (i = 0; i < vertex_count; i++) {
 			if (same_verts.has(i)) {
@@ -380,5 +406,9 @@ void CharacterModifierSet::_bind_methods()
 			&CharacterModifierSet::set_helper);
 	ClassDB::bind_method(D_METHOD("add_bone_modifier", "name", "scene", "bone_name", "xform"),
 			&CharacterModifierSet::add_bone_modifier);
+	ClassDB::bind_method(D_METHOD("add_bone_modifier_symmetry", "name", "scene",
+				"bone_left",
+				"bone_right"),
+			&CharacterModifierSet::add_bone_modifier_symmetry);
 }
 
