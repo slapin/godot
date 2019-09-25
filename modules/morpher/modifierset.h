@@ -18,6 +18,8 @@ protected:
 	static const int TYPE_BLEND = 1;
 	static const int TYPE_BONE = 2;
 	static const int TYPE_SYMMETRY = 3;
+	static const int TYPE_PAIR = 4;
+	static const int TYPE_GROUP = 5;
 	String mod_name;
 	bool empty;
 	ModifierBase() : empty(true)
@@ -56,12 +58,36 @@ protected:
 class ModifierSymmetry: public ModifierBase  {
 protected:
 	int bone_from_id;
+	Transform bf_parent_xform;
 	int bone_to_id;
+	Transform bt_parent_xform;
 	void modify(Skeleton *skel);
 	void create_from_symmetry(const Skeleton * skel,
 			const String &bone_left,
 			const String &bone_right);
 };
+class ModifierPair: public ModifierBase  {
+protected:
+	int bone_left_id;
+	int bone_right_id;
+	Transform bone_left_xform, bone_right_xform;
+	void modify(Skeleton *skel, float value);
+	void create_from_pair(const Skeleton * skel,
+			const String &bone_left,
+			const Transform &xform_left,
+			const String &bone_right,
+			const Transform &xform_right);
+};
+class ModifierBoneGroup: public ModifierBase  {
+protected:
+	PoolVector<int> bones;
+	PoolVector<Transform> xforms;
+	void modify(Skeleton *skel, float value);
+	void create_from_group(const Skeleton * skel,
+			const PoolVector<String> &bone_names,
+			const PoolVector<Transform> &bone_transforms);
+};
+
 
 template <class M>
 class Modifier: public M {
@@ -78,6 +104,8 @@ class ModifierGroup {
 	Modifier<ModifierBlend> mod_plus;
 	Modifier<ModifierBone> bone;
 	Modifier<ModifierSymmetry> symmetry;
+	Modifier<ModifierPair> pair;
+	Modifier<ModifierBoneGroup> group;
 	bool empty;
 	int type;
 	inline void modify(float * data, int vertex_count, float value)
@@ -154,9 +182,34 @@ class ModifierGroup {
 		symmetry.create_from_symmetry(skel, bone_left, bone_right);
 		type = ModifierBase::TYPE_SYMMETRY;
 	}
+	void create_from_pair(const String &name, const Skeleton * skel,
+			const String &bone_left,
+			const Transform &xform_left,
+			const String &bone_right,
+			const Transform &xform_right) {
+		pair.create_from_pair(skel, bone_left, xform_left, bone_right, xform_right);
+		type = ModifierBase::TYPE_PAIR;
+	}
+	void create_from_group(const String &name, const Skeleton * skel,
+				const PoolVector<String> &bone_names,
+				const PoolVector<Transform> &bone_transforms)
+	{
+		group.create_from_group(skel, bone_names, bone_transforms);
+		type = ModifierBase::TYPE_GROUP;
+	}
 	inline void modify(Skeleton *skel, float value)
 	{
-		bone.modify(skel, value);
+		switch(type) {
+		case ModifierBase::TYPE_BONE:
+			bone.modify(skel, value);
+			break;
+		case ModifierBase::TYPE_PAIR:
+			pair.modify(skel, value);
+			break;
+		case ModifierBase::TYPE_GROUP:
+			group.modify(skel, value);
+			break;
+		}
 	}
 	inline void modify(Skeleton *skel)
 	{
@@ -221,6 +274,14 @@ public:
 			const String &bone, const Transform &xform);
 	void _add_modifier(const String &name, const Skeleton *skel,
 		const String &bone_from, const String &bone_to);
+	void _add_modifier(const String &name, const Skeleton *skel,
+		const String &bone_left,
+		const Transform &left_xform,
+		const String &bone_right,
+		const Transform &right_xform);
+	void _add_modifier(const String &name, const Skeleton *skel,
+		const PoolVector<String> &bone_names,
+		const PoolVector<Transform> bone_transforms);
 	void add_mesh(const String &name, Ref<ArrayMesh> mesh);
 	void add_mesh_scene(const Node *node, const String &name)
 	{
@@ -446,6 +507,39 @@ public:
 		Skeleton *skel = ModifierSet::find_node<Skeleton>(scene);
 		if (skel)
 			mods[base_name]->_add_modifier(name, skel, bone_left, bone_right);
+	}
+	void add_bone_modifier_pair(const String &name,
+			Node *scene,
+			Array left,
+			Array right)
+	{
+		Skeleton *skel = ModifierSet::find_node<Skeleton>(scene);
+		assert(skel && left.size() == 2 && right.size() == 2);
+		const String &bone_left = left[0];
+		const Transform &xform_left = left[1];
+		const String &bone_right = right[0];
+		const Transform &xform_right = right[1];
+		if (skel)
+			mods[base_name]->_add_modifier(name, skel, bone_left, xform_left, bone_right, xform_right);
+	}
+	void add_bone_modifier_group(const String &name,
+			Node *scene,
+			const PoolVector<String> &bone_names,
+			const Array &bone_transforms)
+	{
+		Skeleton *skel = ModifierSet::find_node<Skeleton>(scene);
+		PoolVector<Transform> xforms;
+		assert(skel && bone_names.size() == bone_transforms.size());
+		xforms.resize(bone_transforms.size());
+		PoolVector<Transform>::Write xformsw = xforms.write();
+
+		if (skel) {
+			int i;
+			for (i = 0; i < bone_transforms.size(); i++)
+				xformsw[i] = bone_transforms[i];
+			xformsw.release();
+			mods[base_name]->_add_modifier(name, skel, bone_names, xforms);
+		}
 	}
 };
 

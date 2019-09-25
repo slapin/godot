@@ -26,16 +26,34 @@ void ModifierBone::modify(Skeleton *skel, float value)
 {
 	if (bone_id >= 0)
 		skel->set_bone_custom_pose(bone_id,
-			skel->get_bone_custom_pose(bone_id).interpolate_with(xform,
-			value));
+			skel->get_bone_custom_pose(bone_id) *
+				Transform().interpolate_with(xform,	value));
 }
 
 void ModifierSymmetry::modify(Skeleton *skel)
 {
 	const Transform &xform = skel->get_bone_custom_pose(bone_from_id);
-	skel->set_bone_custom_pose(bone_to_id, xform);
+	Transform gpose = bf_parent_xform * xform;
+	gpose = gpose.scaled(Vector3(-1, 1, 1));
+	gpose = bt_parent_xform.affine_inverse() * gpose;
+	skel->set_bone_custom_pose(bone_to_id, gpose);
 }
-
+void ModifierPair::modify(Skeleton *skel, float value)
+{
+	const Transform &xform_left = skel->get_bone_custom_pose(bone_left_id);
+	const Transform &xform_right = skel->get_bone_custom_pose(bone_right_id);
+	skel->set_bone_custom_pose(bone_left_id, xform_left * Transform().interpolate_with(bone_left_xform, value));
+	skel->set_bone_custom_pose(bone_right_id, xform_right * Transform().interpolate_with(bone_right_xform, value));
+}
+void ModifierBoneGroup::modify(Skeleton *skel, float value)
+{
+	int i;
+	for (i = 0; i < bones.size(); i++) {
+		Transform bone_xform = skel->get_bone_custom_pose(bones[i]);
+		bone_xform *= Transform().interpolate_with(xforms[i], value);
+		skel->set_bone_custom_pose(bones[i], bone_xform);
+	}
+}
 void ModifierBone::create_from_bone(const Skeleton *skel, const String &bone, const Transform &xform)
 {
 	assert(skel);
@@ -91,9 +109,41 @@ void ModifierSymmetry::create_from_symmetry(const Skeleton *skel,
 		const String &bone_right)
 {
 	bone_from_id = skel->find_bone(bone_left);
+	int bf_parent_id = skel->get_bone_parent(bone_from_id);
 	bone_to_id = skel->find_bone(bone_right);
+	int bt_parent_id = skel->get_bone_parent(bone_to_id);
 	assert(bone_from_id >= 0);
 	assert(bone_to_id >= 0);
+	if (bf_parent_id >= 0)
+		bf_parent_xform = skel->get_bone_global_pose(bf_parent_id);
+	if (bt_parent_id >= 0)
+		bt_parent_xform = skel->get_bone_global_pose(bt_parent_id);
+}
+void ModifierPair::create_from_pair(const Skeleton *skel,
+		const String &bone_left,
+		const Transform &xform_left,
+		const String &bone_right,
+		const Transform &xform_right)
+{
+	bone_left_id = skel->find_bone(bone_left);
+	bone_right_id = skel->find_bone(bone_right);
+	bone_left_xform = xform_left;
+	bone_right_xform = xform_right;
+}
+void ModifierBoneGroup::create_from_group(const Skeleton * skel,
+		const PoolVector<String> &bone_names,
+		const PoolVector<Transform> &bone_transforms)
+{
+	int i;
+	bones.resize(bone_names.size());
+	PoolVector<int>::Write bw = bones.write();
+
+	for (i = 0; i < bone_names.size(); i++) {
+		int id = skel->find_bone(bone_names[i]);
+		assert(id >= 0);
+		bw[i] = id;
+	}
+	xforms = bone_transforms;
 }
 void ModifierSet::add_modifier(const String &name, Ref<Image> vimage, Ref<Image> nimage, const PoolVector<float> &minmax)
 {
@@ -117,6 +167,28 @@ void ModifierSet::_add_modifier(const String &name, const Skeleton *skel,
 		return;
 	assert(skel);
 	modifiers[mod_count].create_from_symmetry(name, skel, bone_from, bone_to);
+	name2mod[name] = mod_count;
+	mod_count++;
+}
+void ModifierSet::_add_modifier(const String &name, const Skeleton *skel,
+		const String &bone_left, const Transform &xform_left,
+		const String &bone_right, const Transform &xform_right)
+{
+	if (name2mod.has(name))
+		return;
+	assert(skel);
+	modifiers[mod_count].create_from_pair(name, skel, bone_left, xform_left, bone_right, xform_right);
+	name2mod[name] = mod_count;
+	mod_count++;
+}
+void ModifierSet::_add_modifier(const String &name, const Skeleton *skel,
+		const PoolVector<String> &bone_names,
+		const PoolVector<Transform> bone_transforms)
+{
+	if (name2mod.has(name))
+		return;
+	assert(skel);
+	modifiers[mod_count].create_from_group(name, skel, bone_names, bone_transforms);
 	name2mod[name] = mod_count;
 	mod_count++;
 }
@@ -253,12 +325,18 @@ void ModifierSet::modify(Node *scene)
 		for (i = 0; i < mod_count; i++)
 			if (work_meshes[k].mod_values.has(i))
 				if (fabs(work_meshes[k].mod_values[i]) >= 0.001f) {
-					if (modifiers[i].type == ModifierBase::TYPE_BLEND)
+					switch(modifiers[i].type) {
+					case ModifierBase::TYPE_BLEND:
 						modifiers[i].modify(meshdata, vertex_count, work_meshes[k].mod_values[i]);
-					else if (modifiers[i].type == ModifierBase::TYPE_BONE)
+						break;
+					case ModifierBase::TYPE_BONE:
+					case ModifierBase::TYPE_PAIR:
+					case ModifierBase::TYPE_GROUP:
 						modifiers[i].modify(skel, work_meshes[k].mod_values[i]);
-					else if (modifiers[i].type == ModifierBase::TYPE_SYMMETRY)
+						break;
+					case ModifierBase::TYPE_SYMMETRY:
 						modifiers[i].modify(skel);
+					}
 				}
 		for (i = 0; i < vertex_count; i++) {
 			if (same_verts.has(i)) {
@@ -410,5 +488,13 @@ void CharacterModifierSet::_bind_methods()
 				"bone_left",
 				"bone_right"),
 			&CharacterModifierSet::add_bone_modifier_symmetry);
+	ClassDB::bind_method(D_METHOD("add_bone_modifier_pair", "name", "scene",
+				"left",
+				"right"),
+			&CharacterModifierSet::add_bone_modifier_pair);
+	ClassDB::bind_method(D_METHOD("add_bone_modifier_group", "name", "scene",
+				"bone_names",
+				"bone_transforms"),
+			&CharacterModifierSet::add_bone_modifier_group);
 }
 
