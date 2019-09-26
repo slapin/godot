@@ -2432,7 +2432,7 @@ void RasterizerStorageGLES2::mesh_add_surface(RID p_mesh, uint32_t p_format, VS:
 	// from surface->data.
 
 	// if USE_SKELETON_SOFTWARE is active
-	if (!config.float_texture_supported) {
+	if (config.use_skeleton_software) {
 		// if this geometry is used specifically for skinning
 		if (p_format & (VS::ARRAY_FORMAT_BONES | VS::ARRAY_FORMAT_WEIGHTS))
 			surface->data = array;
@@ -3514,7 +3514,7 @@ void RasterizerStorageGLES2::skeleton_allocate(RID p_skeleton, int p_bones, bool
 	skeleton->size = p_bones;
 	skeleton->use_2d = p_2d_skeleton;
 
-	if (config.float_texture_supported) {
+	if (!config.use_skeleton_software) {
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, skeleton->tex_id);
@@ -3663,23 +3663,6 @@ void RasterizerStorageGLES2::skeleton_set_base_transform_2d(RID p_skeleton, cons
 	skeleton->base_transform_2d = p_base_transform;
 }
 
-void RasterizerStorageGLES2::skeleton_set_world_transform(RID p_skeleton, bool p_enable, const Transform &p_world_transform) {
-
-	Skeleton *skeleton = skeleton_owner.getornull(p_skeleton);
-
-	ERR_FAIL_COND(skeleton->use_2d);
-
-	skeleton->world_transform = p_world_transform;
-	skeleton->use_world_transform = p_enable;
-	if (p_enable) {
-		skeleton->world_transform_inverse = skeleton->world_transform.affine_inverse();
-	}
-
-	if (!skeleton->update_list.in_list()) {
-		skeleton_update_list.add(&skeleton->update_list);
-	}
-}
-
 void RasterizerStorageGLES2::_update_skeleton_transform_buffer(const PoolVector<float> &p_data, size_t p_size) {
 
 	glBindBuffer(GL_ARRAY_BUFFER, resources.skeleton_transform_buffer);
@@ -3699,7 +3682,7 @@ void RasterizerStorageGLES2::_update_skeleton_transform_buffer(const PoolVector<
 
 void RasterizerStorageGLES2::update_dirty_skeletons() {
 
-	if (!config.float_texture_supported)
+	if (config.use_skeleton_software)
 		return;
 
 	glActiveTexture(GL_TEXTURE0);
@@ -5751,8 +5734,13 @@ void RasterizerStorageGLES2::initialize() {
 	frame.current_rt = NULL;
 	frame.clear_request = false;
 
+	glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &config.max_vertex_texture_image_units);
 	glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &config.max_texture_image_units);
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &config.max_texture_size);
+
+	// the use skeleton software path should be used if either float texture is not supported,
+	// OR max_vertex_texture_image_units is zero
+	config.use_skeleton_software = (config.float_texture_supported == false) || (config.max_vertex_texture_image_units == 0);
 
 	shaders.copy.init();
 	shaders.cubemap_filter.init();

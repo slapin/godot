@@ -2081,6 +2081,44 @@ void TextEdit::_get_mouse_pos(const Point2i &p_mouse, int &r_row, int &r_col) co
 	r_col = col;
 }
 
+Vector2i TextEdit::_get_cursor_pixel_pos() {
+	adjust_viewport_to_cursor();
+	int row = (cursor.line - get_first_visible_line() - cursor.wrap_ofs);
+	// Correct for hidden and wrapped lines
+	for (int i = get_first_visible_line(); i < cursor.line; i++) {
+		if (is_line_hidden(i)) {
+			row -= 1;
+			continue;
+		}
+		row += times_line_wraps(i);
+	}
+	// Row might be wrapped. Adjust row and r_column
+	Vector<String> rows2 = get_wrap_rows_text(cursor.line);
+	while (rows2.size() > 1) {
+		if (cursor.column >= rows2[0].length()) {
+			cursor.column -= rows2[0].length();
+			rows2.remove(0);
+			row++;
+		} else {
+			break;
+		}
+	}
+
+	// Calculate final pixel position
+	int y = (row - get_v_scroll_offset() + 1 /*Bottom of line*/) * get_row_height();
+	int x = cache.style_normal->get_margin(MARGIN_LEFT) + cache.line_number_w + cache.breakpoint_gutter_width + cache.fold_gutter_width + cache.info_gutter_width - cursor.x_ofs;
+	int ix = 0;
+	while (ix < rows2[0].size() && ix < cursor.column) {
+		if (cache.font != NULL) {
+			x += cache.font->get_char_size(rows2[0].get(ix)).width;
+		}
+		ix++;
+	}
+	x += get_indent_level(cursor.line) * cache.font->get_char_size(' ').width;
+
+	return Vector2i(x, y);
+}
+
 void TextEdit::_get_minimap_mouse_row(const Point2i &p_mouse, int &r_row) const {
 
 	float rows = p_mouse.y;
@@ -2417,7 +2455,7 @@ void TextEdit::_gui_input(const Ref<InputEvent> &p_gui_input) {
 	if (mm.is_valid()) {
 
 		if (select_identifiers_enabled) {
-			if (mm->get_command() && mm->get_button_mask() == 0) {
+			if (!dragging_minimap && !dragging_selection && mm->get_command() && mm->get_button_mask() == 0) {
 
 				String new_word = get_word_at_pos(mm->get_position());
 				if (new_word != highlighted_word) {
@@ -2475,7 +2513,7 @@ void TextEdit::_gui_input(const Ref<InputEvent> &p_gui_input) {
 #endif
 			if (select_identifiers_enabled) {
 
-				if (k->is_pressed()) {
+				if (k->is_pressed() && !dragging_minimap && !dragging_selection) {
 
 					highlighted_word = get_word_at_pos(get_local_mouse_position());
 					update();
@@ -3594,6 +3632,16 @@ void TextEdit::_gui_input(const Ref<InputEvent> &p_gui_input) {
 					scancode_handled = false;
 				}
 
+			} break;
+
+			case KEY_MENU: {
+				if (context_menu_enabled) {
+					menu->set_position(get_global_transform().xform(_get_cursor_pixel_pos()));
+					menu->set_size(Vector2(1, 1));
+					menu->set_scale(get_global_transform().get_scale());
+					menu->popup();
+					menu->grab_focus();
+				}
 			} break;
 
 			default: {
@@ -6062,7 +6110,7 @@ bool TextEdit::is_indent_using_spaces() const {
 }
 
 void TextEdit::set_indent_size(const int p_size) {
-	ERR_FAIL_COND(p_size <= 0);
+	ERR_FAIL_COND_MSG(p_size <= 0, "Indend size must be greater than 0.");
 	indent_size = p_size;
 	text.set_indent_size(p_size);
 

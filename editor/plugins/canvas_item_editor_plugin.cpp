@@ -1749,6 +1749,9 @@ bool CanvasItemEditor::_gui_input_resize(const Ref<InputEvent> &p_event) {
 			if (key_auto_insert_button->is_pressed()) {
 				_insert_animation_keys(false, false, true, true);
 			}
+
+			snap_target[0] = SNAP_TARGET_NONE;
+			snap_target[1] = SNAP_TARGET_NONE;
 			drag_type = DRAG_NONE;
 			viewport->update();
 			return true;
@@ -1757,6 +1760,8 @@ bool CanvasItemEditor::_gui_input_resize(const Ref<InputEvent> &p_event) {
 		// Cancel a drag
 		if (b.is_valid() && b->get_button_index() == BUTTON_RIGHT && b->is_pressed()) {
 			_restore_canvas_item_state(drag_selection);
+			snap_target[0] = SNAP_TARGET_NONE;
+			snap_target[1] = SNAP_TARGET_NONE;
 			drag_type = DRAG_NONE;
 			viewport->update();
 			return true;
@@ -1967,6 +1972,11 @@ bool CanvasItemEditor::_gui_input_move(const Ref<InputEvent> &p_event) {
 			if (key_auto_insert_button->is_pressed()) {
 				_insert_animation_keys(true, false, false, true);
 			}
+
+			//Make sure smart snapping lines disappear.
+			snap_target[0] = SNAP_TARGET_NONE;
+			snap_target[1] = SNAP_TARGET_NONE;
+
 			drag_type = DRAG_NONE;
 			viewport->update();
 			return true;
@@ -1975,6 +1985,8 @@ bool CanvasItemEditor::_gui_input_move(const Ref<InputEvent> &p_event) {
 		// Cancel a drag
 		if (b.is_valid() && b->get_button_index() == BUTTON_RIGHT && b->is_pressed()) {
 			_restore_canvas_item_state(drag_selection, true);
+			snap_target[0] = SNAP_TARGET_NONE;
+			snap_target[1] = SNAP_TARGET_NONE;
 			drag_type = DRAG_NONE;
 			viewport->update();
 			return true;
@@ -3084,14 +3096,12 @@ void CanvasItemEditor::_draw_selection() {
 
 					viewport->draw_set_transform_matrix(simple_xform);
 					Rect2 x_handle_rect = Rect2(scale_factor.x * EDSCALE, -5 * EDSCALE, 10 * EDSCALE, 10 * EDSCALE);
-					Color x_axis_color(1.0, 0.4, 0.4, 0.6);
-					viewport->draw_rect(x_handle_rect, x_axis_color);
-					viewport->draw_line(Point2(), Point2(scale_factor.x * EDSCALE, 0), x_axis_color, Math::round(EDSCALE), true);
+					viewport->draw_rect(x_handle_rect, get_color("axis_x_color", "Editor"));
+					viewport->draw_line(Point2(), Point2(scale_factor.x * EDSCALE, 0), get_color("axis_x_color", "Editor"), Math::round(EDSCALE), true);
 
 					Rect2 y_handle_rect = Rect2(-5 * EDSCALE, -(scale_factor.y + 10) * EDSCALE, 10 * EDSCALE, 10 * EDSCALE);
-					Color y_axis_color(0.4, 1.0, 0.4, 0.6);
-					viewport->draw_rect(y_handle_rect, y_axis_color);
-					viewport->draw_line(Point2(), Point2(0, -scale_factor.y * EDSCALE), y_axis_color, Math::round(EDSCALE), true);
+					viewport->draw_rect(y_handle_rect, get_color("axis_y_color", "Editor"));
+					viewport->draw_line(Point2(), Point2(0, -scale_factor.y * EDSCALE), get_color("axis_y_color", "Editor"), Math::round(EDSCALE), true);
 
 					viewport->draw_set_transform_matrix(viewport->get_transform());
 				}
@@ -3171,11 +3181,8 @@ void CanvasItemEditor::_draw_axis() {
 
 	if (show_origin) {
 
-		Color x_axis_color(1.0, 0.4, 0.4, 0.6);
-		Color y_axis_color(0.4, 1.0, 0.4, 0.6);
-
-		_draw_straight_line(Point2(), Point2(1, 0), x_axis_color);
-		_draw_straight_line(Point2(), Point2(0, 1), y_axis_color);
+		_draw_straight_line(Point2(), Point2(1, 0), get_color("axis_x_color", "Editor") * Color(1, 1, 1, 0.75));
+		_draw_straight_line(Point2(), Point2(0, 1), get_color("axis_y_color", "Editor") * Color(1, 1, 1, 0.75));
 	}
 
 	if (show_viewport) {
@@ -3660,7 +3667,7 @@ void CanvasItemEditor::_notification(int p_what) {
 		scale_button->set_icon(get_icon("ToolScale", "EditorIcons"));
 		rotate_button->set_icon(get_icon("ToolRotate", "EditorIcons"));
 		snap_button->set_icon(get_icon("Snap", "EditorIcons"));
-		snap_config_menu->set_icon(get_icon("GuiMiniTabMenu", "EditorIcons"));
+		snap_config_menu->set_icon(get_icon("GuiTabMenu", "EditorIcons"));
 		skeleton_menu->set_icon(get_icon("Bone", "EditorIcons"));
 		pan_button->set_icon(get_icon("ToolPan", "EditorIcons"));
 		ruler_button->set_icon(get_icon("Ruler", "EditorIcons"));
@@ -5044,6 +5051,8 @@ CanvasItemEditor::CanvasItemEditor(EditorNode *p_editor) {
 	snap_rotation = false;
 	snap_relative = false;
 	snap_pixel = false;
+	snap_target[0] = SNAP_TARGET_NONE;
+	snap_target[1] = SNAP_TARGET_NONE;
 
 	anchors_mode = false;
 

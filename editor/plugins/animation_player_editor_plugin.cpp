@@ -122,7 +122,7 @@ void AnimationPlayerEditor::_notification(int p_what) {
 			stop->set_icon(get_icon("Stop", "EditorIcons"));
 
 			onion_toggle->set_icon(get_icon("Onion", "EditorIcons"));
-			onion_skinning->set_icon(get_icon("GuiMiniTabMenu", "EditorIcons"));
+			onion_skinning->set_icon(get_icon("GuiTabMenu", "EditorIcons"));
 
 			pin->set_icon(get_icon("Pin", "EditorIcons"));
 
@@ -736,8 +736,8 @@ void AnimationPlayerEditor::_dialog_action(String p_file) {
 			ERR_FAIL_COND(!player);
 
 			Ref<Resource> res = ResourceLoader::load(p_file, "Animation");
-			ERR_FAIL_COND(res.is_null());
-			ERR_FAIL_COND(!res->is_class("Animation"));
+			ERR_FAIL_COND_MSG(res.is_null(), "Cannot load Animation from file '" + p_file + "'.");
+			ERR_FAIL_COND_MSG(!res->is_class("Animation"), "Loaded resource from file '" + p_file + "' is not Animation.");
 			if (p_file.find_last("/") != -1) {
 
 				p_file = p_file.substr(p_file.find_last("/") + 1, p_file.length());

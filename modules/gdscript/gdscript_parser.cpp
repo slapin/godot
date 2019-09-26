@@ -1399,9 +1399,6 @@ GDScriptParser::Node *GDScriptParser::_parse_expression(Node *p_parent, bool p_s
 					unary = true;
 					break;
 				case OperatorNode::OP_NEG:
-					priority = 1;
-					unary = true;
-					break;
 				case OperatorNode::OP_POS:
 					priority = 1;
 					unary = true;
@@ -6703,7 +6700,8 @@ GDScriptParser::DataType GDScriptParser::_reduce_node_type(Node *p_node) {
 		}
 	}
 
-	p_node->set_datatype(_resolve_type(node_type, p_node->line));
+	node_type = _resolve_type(node_type, p_node->line);
+	p_node->set_datatype(node_type);
 	return node_type;
 }
 

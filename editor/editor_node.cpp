@@ -903,7 +903,7 @@ void EditorNode::_set_scene_metadata(const String &p_file, int p_idx) {
 	}
 
 	Error err = cf->save(path);
-	ERR_FAIL_COND(err != OK);
+	ERR_FAIL_COND_MSG(err != OK, "Cannot save config file to '" + path + "'.");
 }
 
 bool EditorNode::_find_and_save_resource(RES p_res, Map<RES, bool> &processed, int32_t flags) {
@@ -2519,7 +2519,7 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 
 			bool was_visible = OS::get_singleton()->is_console_visible();
 			OS::get_singleton()->set_console_visible(!was_visible);
-			EditorSettings::get_singleton()->set_setting("interface/editor/hide_console_window", !was_visible);
+			EditorSettings::get_singleton()->set_setting("interface/editor/hide_console_window", was_visible);
 		} break;
 		case EDITOR_SCREENSHOT: {
 
@@ -2597,7 +2597,7 @@ void EditorNode::_save_screenshot(NodePath p_path) {
 	img->flip_y();
 	viewport->set_clear_mode(Viewport::CLEAR_MODE_ALWAYS);
 	Error error = img->save_png(p_path);
-	ERR_FAIL_COND(error != OK);
+	ERR_FAIL_COND_MSG(error != OK, "Cannot save screenshot to file '" + p_path + "'.");
 }
 
 void EditorNode::_tool_menu_option(int p_idx) {
@@ -3133,7 +3133,14 @@ void EditorNode::_clear_undo_history() {
 
 void EditorNode::set_current_scene(int p_idx) {
 
+	//Save the folding in case the scene gets reloaded.
+	if (editor_data.get_scene_path(p_idx) != "")
+		editor_folding.save_scene_folding(editor_data.get_edited_scene_root(p_idx), editor_data.get_scene_path(p_idx));
+
 	if (editor_data.check_and_update_scene(p_idx)) {
+		if (editor_data.get_scene_path(p_idx) != "")
+			editor_folding.load_scene_folding(editor_data.get_edited_scene_root(p_idx), editor_data.get_scene_path(p_idx));
+
 		call_deferred("_clear_undo_history");
 	}
 
@@ -3676,7 +3683,7 @@ Ref<Texture> EditorNode::get_object_icon(const Object *p_object, const String &p
 }
 
 Ref<Texture> EditorNode::get_class_icon(const String &p_class, const String &p_fallback) const {
-	ERR_FAIL_COND_V(p_class.empty(), NULL);
+	ERR_FAIL_COND_V_MSG(p_class.empty(), NULL, "Class name cannot be empty.");
 
 	if (gui_base->has_icon(p_class, "EditorIcons")) {
 		return gui_base->get_icon(p_class, "EditorIcons");

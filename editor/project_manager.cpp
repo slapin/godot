@@ -1689,7 +1689,7 @@ void ProjectList::_panel_input(const Ref<InputEvent> &p_ev, Node *p_hb) {
 
 		emit_signal(SIGNAL_SELECTION_CHANGED);
 
-		if (mb->is_doubleclick()) {
+		if (!mb->get_control() && mb->is_doubleclick()) {
 			emit_signal(SIGNAL_PROJECT_ASK_OPEN);
 		}
 	}
@@ -1757,6 +1757,12 @@ void ProjectManager::_notification(int p_what) {
 
 			if (_project_list->get_project_count() == 0 && StreamPeerSSL::is_available())
 				open_templates->popup_centered_minsize();
+
+			if (_project_list->get_project_count() >= 1) {
+				// Focus on the search box immediately to allow the user
+				// to search without having to reach for their mouse
+				project_filter->search_box->grab_focus();
+			}
 		} break;
 		case NOTIFICATION_VISIBILITY_CHANGED: {
 

@@ -598,7 +598,7 @@ class EditorExportPlatformAndroid : public EditorExportPlatform {
 				String dst_path = String("lib").plus_file(abi).plus_file(p_so.path.get_file());
 				Vector<uint8_t> array = FileAccess::get_file_as_array(p_so.path);
 				Error store_err = store_in_apk(ed, dst_path, array);
-				ERR_FAIL_COND_V(store_err, store_err);
+				ERR_FAIL_COND_V_MSG(store_err, store_err, "Cannot store in apk file '" + dst_path + "'.");
 			}
 		}
 		if (!exported) {
@@ -1308,7 +1308,7 @@ public:
 		r_options->push_back(ExportOption(PropertyInfo(Variant::BOOL, "screen/support_xlarge"), true));
 		r_options->push_back(ExportOption(PropertyInfo(Variant::BOOL, "screen/opengl_debug"), false));
 
-		for (unsigned int i = 0; i < sizeof(launcher_icons) / sizeof(launcher_icons[0]); ++i) {
+		for (uint64_t i = 0; i < sizeof(launcher_icons) / sizeof(launcher_icons[0]); ++i) {
 			r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, launcher_icons[i].option_id, PROPERTY_HINT_FILE, "*.png"), ""));
 		}
 
@@ -1537,7 +1537,7 @@ public:
 		args.push_back("-a");
 		args.push_back("android.intent.action.MAIN");
 		args.push_back("-n");
-		args.push_back(get_package_name(package_name) + "/org.godotengine.godot.Godot");
+		args.push_back(get_package_name(package_name) + "/com.godot.game.GodotApp");
 
 		err = OS::get_singleton()->execute(adb, args, true, NULL, NULL, &rv);
 		if (err || rv != 0) {
@@ -1670,7 +1670,7 @@ public:
 
 		DirAccessRef da = DirAccess::open("res://android");
 
-		ERR_FAIL_COND(!da);
+		ERR_FAIL_COND_MSG(!da, "Cannot open directory 'res://android'.");
 		Map<String, List<String> > directory_paths;
 		Map<String, List<String> > manifest_sections;
 		Map<String, List<String> > gradle_sections;
@@ -1946,7 +1946,7 @@ public:
 			//build project if custom build is enabled
 			String sdk_path = EDITOR_GET("export/android/custom_build_sdk_path");
 
-			ERR_FAIL_COND_V(sdk_path == "", ERR_UNCONFIGURED);
+			ERR_FAIL_COND_V_MSG(sdk_path == "", ERR_UNCONFIGURED, "Android SDK path must be configured in Editor Settings at 'export/android/custom_build_sdk_path'.");
 
 			_update_custom_build_project();
 
@@ -2100,7 +2100,7 @@ public:
 
 			if (file == "res/drawable-nodpi-v4/icon.png") {
 				bool found = false;
-				for (unsigned int i = 0; i < sizeof(launcher_icons) / sizeof(launcher_icons[0]); ++i) {
+				for (uint64_t i = 0; i < sizeof(launcher_icons) / sizeof(launcher_icons[0]); ++i) {
 					String icon_path = String(p_preset->get(launcher_icons[i].option_id)).strip_edges();
 					if (icon_path != "" && icon_path.ends_with(".png")) {
 						FileAccess *f = FileAccess::open(icon_path, FileAccess::READ);
@@ -2226,7 +2226,7 @@ public:
 			APKExportData ed;
 			ed.ep = &ep;
 			ed.apk = unaligned_apk;
-			for (unsigned int i = 0; i < sizeof(launcher_icons) / sizeof(launcher_icons[0]); ++i) {
+			for (uint64_t i = 0; i < sizeof(launcher_icons) / sizeof(launcher_icons[0]); ++i) {
 				String icon_path = String(p_preset->get(launcher_icons[i].option_id)).strip_edges();
 				if (icon_path != "" && icon_path.ends_with(".png") && FileAccess::exists(icon_path)) {
 					Vector<uint8_t> data = FileAccess::get_file_as_array(icon_path);
