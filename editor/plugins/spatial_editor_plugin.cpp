@@ -3230,6 +3230,7 @@ void SpatialEditorViewport::_create_preview(const Vector<String> &files) const {
 	for (int i = 0; i < files.size(); i++) {
 		String path = files[i];
 		RES res = ResourceLoader::load(path);
+		ERR_CONTINUE(res.is_null());
 		Ref<PackedScene> scene = Ref<PackedScene>(Object::cast_to<PackedScene>(*res));
 		Ref<Mesh> mesh = Ref<Mesh>(Object::cast_to<Mesh>(*res));
 		if (mesh != NULL || scene != NULL) {
@@ -3279,6 +3280,7 @@ bool SpatialEditorViewport::_cyclical_dependency_exists(const String &p_target_s
 
 bool SpatialEditorViewport::_create_instance(Node *parent, String &path, const Point2 &p_point) {
 	RES res = ResourceLoader::load(path);
+	ERR_FAIL_COND_V(res.is_null(), false);
 
 	Ref<PackedScene> scene = Ref<PackedScene>(Object::cast_to<PackedScene>(*res));
 	Ref<Mesh> mesh = Ref<Mesh>(Object::cast_to<Mesh>(*res));
@@ -4062,7 +4064,6 @@ void _update_all_gizmos(Node *p_node) {
 
 void SpatialEditor::update_all_gizmos(Node *p_node) {
 	if (!p_node) {
-		if (!SceneTree::get_singleton()) return;
 		p_node = SceneTree::get_singleton()->get_root();
 	}
 	_update_all_gizmos(p_node);
@@ -6269,5 +6270,7 @@ EditorSpatialGizmoPlugin::~EditorSpatialGizmoPlugin() {
 		current_gizmos[i]->set_plugin(NULL);
 		current_gizmos[i]->get_spatial_node()->set_gizmo(NULL);
 	}
-	SpatialEditor::get_singleton()->update_all_gizmos();
+	if (SpatialEditor::get_singleton()) {
+		SpatialEditor::get_singleton()->update_all_gizmos();
+	}
 }
