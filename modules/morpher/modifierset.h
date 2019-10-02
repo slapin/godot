@@ -7,6 +7,7 @@
 #include <core/bind/core_bind.h>
 #include <core/os/file_access.h>
 #include <scene/resources/mesh.h>
+#include <scene/resources/packed_scene.h>
 #include <scene/3d/mesh_instance.h>
 #include <scene/3d/skeleton.h>
 
@@ -220,8 +221,7 @@ class ModifierGroup {
 	}
 };
 
-class ModifierSet: public Reference {
-	GDCLASS(ModifierSet, Reference)
+class ModifierSet {
 protected:
 	ModifierGroup modifiers[256];
 	int mod_count;
@@ -283,9 +283,10 @@ public:
 		const PoolVector<String> &bone_names,
 		const PoolVector<Transform> bone_transforms);
 	void add_mesh(const String &name, Ref<ArrayMesh> mesh);
-	void add_mesh_scene(const Node *node, const String &name)
+	bool add_mesh_scene(const Node *node, const String &name)
 	{
 		int i;
+		bool ret = true;
 		List<const Node *> queue;
 		queue.push_back(node);
 		Ref<ArrayMesh> mesh;
@@ -304,6 +305,10 @@ public:
 		}
 		if (found)
 			add_mesh(name, mesh);
+		else
+			ret = false;
+		
+		return ret;
 	}
 	void set_modifier_value(int id, const String &name, float value)
 	{
@@ -410,6 +415,8 @@ protected:
 	static void _bind_methods();
 	bool dirty;
 	HashMap<String, String> helpers;
+	HashMap<String, String> slots;
+	Ref<PackedScene> ch;
 public:
 	CharacterModifierSet(): base_name("base"), dirty(false)
 	{
@@ -418,19 +425,36 @@ public:
 	{
 		base_name = name;
 	}
-	Ref<ModifierSet> create(const String &name)
+protected:
+	ModifierSet *create(const String &name)
 	{
+		if (mods.has(name))
+			return NULL;
 		mods[name] = memnew(ModifierSet);
-		Ref<ModifierSet> ret = mods[name];
+		ModifierSet *ret = mods[name];
 		return ret;
 	}
-	void add_mesh_scene(Node *node)
+public:
+	void add_mesh_scene(Ref<PackedScene> ps)
 	{
+		ch = ps;
+		Node *node = ps->instance();
+		List<String> bad_slots;
 		for (const String *key = mods.next(NULL);
 				key;
 				key = mods.next(key)) {
-			mods[*key]->add_mesh_scene(node, *key);
+			if (!mods[*key]->add_mesh_scene(node, *key))
+				bad_slots.push_back(*key);
 		}
+		for (List<String>::Element *e = bad_slots.front();
+				e;
+				e = e->next()) {
+					String d = e->get();
+					printf("bad slot: %ls\n", d.c_str());
+					memfree(mods[d]);
+					mods.erase(d);
+		}
+		node->queue_delete();
 	}
 	int add_work_mesh_scene(Node *node)
 	{
@@ -541,5 +565,32 @@ public:
 			mods[base_name]->_add_modifier(name, skel, bone_names, xforms);
 		}
 	}
+	void add_slot(const String &name, const String &helper, int uv_index)
+	{
+		slots[name] = helper;
+		ModifierSet *data = create(name);
+		assert(data);
+		data->set_uv_index(uv_index);
+		set_helper(name, helper);
+	}
+	Node *spawn()
+	{
+		Node *ret = ch->instance();
+		ret->set_meta("mesh_id", add_work_mesh_scene(ret));
+		ret->set_meta("mod", this);
+		return ret;
+	}
+	void remove(Node *node)
+	{
+		int mesh_id = node->get_meta("mesh_id");
+		remove_work_meshes(mesh_id);
+		node->queue_delete();
+	}
+	Node *get_slot(Node *node, const String &name)
+	{
+		if (!slots.has(name))
+			return NULL;
+		MeshInstance *mi = ModifierSet::find_node<MeshInstance>(node, name);
+		return mi;
+	}
 };
-

@@ -281,16 +281,6 @@ void ModifierSet::add_mesh(const String &name, const Ref<ArrayMesh> mesh)
 
 	}
 }
-void ModifierSet::_bind_methods()
-{
-	ClassDB::bind_method(D_METHOD("add_modifier", "name", "vimage", "nimage", "minmax"), &ModifierSet::add_modifier);
-	ClassDB::bind_method(D_METHOD("add_mesh_scene", "node", "name"), &ModifierSet::add_mesh_scene);
-	ClassDB::bind_method(D_METHOD("add_work_mesh_scene", "node", "name"), &ModifierSet::add_work_mesh_scene);
-	ClassDB::bind_method(D_METHOD("set_modifier_value", "id", "name", "value"), &ModifierSet::set_modifier_value);
-	ClassDB::bind_method(D_METHOD("get_modifier_value", "id", "name"), &ModifierSet::get_modifier_value);
-	ClassDB::bind_method(D_METHOD("set_uv_index", "index"), &ModifierSet::set_uv_index);
-	ClassDB::bind_method(D_METHOD("get_modifier_list"), &ModifierSet::get_modifier_list);
-}
 
 void ModifierSet::modify(Node *scene)
 {
@@ -463,11 +453,9 @@ void CharacterModifierSet::_bind_methods()
 {
 	ClassDB::bind_method(D_METHOD("set_base_name", "name"),
 			&CharacterModifierSet::set_base_name);
-	ClassDB::bind_method(D_METHOD("create", "name"),
-			&CharacterModifierSet::create);
 	ClassDB::bind_method(D_METHOD("add_mesh_scene", "node"),
 			&CharacterModifierSet::add_mesh_scene);
-	ClassDB::bind_method(D_METHOD("add_work_mesh_scene", "node"),
+	ClassDB::bind_method(D_METHOD("add_work_mesh_scene", "ps"),
 			&CharacterModifierSet::add_work_mesh_scene);
 	ClassDB::bind_method(D_METHOD("remove_work_meshes", "id"),
 			&CharacterModifierSet::remove_work_meshes);
@@ -496,5 +484,13 @@ void CharacterModifierSet::_bind_methods()
 				"bone_names",
 				"bone_transforms"),
 			&CharacterModifierSet::add_bone_modifier_group);
+	ClassDB::bind_method(D_METHOD("add_slot", "name",
+								  "helper", "uv_index"),
+			&CharacterModifierSet::add_slot);
+	ClassDB::bind_method(D_METHOD("spawn"),
+			&CharacterModifierSet::spawn);
+	ClassDB::bind_method(D_METHOD("remove", "node"),
+			&CharacterModifierSet::remove);
+	ClassDB::bind_method(D_METHOD("get_slot", "node", "name"),
+			&CharacterModifierSet::remove);
 }
-

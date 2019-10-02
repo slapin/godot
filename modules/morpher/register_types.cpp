@@ -36,7 +36,6 @@
 void register_morpher_types() {
 	ClassDB::register_class<DNA_>();
 	ClassDB::register_class<TriangleSet>();
-	ClassDB::register_class<ModifierSet>();
 	ClassDB::register_class<CharacterModifierSet>();
 }
 
