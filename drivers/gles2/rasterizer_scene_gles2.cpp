@@ -2905,16 +2905,10 @@ void RasterizerSceneGLES2::_post_process(Environment *env, const CameraMatrix &p
 		glBindTexture(GL_TEXTURE_2D, storage->frame.current_rt->depth);
 
 		glActiveTexture(GL_TEXTURE0);
-		if (!storage->frame.current_rt->used_dof_blur_near) {
-			if (storage->frame.current_rt->mip_maps[0].color) {
-				glBindTexture(GL_TEXTURE_2D, storage->frame.current_rt->mip_maps[0].color);
-			} else {
-				for (int i = 0; i < storage->frame.current_rt->mip_maps[i].sizes.size(); i++) {
-					glBindTexture(GL_TEXTURE_2D, storage->frame.current_rt->mip_maps[0].sizes[i].color);
-					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, storage->frame.current_rt->mip_maps[0].sizes[i].width, storage->frame.current_rt->mip_maps[0].sizes[i].height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-				}
-				glBindTexture(GL_TEXTURE_2D, storage->frame.current_rt->mip_maps[0].sizes[0].color);
-			}
+		if (storage->frame.current_rt->mip_maps[0].color) {
+			glBindTexture(GL_TEXTURE_2D, storage->frame.current_rt->mip_maps[0].color);
+		} else {
+			glBindTexture(GL_TEXTURE_2D, storage->frame.current_rt->mip_maps[0].sizes[0].color);
 		}
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -3303,6 +3297,12 @@ void RasterizerSceneGLES2::render_scene(const Transform &p_cam_transform, const 
 		reflection_probe_count = 0;
 	}
 
+	if (env && env->bg_mode == VS::ENV_BG_CANVAS) {
+		// If using canvas background, copy 2d to screen copy texture
+		// TODO: When GLES2 renders to current_rt->mip_maps[], this copy will no longer be needed
+		_copy_texture_to_buffer(storage->frame.current_rt->color, storage->frame.current_rt->copy_screen_effect.fbo);
+	}
+
 	// render list stuff
 
 	render_list.clear();
@@ -3439,8 +3439,11 @@ void RasterizerSceneGLES2::render_scene(const Transform &p_cam_transform, const 
 					clear_color = Color(0.0, 1.0, 0.0, 1.0);
 				}
 			} break;
+			case VS::ENV_BG_CANVAS: {
+				// use screen copy as background
+				_copy_texture_to_buffer(storage->frame.current_rt->copy_screen_effect.color, current_fb);
+			} break;
 			default: {
-				// FIXME: implement other background modes
 			} break;
 		}
 	}
@@ -3508,6 +3511,11 @@ void RasterizerSceneGLES2::render_scene(const Transform &p_cam_transform, const 
 	render_list.sort_by_reverse_depth_and_priority(true);
 
 	_render_render_list(&render_list.elements[render_list.max_elements - render_list.alpha_element_count], render_list.alpha_element_count, cam_transform, p_cam_projection, p_shadow_atlas, env, env_radiance_tex, 0.0, 0.0, reverse_cull, true, false);
+
+	if (p_reflection_probe.is_valid()) {
+		// Rendering to a probe so no need for post_processing
+		return;
+	}
 
 	//post process
 	_post_process(env, p_cam_projection);
