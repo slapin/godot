@@ -449,6 +449,54 @@ void CharacterModifierSet::load(Ref<_File> fd)
 				&img, &imgn, minmax.read().ptr());
 	}
 }
+
+void CharacterModifierSet::set_accessory(Node *node, const String &slot_name, const String &gender,
+				const String &atype, const String &aname)
+{
+	int i;
+	MeshInstance *slot = Object::cast_to<MeshInstance>(get_slot(node, slot_name));
+	Skeleton *skel = ModifierSet::find_node<Skeleton>(node);
+	assert(skel);
+	if (!slot) {
+		slot = memnew(MeshInstance);
+		slot->set_name(slot_name);
+		skel->add_child(slot);
+		slot->set_transform(Transform());
+		slot->set_skeleton_path(slot->get_path_to(skel));
+	} else
+		slot->set_skeleton_path(slot->get_path_to(skel));
+	if (!accessories.has(gender))
+		return;
+	const Dictionary &items = accessories[gender];
+	if (!items.has(atype))
+		return;
+	const Dictionary &category = items[atype];
+	if (!category.has(aname))
+		return;
+	const Dictionary &data = category[aname];
+	const String &mesh_path = data["path"];
+	const Array &materials = data["materials"];
+	Error err = OK;
+	Ref<ArrayMesh> mesh = ResourceLoader::load(mesh_path, "", &err);
+	if (err != OK) {
+		printf("Could not read resource %ls\n", mesh_path.c_str());
+		return;
+	}
+	for (i = 0; i < mesh->get_surface_count(); i++) {
+		const Dictionary &mat_data = materials[i];
+		const String &mat_path  = mat_data["path"];
+		Ref<Material> mat = ResourceLoader::load(mat_path, "", &err);
+		if (err != OK) {
+			printf("Could not read resource %ls\n", mat_path.c_str());
+			return;
+		}
+		mesh->surface_set_material(i, mat);
+	}
+	slot->hide();
+	slot->set_mesh(mesh);
+	slot->show();
+}
+
 void CharacterModifierSet::_bind_methods()
 {
 	ClassDB::bind_method(D_METHOD("set_base_name", "name"),
@@ -492,5 +540,15 @@ void CharacterModifierSet::_bind_methods()
 	ClassDB::bind_method(D_METHOD("remove", "node"),
 			&CharacterModifierSet::remove);
 	ClassDB::bind_method(D_METHOD("get_slot", "node", "name"),
-			&CharacterModifierSet::remove);
+			&CharacterModifierSet::get_slot);
+	ClassDB::bind_method(D_METHOD("hide_slot", "node", "name"),
+			&CharacterModifierSet::hide_slot);
+	ClassDB::bind_method(D_METHOD("show_slot", "node", "name"),
+			&CharacterModifierSet::show_slot);
+	ClassDB::bind_method(D_METHOD("set_accessory", "node", "slot_name",
+			"gender", "atype", "aname"),
+			&CharacterModifierSet::set_accessory);
+	ClassDB::bind_method(D_METHOD("get_accessory_list",	"gender",
+			"atype", "name_start"),
+			&CharacterModifierSet::get_acessory_list);
 }

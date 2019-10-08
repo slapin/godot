@@ -6,12 +6,48 @@
 #include <core/resource.h>
 #include <core/bind/core_bind.h>
 #include <core/os/file_access.h>
+#include <core/io/json.h>
+#include <core/io/resource_loader.h>
 #include <scene/resources/mesh.h>
 #include <scene/resources/packed_scene.h>
 #include <scene/3d/mesh_instance.h>
 #include <scene/3d/skeleton.h>
 
 #undef MORPH_DEBUG
+
+class MapStorage {
+	struct datablock {
+		String name;
+		int width;
+		int height;
+		int format;
+		PoolVector<uint8_t> buffer;
+	};
+	HashMap<String, struct datablock> data;
+	MapStorage()
+	{
+	}
+public:
+	void add_map(const String &name, const PoolVector<uint8_t> &buffer, int width, int height, int format)
+	{
+		struct datablock d;
+		d.buffer = buffer;
+		d.width = width;
+		d.height = height;
+		d.format = format;
+		d.name = name;
+		data[name] = d;
+	}
+	void remove_map(const String &name)
+	{
+		data.erase(name);
+	}
+	static MapStorage *get_singleton()
+	{
+		static MapStorage ms;
+		return &ms;
+	}
+};
 
 class ModifierBase {
 protected:
@@ -405,7 +441,6 @@ public:
 			memdelete_arr(meshdata);
 	}
 };
-#endif
 
 class CharacterModifierSet: public Reference {
 	GDCLASS(CharacterModifierSet, Reference)
@@ -417,9 +452,18 @@ protected:
 	HashMap<String, String> helpers;
 	HashMap<String, String> slots;
 	Ref<PackedScene> ch;
+	Dictionary accessories;
 public:
 	CharacterModifierSet(): base_name("base"), dirty(false)
 	{
+		FileAccess *fd = FileAccess::open("res://characters/accessory.json", FileAccess::READ);
+		String confdata = fd->get_as_utf8_string();
+		fd->close();
+		String err;
+		int err_line;
+		Variant adata;
+		JSON::parse(confdata, adata, err, err_line);
+		accessories = adata;
 	}
 	void set_base_name(const String &name)
 	{
@@ -593,4 +637,39 @@ public:
 		MeshInstance *mi = ModifierSet::find_node<MeshInstance>(node, name);
 		return mi;
 	}
+	void hide_slot(Node *node, const String &name)
+	{
+		MeshInstance *mi = ModifierSet::find_node<MeshInstance>(node, name);
+		if (mi)
+			mi->hide();
+	}
+	void show_slot(Node *node, const String &name)
+	{
+		MeshInstance *mi = ModifierSet::find_node<MeshInstance>(node, name);
+		if (mi)
+			mi->show();
+	}
+	void set_accessory(Node *node, const String &slot_name, const String &gender,
+					const String &atype, const String &aname);
+	PoolVector<String> get_acessory_list(const String &gender,
+					const String &atype, const String &name_start)
+	{
+		int i;
+		PoolVector<String> ret;
+		if (!accessories.has(gender))
+			return ret;
+		const Dictionary &items = accessories[gender];
+		if (!items.has(atype))
+			return ret;
+		const Dictionary &category = items[atype];
+		Array key_list = category.keys();
+		for (i = 0; i < key_list.size(); i++) {
+			const String &name = key_list[i];
+			if (name_start.length() == 0 || name.begins_with(name_start))
+				ret.push_back(name);
+		}
+		return ret;
+	}
 };
+
+#endif
