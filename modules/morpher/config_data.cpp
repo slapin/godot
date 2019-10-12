@@ -46,7 +46,7 @@ Ref<ArrayMesh> AccessoryData::get_mesh(const Dictionary &entry) const {
 	int i;
 	Error err = OK;
 
-	Ref<ArrayMesh> mesh = ResourceLoader::load(mesh_path, "", &err);
+	Ref<ArrayMesh> mesh = ResourceLoader::load(mesh_path, "", &err)->duplicate();
 	if (err != OK) {
 		printf("Could not read resource %ls\n", mesh_path.c_str());
 		return NULL;

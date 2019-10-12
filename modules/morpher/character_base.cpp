@@ -143,17 +143,28 @@ void CharacterInstanceList::update_slot(CharacterInstance *ci,
 
 	Array surface = si->mesh->surface_get_arrays(0);
 	const PoolVector<Vector2> &uvdata = surface[si->uv_index];
+	if (uvdata.size() == 0)
+		return;
 	const PoolVector<Vector3> &vdata = surface[Mesh::ARRAY_VERTEX];
 	const PoolVector<Vector3> &normal = surface[Mesh::ARRAY_NORMAL];
+	for (i = 0; i < uvdata.size(); i++)
+		printf("%d, %f, %f\n", i, uvdata[i].x, uvdata[i].y);
 
 	si->meshdata = memnew_arr(float, vdata.size() * 14);
     si->vertex_count = vdata.size();
+	assert(uvdata.size() > 0);
+	assert(vdata.size() == uvdata.size());
+	assert(si->vertex_count > 0);
 	const Vector2 *uvs = uvdata.read().ptr();
 	const Vector3 *n = normal.read().ptr();
 	const Vector3 *v = vdata.read().ptr();
 	for (i = 0; i < uvdata.size(); i++) {
 		si->meshdata[i * 14 + 0] = uvs[i][0];
 		si->meshdata[i * 14 + 1] = uvs[i][1];
+		assert(si->meshdata[i * 14 + 0] >= 0);
+		assert(si->meshdata[i * 14 + 1] >= 0);
+		assert(si->meshdata[i * 14 + 0] <= 1.0f);
+		assert(si->meshdata[i * 14 + 1] <= 1.0f);
 		si->meshdata[i * 14 + 2] = v[i][0];
 		si->meshdata[i * 14 + 3] = v[i][1];
 		si->meshdata[i * 14 + 4] = v[i][2];
@@ -179,6 +190,8 @@ void CharacterInstanceList::update_slot(CharacterInstance *ci,
 			}
 		}
 	}
+	printf("meshdata %p\n", si->meshdata);
+	printf("slot updated, running modify\n");
     cm->modify(ci, si, ci->mod_values);
 }
 CharacterInstanceList *CharacterInstanceList::get_singleton()
@@ -257,6 +270,7 @@ void CharacterModifiers::modify(CharacterSlotInstance *si,
     ModifierDataBase *mod, 
     float value)
 {
+	printf("meshdata %p\n", si->meshdata);
     MapStorage *ms = MapStorage::get_singleton();
     if (mod->type == ModifierDataBase::TYPE_BLEND) {
         int i, j;
@@ -269,8 +283,10 @@ void CharacterModifiers::modify(CharacterSlotInstance *si,
     	img->lock();
 	    nimg->lock();
     	for (i = 0; i < si->vertex_count; i++) {
-	    	int vx = (int)(si->meshdata[i * 14 + 0] * (float)img->get_width());
-		    int vy = (int)(si->meshdata[i * 14 + 1] * (float)img->get_height());
+	    	int vx = (int)(si->meshdata[i * 14 + 0] * (float)(img->get_width() - 1));
+		    int vy = (int)(si->meshdata[i * 14 + 1] * (float)(img->get_height() - 1));
+			assert(vx >= 0 && vy >= 0);
+			assert(vx < img->get_width() && vy < img->get_height());
     		Color c = img->get_pixel(vx, vy);
 	    	Color nc = nimg->get_pixel(vx, vy);
 		    float pdelta[3], ndelta[3];
@@ -317,6 +333,7 @@ void CharacterModifiers::modify(CharacterInstance *ci, CharacterSlotInstance *si
 {
     Array surface = si->mesh->surface_get_arrays(0);
     int i, j;
+	printf("meshdata %p\n", si->meshdata);
     for (i = 0; i < si->vertex_count; i++) {
         si->meshdata[i * 14 + 2] =  si->meshdata[i * 14 + 8];
         si->meshdata[i * 14 + 3] =  si->meshdata[i * 14 + 9];
