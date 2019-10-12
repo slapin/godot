@@ -16,62 +16,6 @@
 
 #undef MORPH_DEBUG
 
-class MapStorage {
-	struct datablock {
-		String name;
-		float minp[3], maxp[3], min_normal[3], max_normal[3];
-		String helper;
-		int width;
-		int height;
-		int format;
-		int dec_size;
-		PoolVector<uint8_t> buf;
-		int width_normal;
-		int height_normal;
-		int format_normal;
-		int dec_size_normal;
-		PoolVector<uint8_t> buf_normal;
-	};
-	HashMap<String, struct datablock> data;
-	Dictionary config;
-	void load();
-	MapStorage()
-	{
-		FileAccess *fd = FileAccess::open("res://characters/config.json", FileAccess::READ);
-		assert(fd);
-		String confdata = fd->get_as_utf8_string();
-		fd->close();
-		String err;
-		int err_line;
-		Variant adata;
-		JSON::parse(confdata, adata, err, err_line);
-		config = adata;
-		load();
-	}
-public:
-	PoolVector<String> get_list() const
-	{
-		PoolVector<String> ret;
-		for (const String *key = data.next(NULL);
-			key; key = data.next(key)) {
-				ret.push_back(*key);
-		}
-		return ret;
-	}
-	Ref<Image> get_image(const String &name) const;
-	Ref<Image> get_normal_image(const String &name) const;
-	PoolVector<float> get_minmax(const String &shape_name);
-	void remove_map(const String &name)
-	{
-		data.erase(name);
-	}
-	static MapStorage *get_singleton()
-	{
-		static MapStorage ms;
-		return &ms;
-	}
-};
-
 class ModifierSet {
 protected:
 	ModifierGroup modifiers[256];
@@ -114,8 +58,9 @@ public:
 	ModifierSet(): mod_count(0),
 		meshdata(0),
 		uv_index(Mesh::ARRAY_TEX_UV),
-		vertex_count(0), dirty(false)
+		vertex_count(0), dirty(false), name2mod()
 	{
+		printf("ModifierSet\n");
 	}
 	void add_modifier(const String &name, Ref<Image> vimage,
 			Ref<Image> nimage, const PoolVector<float> &minmax);
@@ -289,6 +234,7 @@ protected:
 	{
 		if (mods.has(name))
 			return NULL;
+		printf("create %ls", name.c_str());
 		mods[name] = memnew(ModifierSet);
 		ModifierSet *ret = mods[name];
 		return ret;

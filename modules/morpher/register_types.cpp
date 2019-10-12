@@ -32,11 +32,22 @@
 #include "morpher.h"
 #include "triangle.h"
 #include "modifierset.h"
+#include "character_base.h"
 
 void register_morpher_types() {
 	ClassDB::register_class<DNA_>();
 	ClassDB::register_class<TriangleSet>();
 	ClassDB::register_class<CharacterModifierSet>();
+	ClassDB::register_class<CharacterGenderList>();
+	ClassDB::register_class<CharacterInstance>();
+	ClassDB::register_class<CharacterInstanceList>();
+
+	Engine::get_singleton()->add_singleton(
+			Engine::Singleton("CharacterInstanceList",
+				CharacterInstanceList::get_singleton()));
+	Engine::get_singleton()->add_singleton(
+			Engine::Singleton("CharacterGenderList",
+				CharacterGenderList::get_singleton()));
 }
 
 void unregister_morpher_types() {
