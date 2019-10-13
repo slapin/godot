@@ -1,13 +1,13 @@
 #ifndef TRIANGLE_H
 #define TRIANGLE_H
-#include <cassert>
-#include <core/reference.h>
-#include <core/resource.h>
 #include <core/bind/core_bind.h>
 #include <core/os/file_access.h>
+#include <core/reference.h>
+#include <core/resource.h>
 #include <scene/resources/mesh.h>
+#include <cassert>
 
-class TriangleSet: public Reference {
+class TriangleSet : public Reference {
 	GDCLASS(TriangleSet, Reference)
 protected:
 	PoolVector<Vector3> vertices;
@@ -23,13 +23,12 @@ protected:
 	float maxn[3];
 	float cdn[3];
 	int minx, miny, maxx, maxy;
-	PoolVector<uint8_t> get_data(const Ref<Image> &vimage, const Ref<Image> &nimage)
-	{
+	PoolVector<uint8_t> get_data(const Ref<Image> &vimage, const Ref<Image> &nimage) {
 		int i, j, width = vimage->get_width(), height = vimage->get_height();
 		const PoolVector<uint8_t> &vdata = vimage->get_data(), &ndata = nimage->get_data();
 		assert(vdata.size() == ndata.size());
 		uint32_t *h_table = memnew_arr(uint32_t, height + 1);
-		h_table[0] = (uint32_t) height;
+		h_table[0] = (uint32_t)height;
 		uint64_t *src_buffer = memnew_arr(uint64_t, width);
 		uint8_t *dst_buffer = memnew_arr(uint8_t, width * 9);
 		PoolVector<uint8_t> ret;
@@ -74,8 +73,7 @@ protected:
 		memcpy(table_p, h_table, (height + 1) * 4);
 		return ret;
 	}
-	static inline void draw_hline(Image *image, const float *v1, const float *v2)
-	{
+	static inline void draw_hline(Image *image, const float *v1, const float *v2) {
 		if (v1[0] < 0 && v2[0] < 0)
 			return;
 		if (v1[0] >= v2[0])
@@ -85,7 +83,7 @@ protected:
 		float l = (v2[0] - v1[0]);
 		Color c;
 		for (int i = MAX(0, (int)v1[0] - 1); i <= MIN(image->get_width() - 1, (int)v2[0] + 1); i++) {
-			float t = ((float)i - v1[0] + 1)/ (l + 2.0f);
+			float t = ((float)i - v1[0] + 1) / (l + 2.0f);
 			t = CLAMP(t, 0.0f, 1.0f);
 			c.r = Math::lerp(v1[2], v2[2], t);
 			c.g = Math::lerp(v1[3], v2[3], t);
@@ -94,8 +92,7 @@ protected:
 		}
 	}
 	static inline void flat_bottom_triangle(Image *image,
-			const float *v1, const float *v2, const float *v3)
-	{
+			const float *v1, const float *v2, const float *v3) {
 		if ((v2[1] - v1[1]) < 1.0)
 			return;
 		double bdiv = (v2[1] - v1[1]);
@@ -119,8 +116,7 @@ protected:
 		}
 	}
 	static inline void flat_top_triangle(Image *image,
-			const float *v1, const float *v2, const float *v3)
-	{
+			const float *v1, const float *v2, const float *v3) {
 		if ((v3[1] - v1[1]) < 1.0)
 			return;
 		double bdiv = (v3[1] - v1[1]);
@@ -143,20 +139,18 @@ protected:
 			draw_hline(image, cx1, cx2);
 		}
 	}
-	inline float distance_squared(const float *v1, const float *v2)
-	{
+	inline float distance_squared(const float *v1, const float *v2) {
 		return Vector2(v1[0], v1[1]).distance_squared_to(Vector2(v2[0], v2[1]));
 	}
 	inline void draw_triangle(Image *image,
 			const float *v1,
 			const float *v2,
-			const float *v3)
-	{
+			const float *v3) {
 		if (v1[1] == v2[1] && v1[1] == v3[1])
 			return;
 		float d12 = distance_squared(v1, v2);
 		float d13 = distance_squared(v1, v3);
-		const float *points[] = {v1, v2, v3};
+		const float *points[] = { v1, v2, v3 };
 		int i, j;
 		for (i = 0; i < 3; i++)
 			for (j = 0; j < 3; j++) {
@@ -197,20 +191,17 @@ protected:
 				flat_top_triangle(image, points[1], p4, points[2]);
 		}
 	}
+
 public:
-	TriangleSet()
-	{
+	TriangleSet() {
 	}
-	~TriangleSet()
-	{
+	~TriangleSet() {
 	}
 	void normalize_deltas();
-	static inline float get_area(Vector3 p1, Vector3 p2, Vector3 p3)
-	{
+	static inline float get_area(Vector3 p1, Vector3 p2, Vector3 p3) {
 		return (p2 - p1).cross(p3 - p1).length() / 2.0;
 	}
-	static inline Vector3 get_baricentric(Vector3 pt, Vector3 p1, Vector3 p2, Vector3 p3)
-	{
+	static inline Vector3 get_baricentric(Vector3 pt, Vector3 p1, Vector3 p2, Vector3 p3) {
 		Vector3 p;
 		float area = get_area(p1, p2, p3);
 		if (area == 0.0) {
@@ -223,7 +214,7 @@ public:
 		if (denom != 0.0) {
 			float t = (-n.dot(pt) + d) / denom;
 			p = pt + n * t;
-		} else 
+		} else
 			p = pt;
 		float c = get_area(p2, p3, p);
 		float u = c / area;
@@ -238,8 +229,7 @@ public:
 	void create_from_array_shape(const Array &arrays_base, const Array &arrays_shape);
 	/* Close but not the same topology */
 	void create_from_array_difference(const Array &arrays_base, int uv_index1, const Array &arrays_shape, int uv_index2);
-	inline void update_bounds(float x, float y)
-	{
+	inline void update_bounds(float x, float y) {
 		if (minx > (int)x)
 			minx = (int)x;
 		if (miny > (int)y)
@@ -250,20 +240,16 @@ public:
 			maxy = (int)(ceil(y));
 	}
 	void draw(Ref<Image> vimage, Ref<Image> nimage, int uv_index);
-	Vector3 get_min()
-	{
+	Vector3 get_min() {
 		return Vector3(minp[0], minp[1], minp[2]);
 	}
-	Vector3 get_max()
-	{
+	Vector3 get_max() {
 		return Vector3(maxp[0], maxp[1], maxp[2]);
 	}
-	Vector3 get_min_normal()
-	{
+	Vector3 get_min_normal() {
 		return Vector3(minn[0], minn[1], minn[2]);
 	}
-	Vector3 get_max_normal()
-	{
+	Vector3 get_max_normal() {
 		return Vector3(maxn[0], maxn[1], maxn[2]);
 	}
 	void save(Ref<_File> fd, const String &shape_name, Ref<Image> vimage, Ref<Image> nimage);

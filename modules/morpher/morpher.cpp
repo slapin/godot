@@ -1,19 +1,15 @@
+#include "morpher.h"
 #include <core/io/compression.h>
 #include <core/math/math_funcs.h>
-#include "morpher.h"
 
-DNA_::DNA_(String &path)
-{
+DNA_::DNA_(String &path) {
 }
-DNA_::DNA_()
-{
+DNA_::DNA_() {
 	modify_mesh_mutex = Mutex::create();
 }
-DNA_::~DNA_()
-{
+DNA_::~DNA_() {
 }
-void DNA_::_bind_methods()
-{
+void DNA_::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("add_mesh", "part", "mesh", "same_verts"), &DNA_::add_mesh);
 	ClassDB::bind_method(D_METHOD("add_cloth_mesh", "cloth_name", "cloth_helper", "mesh"), &DNA_::add_cloth_mesh);
 	ClassDB::bind_method(D_METHOD("add_body_mesh", "body_mesh", "same_verts"), &DNA_::add_body_mesh);
@@ -31,8 +27,7 @@ void DNA_::_bind_methods()
 	ClassDB::bind_method(D_METHOD("set_modifier_value", "mod_name", "value"), &DNA_::set_modifier_value);
 }
 
-Dictionary DNA_::find_body_points(const Ref<ArrayMesh> &body_mesh, const Ref<ArrayMesh> &cloth_mesh)
-{
+Dictionary DNA_::find_body_points(const Ref<ArrayMesh> &body_mesh, const Ref<ArrayMesh> &cloth_mesh) {
 	Dictionary tmp;
 	Array arrays_cloth = cloth_mesh->surface_get_arrays(0);
 	Array arrays_body = body_mesh->surface_get_arrays(0);
@@ -58,8 +53,7 @@ Dictionary DNA_::find_body_points(const Ref<ArrayMesh> &body_mesh, const Ref<Arr
 	return tmp;
 }
 
-Ref<ArrayMesh> DNA_::_prepare_cloth(const Ref<ArrayMesh> &body_mesh, const Ref<ArrayMesh> &cloth_mesh)
-{
+Ref<ArrayMesh> DNA_::_prepare_cloth(const Ref<ArrayMesh> &body_mesh, const Ref<ArrayMesh> &cloth_mesh) {
 	Array arrays_cloth = cloth_mesh->surface_get_arrays(0);
 	ensure_uv2(arrays_cloth);
 	Array arrays_body = body_mesh->surface_get_arrays(0);
@@ -77,7 +71,6 @@ Ref<ArrayMesh> DNA_::_prepare_cloth(const Ref<ArrayMesh> &body_mesh, const Ref<A
 		if (res.size() == 3) {
 			Vector2 uv = triangulate_uv_arrays(vc, Mesh::ARRAY_TEX_UV, arrays_body, res);
 			cloth_uv2.write()[k] = uv;
-
 		}
 	}
 	arrays_cloth[Mesh::ARRAY_TEX_UV2] = cloth_uv2;
@@ -90,12 +83,11 @@ Ref<ArrayMesh> DNA_::_prepare_cloth(const Ref<ArrayMesh> &body_mesh, const Ref<A
 	new_mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, arrays_cloth);
 	return new_mesh;
 }
-Ref<ArrayMesh> DNA_::modify_mesh(const Ref<ArrayMesh> orig_mesh, const Dictionary same_verts)
-{
+Ref<ArrayMesh> DNA_::modify_mesh(const Ref<ArrayMesh> orig_mesh, const Dictionary same_verts) {
 	Ref<ArrayMesh> ret = memnew(ArrayMesh);
 	PoolVector<String> modifier_list = get_modifier_list();
 	lock_all_images();
-	
+
 	Rect2 rect = collect_rects();
 	modify_mesh_mutex->lock();
 	int surface_count = orig_mesh->get_surface_count();
@@ -184,23 +176,21 @@ Ref<ArrayMesh> DNA_::modify_mesh(const Ref<ArrayMesh> orig_mesh, const Dictionar
 	return ret;
 }
 
-Variant DNA_::get_var(FileAccess *f) const
-{
-        uint32_t len = f->get_32();
+Variant DNA_::get_var(FileAccess *f) const {
+	uint32_t len = f->get_32();
 	PoolVector<uint8_t> buff;
 	buff.resize(len);
 	PoolVector<uint8_t>::Write w = buff.write();
 	f->get_buffer(&w[0], len);
 	w.release();
-        PoolVector<uint8_t>::Read r = buff.read();
+	PoolVector<uint8_t>::Read r = buff.read();
 
-        Variant v;
-        decode_variant(v, &r[0], len, NULL, false);
-        return v;
+	Variant v;
+	decode_variant(v, &r[0], len, NULL, false);
+	return v;
 }
 
-bool DNA_::load(const String &path)
-{
+bool DNA_::load(const String &path) {
 	Error err;
 	FileAccess *f = FileAccess::open(path, FileAccess::READ, &err);
 	if (!f || err != OK)

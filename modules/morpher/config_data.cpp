@@ -1,44 +1,38 @@
-#include <cassert>
-#include <core/os/file_access.h>
-#include <core/io/json.h>
 #include "config_data.h"
-ConfigData::ConfigData()
-{
-   		FileAccess *fd = FileAccess::open("res://characters/config.json", FileAccess::READ);
-		assert(fd);
-		String confdata = fd->get_as_utf8_string();
-		fd->close();
-		String err;
-		int err_line;
-		Variant adata;
-		JSON::parse(confdata, adata, err, err_line);
-		config = adata;
+#include <core/io/json.h>
+#include <core/os/file_access.h>
+#include <cassert>
+ConfigData::ConfigData() {
+	FileAccess *fd = FileAccess::open("res://characters/config.json", FileAccess::READ);
+	assert(fd);
+	String confdata = fd->get_as_utf8_string();
+	fd->close();
+	String err;
+	int err_line;
+	Variant adata;
+	JSON::parse(confdata, adata, err, err_line);
+	config = adata;
 }
-ConfigData *ConfigData::get_singleton()
-{
-        static ConfigData data;
-        return &data;
-
+ConfigData *ConfigData::get_singleton() {
+	static ConfigData data;
+	return &data;
 }
-AccessoryData::AccessoryData()
-{
-   		const String &accessory_path =
-           ConfigData::get_singleton()->get()["accessory_path"];
-   		FileAccess *fd = FileAccess::open(accessory_path, FileAccess::READ);
-		assert(fd);
-		String confdata = fd->get_as_utf8_string();
-		fd->close();
-		String err;
-		int err_line;
-		Variant adata;
-		JSON::parse(confdata, adata, err, err_line);
-		accessory = adata;
-
+AccessoryData::AccessoryData() {
+	const String &accessory_path =
+			ConfigData::get_singleton()->get()["accessory_path"];
+	FileAccess *fd = FileAccess::open(accessory_path, FileAccess::READ);
+	assert(fd);
+	String confdata = fd->get_as_utf8_string();
+	fd->close();
+	String err;
+	int err_line;
+	Variant adata;
+	JSON::parse(confdata, adata, err, err_line);
+	accessory = adata;
 }
-AccessoryData *AccessoryData::get_singleton()
-{
-    static AccessoryData data;
-    return &data;
+AccessoryData *AccessoryData::get_singleton() {
+	static AccessoryData data;
+	return &data;
 }
 Ref<ArrayMesh> AccessoryData::get_mesh(const Dictionary &entry) const {
 	const Array materials = entry["materials"];
@@ -46,7 +40,9 @@ Ref<ArrayMesh> AccessoryData::get_mesh(const Dictionary &entry) const {
 	int i;
 	Error err = OK;
 
-	Ref<ArrayMesh> mesh = ResourceLoader::load(mesh_path, "", &err)->duplicate();
+	Ref<ArrayMesh> mesh_orig = ResourceLoader::load(mesh_path, "", &err);
+	Ref<ArrayMesh> mesh = mesh_orig->duplicate();
+	mesh->set_meta("orig_path", mesh_orig->get_path());
 	if (err != OK) {
 		printf("Could not read resource %ls\n", mesh_path.c_str());
 		return NULL;

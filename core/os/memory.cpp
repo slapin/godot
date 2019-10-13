@@ -36,6 +36,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <cassert>
 
 void *operator new(size_t p_size, const char *p_description) {
 

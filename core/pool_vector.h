@@ -31,6 +31,8 @@
 #ifndef POOL_VECTOR_H
 #define POOL_VECTOR_H
 
+#include <cstdlib>
+#include <cstdio>
 #include "core/os/copymem.h"
 #include "core/os/memory.h"
 #include "core/os/rw_lock.h"
@@ -519,6 +521,8 @@ Error PoolVector<T>::resize(int p_size) {
 		MemoryPool::alloc_mutex->lock();
 		if (MemoryPool::allocs_used == MemoryPool::alloc_count) {
 			MemoryPool::alloc_mutex->unlock();
+			printf("%d %d\n", MemoryPool::allocs_used, MemoryPool::alloc_count);
+			abort();
 			ERR_FAIL_V_MSG(ERR_OUT_OF_MEMORY, "All memory pool allocations are in use.");
 		}
 

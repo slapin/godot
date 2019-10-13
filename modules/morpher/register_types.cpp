@@ -29,10 +29,10 @@
 /*************************************************************************/
 
 #include "register_types.h"
+#include "character_base.h"
+#include "modifierset.h"
 #include "morpher.h"
 #include "triangle.h"
-#include "modifierset.h"
-#include "character_base.h"
 
 void register_morpher_types() {
 	ClassDB::register_class<DNA_>();
@@ -44,10 +44,10 @@ void register_morpher_types() {
 
 	Engine::get_singleton()->add_singleton(
 			Engine::Singleton("CharacterInstanceList",
-				CharacterInstanceList::get_singleton()));
+					CharacterInstanceList::get_singleton()));
 	Engine::get_singleton()->add_singleton(
 			Engine::Singleton("CharacterGenderList",
-				CharacterGenderList::get_singleton()));
+					CharacterGenderList::get_singleton()));
 }
 
 void unregister_morpher_types() {

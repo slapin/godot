@@ -1,14 +1,12 @@
 #include "modifierset.h"
 #include "map_storage.h"
 
-void ModifierSet::add_modifier(const String &name, Ref<Image> vimage, Ref<Image> nimage, const PoolVector<float> &minmax)
-{
+void ModifierSet::add_modifier(const String &name, Ref<Image> vimage, Ref<Image> nimage, const PoolVector<float> &minmax) {
 	printf("adding modifier %ls\n", name.c_str());
 	_add_modifier(name, vimage.ptr(), nimage.ptr(), minmax.read().ptr());
 }
 void ModifierSet::_add_modifier(const String &name, const Skeleton *skel,
-		const String &bone, const Transform &xform)
-{
+		const String &bone, const Transform &xform) {
 	assert(skel);
 	if (name2mod.has(name))
 		return;
@@ -17,8 +15,7 @@ void ModifierSet::_add_modifier(const String &name, const Skeleton *skel,
 	mod_count++;
 }
 void ModifierSet::_add_modifier(const String &name, const Skeleton *skel,
-		const String &bone_from, const String &bone_to)
-{
+		const String &bone_from, const String &bone_to) {
 	if (name2mod.has(name))
 		return;
 	assert(skel);
@@ -28,8 +25,7 @@ void ModifierSet::_add_modifier(const String &name, const Skeleton *skel,
 }
 void ModifierSet::_add_modifier(const String &name, const Skeleton *skel,
 		const String &bone_left, const Transform &xform_left,
-		const String &bone_right, const Transform &xform_right)
-{
+		const String &bone_right, const Transform &xform_right) {
 	if (name2mod.has(name))
 		return;
 	assert(skel);
@@ -39,8 +35,7 @@ void ModifierSet::_add_modifier(const String &name, const Skeleton *skel,
 }
 void ModifierSet::_add_modifier(const String &name, const Skeleton *skel,
 		const PoolVector<String> &bone_names,
-		const PoolVector<Transform> bone_transforms)
-{
+		const PoolVector<Transform> bone_transforms) {
 	if (name2mod.has(name))
 		return;
 	assert(skel);
@@ -48,8 +43,7 @@ void ModifierSet::_add_modifier(const String &name, const Skeleton *skel,
 	name2mod[name] = mod_count;
 	mod_count++;
 }
-void ModifierSet::_add_modifier(const String &name, Image *vimage, Image *nimage, const float *minmax)
-{
+void ModifierSet::_add_modifier(const String &name, Image *vimage, Image *nimage, const float *minmax) {
 	Vector3 vmin(minmax[0], minmax[1], minmax[2]);
 	Vector3 vmax(minmax[3], minmax[4], minmax[5]);
 	Vector3 nmin(minmax[6], minmax[7], minmax[8]);
@@ -74,11 +68,10 @@ void ModifierSet::_add_modifier(const String &name, Image *vimage, Image *nimage
 		mod_count++;
 	} else
 		modifiers[name2mod[name]].create_from_images(name,
-			meshdata, vertex_count,
-			vimage, nimage, vmin, vmax, nmin, nmax);
+				meshdata, vertex_count,
+				vimage, nimage, vmin, vmax, nmin, nmax);
 }
-int ModifierSet::add_work_mesh(Ref<ArrayMesh> mesh, const NodePath &skel)
-{
+int ModifierSet::add_work_mesh(Ref<ArrayMesh> mesh, const NodePath &skel) {
 	struct work_mesh wm;
 	int i;
 	int ret = work_meshes.size();
@@ -92,16 +85,14 @@ int ModifierSet::add_work_mesh(Ref<ArrayMesh> mesh, const NodePath &skel)
 	printf("post add %d\n", work_meshes.size());
 	return ret;
 }
-void ModifierSet::remove_work_mesh(int id)
-{
+void ModifierSet::remove_work_mesh(int id) {
 	if (id < 0 || id >= work_meshes.size())
 		return;
 	printf("pre remove %d\n", work_meshes.size());
 	work_meshes.remove(id);
 	printf("post remove %d\n", work_meshes.size());
 }
-void ModifierSet::add_mesh(const String &name, const Ref<ArrayMesh> mesh)
-{
+void ModifierSet::add_mesh(const String &name, const Ref<ArrayMesh> mesh) {
 	int i, j;
 	surface = mesh->surface_get_arrays(0);
 	const PoolVector<Vector2> &uvdata = surface[uv_index];
@@ -139,12 +130,10 @@ void ModifierSet::add_mesh(const String &name, const Ref<ArrayMesh> mesh)
 				same_verts[i].push_back(j);
 			}
 		}
-
 	}
 }
 
-void ModifierSet::modify(Node *scene)
-{
+void ModifierSet::modify(Node *scene) {
 	int i, j, k;
 	if (!dirty)
 		return;
@@ -166,27 +155,27 @@ void ModifierSet::modify(Node *scene)
 		Vector3 lf_orig_pos = skel->get_bone_global_pose(left_foot).origin;
 
 		for (i = 0; i < vertex_count; i++) {
-			meshdata[i * 14 + 2] =  meshdata[i * 14 + 8];
-			meshdata[i * 14 + 3] =  meshdata[i * 14 + 9];
-			meshdata[i * 14 + 4] =  meshdata[i * 14 + 10];
-			meshdata[i * 14 + 5] =  meshdata[i * 14 + 11];
-			meshdata[i * 14 + 6] =  meshdata[i * 14 + 12];
-			meshdata[i * 14 + 7] =  meshdata[i * 14 + 13];
+			meshdata[i * 14 + 2] = meshdata[i * 14 + 8];
+			meshdata[i * 14 + 3] = meshdata[i * 14 + 9];
+			meshdata[i * 14 + 4] = meshdata[i * 14 + 10];
+			meshdata[i * 14 + 5] = meshdata[i * 14 + 11];
+			meshdata[i * 14 + 6] = meshdata[i * 14 + 12];
+			meshdata[i * 14 + 7] = meshdata[i * 14 + 13];
 		}
 		for (i = 0; i < mod_count; i++)
 			if (work_meshes[k].mod_values.has(i))
 				if (fabs(work_meshes[k].mod_values[i]) >= 0.001f) {
-					switch(modifiers[i].type) {
-					case ModifierBase::TYPE_BLEND:
-						modifiers[i].modify(meshdata, vertex_count, work_meshes[k].mod_values[i]);
-						break;
-					case ModifierBase::TYPE_BONE:
-					case ModifierBase::TYPE_PAIR:
-					case ModifierBase::TYPE_GROUP:
-						modifiers[i].modify(skel, work_meshes[k].mod_values[i]);
-						break;
-					case ModifierBase::TYPE_SYMMETRY:
-						modifiers[i].modify(skel);
+					switch (modifiers[i].type) {
+						case ModifierBase::TYPE_BLEND:
+							modifiers[i].modify(meshdata, vertex_count, work_meshes[k].mod_values[i]);
+							break;
+						case ModifierBase::TYPE_BONE:
+						case ModifierBase::TYPE_PAIR:
+						case ModifierBase::TYPE_GROUP:
+							modifiers[i].modify(skel, work_meshes[k].mod_values[i]);
+							break;
+						case ModifierBase::TYPE_SYMMETRY:
+							modifiers[i].modify(skel);
 					}
 				}
 		for (i = 0; i < vertex_count; i++) {
@@ -248,11 +237,9 @@ void ModifierSet::modify(Node *scene)
 	dirty = false;
 }
 
-void ModifierSet::create_uv(int id, Ref<ArrayMesh> mesh, int src_id, Ref<ArrayMesh> src_mesh)
-{
+void ModifierSet::create_uv(int id, Ref<ArrayMesh> mesh, int src_id, Ref<ArrayMesh> src_mesh) {
 }
-void CharacterModifierSet::process()
-{
+void CharacterModifierSet::process() {
 	MapStorage *ms = MapStorage::get_singleton();
 	PoolVector<String> mlist = ms->get_list();
 	int i;
@@ -267,13 +254,12 @@ void CharacterModifierSet::process()
 				Ref<Image> img = ms->get_image(shape_name);
 				Ref<Image> imgn = ms->get_normal_image(shape_name);
 				mods[*key]->_add_modifier(splitname[1],
-					img.ptr(), imgn.ptr(), minmax.read().ptr());
+						img.ptr(), imgn.ptr(), minmax.read().ptr());
 			}
 		}
 	}
 }
-void CharacterModifierSet::load(Ref<_File> fd)
-{
+void CharacterModifierSet::load(Ref<_File> fd) {
 	int i;
 	float minp[3], maxp[3], min_normal[3], max_normal[3];
 	int width, height, format;
@@ -328,13 +314,12 @@ void CharacterModifierSet::load(Ref<_File> fd)
 			key = mods.next(key)) {
 		if (helpers[*key] == splitname[0])
 			mods[*key]->_add_modifier(splitname[1],
-				&img, &imgn, minmax.read().ptr());
+					&img, &imgn, minmax.read().ptr());
 	}
 }
 
 void CharacterModifierSet::set_accessory(Node *node, const String &slot_name, const String &gender,
-				const String &atype, const String &aname)
-{
+		const String &atype, const String &aname) {
 	int i;
 	MeshInstance *slot = Object::cast_to<MeshInstance>(get_slot(node, slot_name));
 	Skeleton *skel = ModifierSet::find_node<Skeleton>(node);
@@ -366,7 +351,7 @@ void CharacterModifierSet::set_accessory(Node *node, const String &slot_name, co
 	}
 	for (i = 0; i < mesh->get_surface_count(); i++) {
 		const Dictionary &mat_data = materials[i];
-		const String &mat_path  = mat_data["path"];
+		const String &mat_path = mat_data["path"];
 		Ref<Material> mat = ResourceLoader::load(mat_path, "", &err);
 		if (err != OK) {
 			printf("Could not read resource %ls\n", mat_path.c_str());
@@ -379,8 +364,7 @@ void CharacterModifierSet::set_accessory(Node *node, const String &slot_name, co
 	slot->show();
 }
 
-void CharacterModifierSet::_bind_methods()
-{
+void CharacterModifierSet::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_base_name", "name"),
 			&CharacterModifierSet::set_base_name);
 	ClassDB::bind_method(D_METHOD("add_mesh_scene", "node"),
@@ -403,19 +387,19 @@ void CharacterModifierSet::_bind_methods()
 	ClassDB::bind_method(D_METHOD("add_bone_modifier", "name", "scene", "bone_name", "xform"),
 			&CharacterModifierSet::add_bone_modifier);
 	ClassDB::bind_method(D_METHOD("add_bone_modifier_symmetry", "name", "scene",
-				"bone_left",
-				"bone_right"),
+								 "bone_left",
+								 "bone_right"),
 			&CharacterModifierSet::add_bone_modifier_symmetry);
 	ClassDB::bind_method(D_METHOD("add_bone_modifier_pair", "name", "scene",
-				"left",
-				"right"),
+								 "left",
+								 "right"),
 			&CharacterModifierSet::add_bone_modifier_pair);
 	ClassDB::bind_method(D_METHOD("add_bone_modifier_group", "name", "scene",
-				"bone_names",
-				"bone_transforms"),
+								 "bone_names",
+								 "bone_transforms"),
 			&CharacterModifierSet::add_bone_modifier_group);
 	ClassDB::bind_method(D_METHOD("add_slot", "name",
-								  "helper", "uv_index"),
+								 "helper", "uv_index"),
 			&CharacterModifierSet::add_slot);
 	ClassDB::bind_method(D_METHOD("spawn"),
 			&CharacterModifierSet::spawn);
@@ -428,10 +412,10 @@ void CharacterModifierSet::_bind_methods()
 	ClassDB::bind_method(D_METHOD("show_slot", "node", "name"),
 			&CharacterModifierSet::show_slot);
 	ClassDB::bind_method(D_METHOD("set_accessory", "node", "slot_name",
-			"gender", "atype", "aname"),
+								 "gender", "atype", "aname"),
 			&CharacterModifierSet::set_accessory);
-	ClassDB::bind_method(D_METHOD("get_accessory_list",	"gender",
-			"atype", "name_start"),
+	ClassDB::bind_method(D_METHOD("get_accessory_list", "gender",
+								 "atype", "name_start"),
 			&CharacterModifierSet::get_acessory_list);
 	ClassDB::bind_method(D_METHOD("process"),
 			&CharacterModifierSet::process);

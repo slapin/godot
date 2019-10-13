@@ -1,6 +1,5 @@
 #include "triangle.h"
-void TriangleSet::_bind_methods()
-{
+void TriangleSet::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("create_from_array_shape", "arrays_base", "shape_arrays"), &TriangleSet::create_from_array_shape);
 	ClassDB::bind_method(D_METHOD("create_from_mesh_difference", "arrays_base", "uv_index1", "arrays_shape", "uv_index2"), &TriangleSet::create_from_array_difference);
 	ClassDB::bind_method(D_METHOD("draw", "vimage", "nimage", "uv_index"), &TriangleSet::draw);
@@ -11,8 +10,7 @@ void TriangleSet::_bind_methods()
 	ClassDB::bind_method(D_METHOD("get_max_normal"), &TriangleSet::get_max_normal);
 	ClassDB::bind_method(D_METHOD("save", "fd"), &TriangleSet::save);
 }
-void TriangleSet::create_from_array_shape(const Array &arrays_base, const Array &shape_array)
-{
+void TriangleSet::create_from_array_shape(const Array &arrays_base, const Array &shape_array) {
 	const PoolVector<int> &data_indices = shape_array[Mesh::ARRAY_INDEX];
 	const PoolVector<Vector3> &base_vertices = arrays_base[Mesh::ARRAY_VERTEX];
 	const PoolVector<Vector3> &shape_vertices = shape_array[Mesh::ARRAY_VERTEX];
@@ -38,33 +36,32 @@ void TriangleSet::create_from_array_shape(const Array &arrays_base, const Array 
 	}
 	printf("create done\n");
 }
-void TriangleSet::create_from_array_difference(const Array &arrays_base, int uv_index1, const Array &arrays_shape, int uv_index2)
-{
+void TriangleSet::create_from_array_difference(const Array &arrays_base, int uv_index1, const Array &arrays_shape, int uv_index2) {
 	Vector<int> missing_vertices;
 	const PoolVector<Vector3> &base_vertices = arrays_base[Mesh::ARRAY_VERTEX];
 	const PoolVector<Vector3> &shape_vertices = arrays_shape[Mesh::ARRAY_VERTEX];
 	const PoolVector<Vector3> &base_normals = arrays_base[Mesh::ARRAY_NORMAL];
 	const PoolVector<Vector3> &shape_normals = arrays_shape[Mesh::ARRAY_NORMAL];
 	const PoolVector<int> &shape_index = arrays_shape[Mesh::ARRAY_INDEX];
-	switch(uv_index1) {
-	case 0:
-		uv_index1 = Mesh::ARRAY_TEX_UV;
-		break;
-	case 1:
-		uv_index1 = Mesh::ARRAY_TEX_UV2;
-		break;
-	default:
-		uv_index1 = Mesh::ARRAY_TEX_UV;
+	switch (uv_index1) {
+		case 0:
+			uv_index1 = Mesh::ARRAY_TEX_UV;
+			break;
+		case 1:
+			uv_index1 = Mesh::ARRAY_TEX_UV2;
+			break;
+		default:
+			uv_index1 = Mesh::ARRAY_TEX_UV;
 	}
-	switch(uv_index2) {
-	case 0:
-		uv_index2 = Mesh::ARRAY_TEX_UV;
-		break;
-	case 1:
-		uv_index2 = Mesh::ARRAY_TEX_UV2;
-		break;
-	default:
-		uv_index2 = Mesh::ARRAY_TEX_UV;
+	switch (uv_index2) {
+		case 0:
+			uv_index2 = Mesh::ARRAY_TEX_UV;
+			break;
+		case 1:
+			uv_index2 = Mesh::ARRAY_TEX_UV2;
+			break;
+		default:
+			uv_index2 = Mesh::ARRAY_TEX_UV;
 	}
 	const PoolVector<Vector2> &base_uvs = arrays_base[uv_index1];
 	const PoolVector<Vector2> &shape_uvs = arrays_shape[uv_index1];
@@ -94,7 +91,7 @@ void TriangleSet::create_from_array_difference(const Array &arrays_base, int uv_
 		int base_index = missing_vertices[i];
 		Vector2 pt2 = base_uvs[base_index];
 		Vector3 pt = Vector3(pt2.x, pt2.y, 0.0f);
-		for (j = 0; j < shape_index.size();j += 3) {
+		for (j = 0; j < shape_index.size(); j += 3) {
 			Vector3 p1 = Vector3(shape_uvs[shape_index[j + 0]].x,
 					shape_uvs[shape_index[j + 0]].y,
 					0.0f);
@@ -107,12 +104,8 @@ void TriangleSet::create_from_array_difference(const Array &arrays_base, int uv_
 			Vector3 b = get_baricentric(pt, p1, p2, p3);
 			if (b.x < 0 || b.y < 0 || b.z < 0)
 				continue;
-			Vector3 newpt = shape_vertices[shape_index[j + 0]] * b.x
-				+ shape_vertices[shape_index[j + 1]] * b.y
-				+ shape_vertices[shape_index[j + 2]] * b.z;
-			Vector3 newn = shape_normals[shape_index[j + 0]] * b.x
-				+ shape_normals[shape_index[j + 1]] * b.y
-				+ shape_normals[shape_index[j + 2]] * b.z;
+			Vector3 newpt = shape_vertices[shape_index[j + 0]] * b.x + shape_vertices[shape_index[j + 1]] * b.y + shape_vertices[shape_index[j + 2]] * b.z;
+			Vector3 newn = shape_normals[shape_index[j + 0]] * b.x + shape_normals[shape_index[j + 1]] * b.y + shape_normals[shape_index[j + 2]] * b.z;
 			vertices_write[base_index] = newpt - base_vertices[base_index];
 			normals_write[base_index] = newn - base_normals[base_index];
 		}
@@ -120,8 +113,7 @@ void TriangleSet::create_from_array_difference(const Array &arrays_base, int uv_
 	vertices_write.release();
 	normals_write.release();
 }
-void TriangleSet::draw(Ref<Image> vimage, Ref<Image> nimage, int uv_index)
-{
+void TriangleSet::draw(Ref<Image> vimage, Ref<Image> nimage, int uv_index) {
 	int i, j;
 	int width = vimage->get_width();
 	int height = vimage->get_height();
@@ -140,13 +132,13 @@ void TriangleSet::draw(Ref<Image> vimage, Ref<Image> nimage, int uv_index)
 	PoolVector<int>::Read indices_r = indices.read();
 	PoolVector<Vector3>::Read vertices_r = vertices.read();
 	PoolVector<Vector3>::Read normals_r = normals.read();
-	switch(uv_index) {
-	case 0:
-		uvs_r = uvs1.read();
-		break;
-	case 1:
-		uvs_r = uvs2.read();
-		break;
+	switch (uv_index) {
+		case 0:
+			uvs_r = uvs1.read();
+			break;
+		case 1:
+			uvs_r = uvs2.read();
+			break;
 	}
 	for (i = 0; i < vimage->get_height(); i++)
 		for (j = 0; j < vimage->get_width(); j++)
@@ -167,19 +159,19 @@ void TriangleSet::draw(Ref<Image> vimage, Ref<Image> nimage, int uv_index)
 		const Vector3 &vc2 = vertices_r[indices_r[i + 1]];
 		const Vector3 &vc3 = vertices_r[indices_r[i + 2]];
 		if (vc1.length_squared() + vc2.length_squared() + vc3.length_squared() > eps * eps) {
-			update_bounds(vp1.x * mulv.x, vp1.y *mulv.y);
-			update_bounds(vp2.x * mulv.x, vp2.y *mulv.y);
-			update_bounds(vp3.x * mulv.x, vp3.y *mulv.y);
+			update_bounds(vp1.x * mulv.x, vp1.y * mulv.y);
+			update_bounds(vp2.x * mulv.x, vp2.y * mulv.y);
+			update_bounds(vp3.x * mulv.x, vp3.y * mulv.y);
 		}
 		const Vector3 &nc1 = normals_r[indices_r[i + 0]];
 		const Vector3 &nc2 = normals_r[indices_r[i + 1]];
 		const Vector3 &nc3 = normals_r[indices_r[i + 2]];
-		float v1[] = {vp1.x * mulv.x + c1.x, vp1.y * mulv.y + c1.y, vc1.x, vc1.y, vc1.z};
-		float v2[] = {vp2.x * mulv.x + c2.x, vp2.y * mulv.y + c2.y, vc2.x, vc2.y, vc2.z};
-		float v3[] = {vp3.x * mulv.x + c3.x, vp3.y * mulv.y + c3.x, vc3.x, vc3.y, vc3.z};
-		float n1[] = {vp1.x * muln.x + c1.x, vp1.y * muln.y + c1.y, nc1.x, nc1.y, nc1.z};
-		float n2[] = {vp2.x * muln.x + c2.x, vp2.y * muln.y + c2.y, nc2.x, nc2.y, nc2.z};
-		float n3[] = {vp3.x * muln.x + c3.x, vp3.y * muln.y + c3.y, nc3.x, nc3.y, nc3.z};
+		float v1[] = { vp1.x * mulv.x + c1.x, vp1.y * mulv.y + c1.y, vc1.x, vc1.y, vc1.z };
+		float v2[] = { vp2.x * mulv.x + c2.x, vp2.y * mulv.y + c2.y, vc2.x, vc2.y, vc2.z };
+		float v3[] = { vp3.x * mulv.x + c3.x, vp3.y * mulv.y + c3.x, vc3.x, vc3.y, vc3.z };
+		float n1[] = { vp1.x * muln.x + c1.x, vp1.y * muln.y + c1.y, nc1.x, nc1.y, nc1.z };
+		float n2[] = { vp2.x * muln.x + c2.x, vp2.y * muln.y + c2.y, nc2.x, nc2.y, nc2.z };
+		float n3[] = { vp3.x * muln.x + c3.x, vp3.y * muln.y + c3.y, nc3.x, nc3.y, nc3.z };
 		draw_triangle(vimage.ptr(), v1, v2, v3);
 		draw_triangle(nimage.ptr(), n1, n2, n3);
 	}
@@ -193,12 +185,12 @@ void TriangleSet::draw(Ref<Image> vimage, Ref<Image> nimage, int uv_index)
 		const Vector3 &nc1 = normals_r[indices_r[i + 0]];
 		const Vector3 &nc2 = normals_r[indices_r[i + 1]];
 		const Vector3 &nc3 = normals_r[indices_r[i + 2]];
-		float v1[] = {vp1.x * mulv.x, vp1.y * mulv.y, vc1.x, vc1.y, vc1.z};
-		float v2[] = {vp2.x * mulv.x, vp2.y * mulv.y, vc2.x, vc2.y, vc2.z};
-		float v3[] = {vp3.x * mulv.x, vp3.y * mulv.y, vc3.x, vc3.y, vc3.z};
-		float n1[] = {vp1.x * muln.x, vp1.y * muln.y, nc1.x, nc1.y, nc1.z};
-		float n2[] = {vp2.x * muln.x, vp2.y * muln.y, nc2.x, nc2.y, nc2.z};
-		float n3[] = {vp3.x * muln.x, vp3.y * muln.y, nc3.x, nc3.y, nc3.z};
+		float v1[] = { vp1.x * mulv.x, vp1.y * mulv.y, vc1.x, vc1.y, vc1.z };
+		float v2[] = { vp2.x * mulv.x, vp2.y * mulv.y, vc2.x, vc2.y, vc2.z };
+		float v3[] = { vp3.x * mulv.x, vp3.y * mulv.y, vc3.x, vc3.y, vc3.z };
+		float n1[] = { vp1.x * muln.x, vp1.y * muln.y, nc1.x, nc1.y, nc1.z };
+		float n2[] = { vp2.x * muln.x, vp2.y * muln.y, nc2.x, nc2.y, nc2.z };
+		float n3[] = { vp3.x * muln.x, vp3.y * muln.y, nc3.x, nc3.y, nc3.z };
 		draw_triangle(vimage.ptr(), v1, v2, v3);
 		draw_triangle(nimage.ptr(), n1, n2, n3);
 	}
@@ -214,8 +206,7 @@ void TriangleSet::draw(Ref<Image> vimage, Ref<Image> nimage, int uv_index)
 	nimage->unlock();
 }
 
-void TriangleSet::normalize_deltas()
-{
+void TriangleSet::normalize_deltas() {
 	int i, j;
 	minp[0] = 100.0f;
 	minp[1] = 100.0f;
@@ -259,8 +250,7 @@ void TriangleSet::normalize_deltas()
 				normals_w[i][j] = (normals_w[i][j] - minn[j]) / cdn[j];
 		}
 }
-void TriangleSet::save(Ref<_File> fd, const String &shape_name, Ref<Image> vimage, Ref<Image> nimage)
-{
+void TriangleSet::save(Ref<_File> fd, const String &shape_name, Ref<Image> vimage, Ref<Image> nimage) {
 	int csize;
 	fd->store_pascal_string(shape_name);
 	fd->store_float(minp[0]);
@@ -278,7 +268,7 @@ void TriangleSet::save(Ref<_File> fd, const String &shape_name, Ref<Image> vimag
 	imgbuf_comp.resize(imgbuf.size());
 	csize = Compression::compress(imgbuf_comp.write().ptr(),
 			imgbuf.read().ptr(), imgbuf.size(),
-			Compression::MODE_DEFLATE);
+			Compression::MODE_FASTLZ);
 	imgbuf_comp.resize(csize);
 	fd->store_32(csize);
 	fd->store_buffer(imgbuf_comp);
@@ -302,4 +292,3 @@ void TriangleSet::save(Ref<_File> fd, const String &shape_name, Ref<Image> vimag
 	fd->store_32(csize);
 	fd->store_buffer(imgbuf_compn);
 }
-

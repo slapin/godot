@@ -1,7 +1,6 @@
 #include "modifier.h"
 
-void ModifierBlend::modify(float *data, int vertex_count, float value)
-{
+void ModifierBlend::modify(float *data, int vertex_count, float value) {
 	for (int i = 0; i < mod_indices.size(); i++) {
 		int index = mod_indices[i];
 		float vx = mod_data[i * 6 + 0];
@@ -22,31 +21,27 @@ void ModifierBlend::modify(float *data, int vertex_count, float value)
 #endif
 }
 
-void ModifierBone::modify(Skeleton *skel, float value)
-{
+void ModifierBone::modify(Skeleton *skel, float value) {
 	if (bone_id >= 0)
 		skel->set_bone_custom_pose(bone_id,
-			skel->get_bone_custom_pose(bone_id) *
-				Transform().interpolate_with(xform,	value));
+				skel->get_bone_custom_pose(bone_id) *
+						Transform().interpolate_with(xform, value));
 }
 
-void ModifierSymmetry::modify(Skeleton *skel)
-{
+void ModifierSymmetry::modify(Skeleton *skel) {
 	const Transform &xform = skel->get_bone_custom_pose(bone_from_id);
 	Transform gpose = bf_parent_xform * xform;
 	gpose = gpose.scaled(Vector3(-1, 1, 1));
 	gpose = bt_parent_xform.affine_inverse() * gpose;
 	skel->set_bone_custom_pose(bone_to_id, gpose);
 }
-void ModifierPair::modify(Skeleton *skel, float value)
-{
+void ModifierPair::modify(Skeleton *skel, float value) {
 	const Transform &xform_left = skel->get_bone_custom_pose(bone_left_id);
 	const Transform &xform_right = skel->get_bone_custom_pose(bone_right_id);
 	skel->set_bone_custom_pose(bone_left_id, xform_left * Transform().interpolate_with(bone_left_xform, value));
 	skel->set_bone_custom_pose(bone_right_id, xform_right * Transform().interpolate_with(bone_right_xform, value));
 }
-void ModifierBoneGroup::modify(Skeleton *skel, float value)
-{
+void ModifierBoneGroup::modify(Skeleton *skel, float value) {
 	int i;
 	for (i = 0; i < bones.size(); i++) {
 		Transform bone_xform = skel->get_bone_custom_pose(bones[i]);
@@ -54,8 +49,7 @@ void ModifierBoneGroup::modify(Skeleton *skel, float value)
 		skel->set_bone_custom_pose(bones[i], bone_xform);
 	}
 }
-void ModifierBone::create_from_bone(const Skeleton *skel, const String &bone, const Transform &xform)
-{
+void ModifierBone::create_from_bone(const Skeleton *skel, const String &bone, const Transform &xform) {
 	assert(skel);
 	type = TYPE_BONE;
 	bone_id = skel->find_bone(bone);
@@ -63,10 +57,9 @@ void ModifierBone::create_from_bone(const Skeleton *skel, const String &bone, co
 	empty = false;
 }
 void ModifierBlend::create_from_images(const String &name,
-		const float *meshdata, int count, 
+		const float *meshdata, int count,
 		Image *vdata, Image *ndata, const Vector3 &vmin,
-		const Vector3 &vmax, const Vector3 &nmin, const Vector3 &nmax)
-{
+		const Vector3 &vmax, const Vector3 &nmin, const Vector3 &nmax) {
 	int i, j;
 	for (i = 0; i < 3; i++) {
 		minp[i] = vmin[i];
@@ -106,8 +99,7 @@ void ModifierBlend::create_from_images(const String &name,
 }
 void ModifierSymmetry::create_from_symmetry(const Skeleton *skel,
 		const String &bone_left,
-		const String &bone_right)
-{
+		const String &bone_right) {
 	bone_from_id = skel->find_bone(bone_left);
 	int bf_parent_id = skel->get_bone_parent(bone_from_id);
 	bone_to_id = skel->find_bone(bone_right);
@@ -123,17 +115,15 @@ void ModifierPair::create_from_pair(const Skeleton *skel,
 		const String &bone_left,
 		const Transform &xform_left,
 		const String &bone_right,
-		const Transform &xform_right)
-{
+		const Transform &xform_right) {
 	bone_left_id = skel->find_bone(bone_left);
 	bone_right_id = skel->find_bone(bone_right);
 	bone_left_xform = xform_left;
 	bone_right_xform = xform_right;
 }
-void ModifierBoneGroup::create_from_group(const Skeleton * skel,
+void ModifierBoneGroup::create_from_group(const Skeleton *skel,
 		const PoolVector<String> &bone_names,
-		const PoolVector<Transform> &bone_transforms)
-{
+		const PoolVector<Transform> &bone_transforms) {
 	int i;
 	bones.resize(bone_names.size());
 	PoolVector<int>::Write bw = bones.write();
