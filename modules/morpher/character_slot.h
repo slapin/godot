@@ -11,6 +11,7 @@ class CharacterSlot {
 	String match;
 	String helper;
 	bool mandatory;
+	bool blend_skip;
 };
 
 class CharacterInstance;

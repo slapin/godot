@@ -8,6 +8,7 @@
 
 MapStorage::MapStorage() :
 		pos(0) {
+	printf("map_storage created\n");
 	FileAccess *fd = FileAccess::open("res://characters/config.json", FileAccess::READ);
 	assert(fd);
 	String confdata = fd->get_as_utf8_string();
@@ -15,9 +16,14 @@ MapStorage::MapStorage() :
 	String err;
 	int err_line;
 	Variant adata;
-	JSON::parse(confdata, adata, err, err_line);
+	Error e = JSON::parse(confdata, adata, err, err_line);
+	if (e != OK)
+		printf("json parse error: %ls at line %d\n", err.c_str(), err_line);
+	assert(e == OK);
 	config = adata;
+	printf("loading\n");
 	load();
+	printf("loading done\n");
 }
 
 PoolVector<float> MapStorage::get_minmax(const String &shape_name) {

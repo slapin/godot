@@ -16,6 +16,7 @@ class ModifierDataBase : public Reference {
 protected:
 	friend class CharacterModifiers;
 	int type;
+	String gender;
 
 public:
 	static const int TYPE_BLEND = 1;
@@ -29,7 +30,9 @@ protected:
 	String mod_name;
 	bool empty;
 	ModifierDataBase() :
-			empty(true) {
+			empty(true),
+       			gender("common")
+	{
 	}
 };
 
@@ -61,25 +64,58 @@ public:
 		type = TYPE_BLEND_SYM;
 	}
 };
+class BoneModifierData : public ModifierDataBase {
+	friend class CharacterModifiers;
+	String bone_name;
+	Transform xform;
+	int bone_id;
+public:
+	BoneModifierData(): bone_id(-1) {
+		type = TYPE_BONE;
+	}
+};
+class BoneGroupModifierData : public ModifierDataBase {
+	friend class CharacterModifiers;
+public:
+	BoneGroupModifierData() {
+		type = TYPE_GROUP;
+	}
+};
 class CharacterSlotInstance;
+class Skeleton;
 class CharacterModifiers : public Reference {
 	HashMap<String, Ref<ModifierDataBase> > modifiers;
 	template <class T>
-	void create(const String &name) {
+	void create(const String &name, const String &gender) {
 		Ref<T> mod = memnew(T);
 		mod->mod_name = name;
+		mod->gender = gender;
 		modifiers[name] = mod;
 	}
 
 protected:
+	bool mods_created;
 	void init_blend_modifier(const String &name,
 			BlendModifierData *bm);
+	void init_bone_modifier(const String &name,
+			BoneModifierData *bm,
+			const Array &parameters);
+	void init_bone_group_modifier(const String &name,
+			BoneGroupModifierData *bm,
+			const Array &parameters);
+	Transform parse_transform(const Dictionary &xformdata);
+	void create_mod(int type, const String &name, const String &gender, const Array &parameters = Array());
 
 public:
+	CharacterModifiers() : mods_created(false)
+	{
+	}
 	PoolVector<String> get_modifier_list() const;
 	PoolVector<String> get_base_modifier_list() const;
-	void create_mod(int type, const String &name);
+	void create_modifiers();
+	void modify_bones(CharacterInstance *ci);
 	void modify(CharacterSlotInstance *si, ModifierDataBase *mod, float value);
+	void modify(Skeleton *skel, ModifierDataBase *mod, float value);
 	void modify(CharacterInstance *ci, CharacterSlotInstance *si,
 			const HashMap<String, float> &values);
 	static CharacterModifiers *get_singleton();
@@ -116,10 +152,10 @@ public:
 		return &gl;
 	}
 };
-
 class CharacterInstance : public Reference {
 	GDCLASS(CharacterInstance, Reference)
 	friend class CharacterInstanceList;
+	friend class CharacterModifiers;
 	NodePath scene_root;
 	HashMap<String, CharacterSlotInstance> slots;
 	HashMap<String, float> mod_values;
@@ -127,6 +163,8 @@ class CharacterInstance : public Reference {
 	CharacterInstance(): mod_updated(false)
 	{
 	}
+	Node *get_scene_root() const;
+	Skeleton *get_skeleton() const;
 };
 
 class CharacterInstanceList : public Reference {
@@ -136,24 +174,6 @@ class CharacterInstanceList : public Reference {
 protected:
 	HashMap<String, HashMap<int, Vector<int> > > same_verts;
 	static void _bind_methods();
-	template <class T>
-	static inline T *find_node(Node *node, const String &name = "") {
-		int i;
-		T *ret = NULL;
-		List<Node *> queue;
-		queue.push_back(node);
-		while (!queue.empty()) {
-			Node *item = queue.front()->get();
-			queue.pop_front();
-			ret = Object::cast_to<T>(item);
-			if (ret && (name.length() == 0 || ret->get_name() == name))
-				break;
-			for (i = 0; i < item->get_child_count(); i++)
-				queue.push_back(item->get_child(i));
-		}
-		return ret;
-	}
-
 protected:
 	void update_slot(CharacterInstance *ci,
 			CharacterSlotInstance *si);
@@ -185,6 +205,7 @@ public:
 		return ret;
 	}
 	float get_mod_value(Node *scene, const String &mod);
+	Skeleton *get_skeleton(Node *scene) const;
 	static CharacterInstanceList *get_singleton();
 	void update();
 };

@@ -2,11 +2,30 @@
 #include <core/os/os.h>
 #include <scene/3d/mesh_instance.h>
 #include <scene/3d/spatial.h>
+#include <scene/3d/skeleton.h>
 #include <scene/main/scene_tree.h>
 #include <scene/main/viewport.h>
 #include "character_base.h"
 #include "character_slot.h"
 #include "map_storage.h"
+template <class T>
+static inline T *find_node(Node *node, const String &name = "") {
+	int i;
+	T *ret = NULL;
+	List<Node *> queue;
+	queue.push_back(node);
+	while (!queue.empty()) {
+		Node *item = queue.front()->get();
+		queue.pop_front();
+		ret = Object::cast_to<T>(item);
+		if (ret && (name.length() == 0 || ret->get_name() == name))
+			break;
+		for (i = 0; i < item->get_child_count(); i++)
+			queue.push_back(item->get_child(i));
+	}
+	return ret;
+}
+
 void CharacterGenderList::config() {
 	const Dictionary &config = ConfigData::get_singleton()->get();
 	const Array &gdata = config["genders"];
@@ -46,6 +65,10 @@ void CharacterGenderList::create_gender(const String &name, Ref<PackedScene> bas
 		slot.category = item["category"];
 		slot.helper = item["helper"];
 		slot.mandatory = item["mandatory"];
+		if (item.has("blend_skip"))
+			slot.blend_skip = item["blend_skip"];
+		else
+			slot.blend_skip = false;
 		g.slot_list[slot.name] = slot;
 	}
 	genders[name] = g;
@@ -69,13 +92,11 @@ void CharacterInstanceList::_bind_methods() {
 			&CharacterInstanceList::get_base_modifier_list);
 }
 Node *CharacterInstanceList::create(const String &gender, const Transform &xform, const Dictionary &slot_conf) {
-	int i;
 	printf("create %ls\n", gender.c_str());
 	Node *root = SceneTree::get_singleton()->get_root();
 	CharacterGenderList *gl = CharacterGenderList::get_singleton();
 	AccessoryData *ad = AccessoryData::get_singleton();
 	CharacterModifiers *cm = CharacterModifiers::get_singleton();
-	MapStorage *ms = MapStorage::get_singleton();
 	const CharacterGender &gdata = gl->genders[gender];
 	Node *sc = gl->instance(gender);
 	root->add_child(sc);
@@ -85,11 +106,7 @@ Node *CharacterInstanceList::create(const String &gender, const Transform &xform
 	/* TODO: custom allocator */
 	Ref<CharacterInstance> char_instance = memnew(CharacterInstance);
 	char_instance->scene_root = root->get_path_to(sc);
-
-	PoolVector<String> map_list = ms->get_list();
-	for (i = 0; i < map_list.size(); i++) {
-		cm->create_mod(ModifierDataBase::TYPE_BLEND, map_list[i]);
-	}
+	cm->create_modifiers();
 
 	for (const String *key = gdata.slot_list.next(NULL);
 			key; key = gdata.slot_list.next(key)) {
@@ -131,6 +148,8 @@ void CharacterInstanceList::update() {
 			e;
 			e = e->next()) {
 		Ref<CharacterInstance> &ci = e->get();
+		CharacterModifiers *cm = CharacterModifiers::get_singleton();
+		cm->modify_bones(ci.ptr());
 		for (const String *key = ci->slots.next(NULL);
 				key;
 				key = ci->slots.next(key)) {
@@ -229,6 +248,24 @@ Node *CharacterInstanceList::get_scene(CharacterInstance *ci) {
 	Node *scene = SceneTree::get_singleton()->get_root()->get_node(ci->scene_root);
 	return scene;
 }
+Node *CharacterInstance::get_scene_root() const
+{
+	Node *root = SceneTree::get_singleton()->get_root();
+	Node *scene = root->get_node(scene_root);
+	return scene;
+}
+Skeleton *CharacterInstance::get_skeleton() const
+{
+	Node *root = SceneTree::get_singleton()->get_root();
+	Node *scene = root->get_node(scene_root);
+	Skeleton *skel = find_node<Skeleton>(scene);
+	return skel;
+}
+Skeleton *CharacterInstanceList::get_skeleton(Node *scene) const
+{
+	Skeleton *skel = find_node<Skeleton>(scene);
+	return skel;
+}
 PoolVector<String> CharacterModifiers::get_modifier_list() const {
 	PoolVector<String> ret;
 	for (const String *key = modifiers.next(NULL);
@@ -245,6 +282,8 @@ PoolVector<String> CharacterModifiers::get_base_modifier_list() const {
 			key = modifiers.next(key)) {
 		if ((*key).begins_with("base:"))
 			ret.push_back((*key).replace("base:", ""));
+		if ((*key).begins_with("bone:"))
+			ret.push_back((*key).replace("bone:", ""));
 	}
 	return ret;
 }
@@ -267,24 +306,100 @@ void CharacterModifiers::init_blend_modifier(const String &name,
 	assert(bm->mod_name.length() > 0);
 	assert(bm->mod_name == name);
 }
-void CharacterModifiers::create_mod(int type, const String &name) {
+Transform CharacterModifiers::parse_transform(const Dictionary &xformdata)
+{
+	Transform xform;
+	if (xformdata.has("uniform-scale")) {
+		float scale = xformdata["uniform-scale"];
+		Basis basisd = xform.basis.scaled(Vector3(1, 1, 1) * scale);
+		xform.basis = basisd;
+	}
+	if (xformdata.has("translate")) {
+		Array xlate = xformdata["translate"];
+		xform.origin = Vector3(xlate[0], xlate[1], xlate[2]);
+	}
+	return xform;
+}
+void CharacterModifiers::init_bone_modifier(const String &name,
+		BoneModifierData *bm, const Array &parameters) {
+	bm->bone_name = parameters[2];
+	const Dictionary &xformdata = parameters[3];
+	bm->xform = parse_transform(xformdata);
+}
+void CharacterModifiers::init_bone_group_modifier(const String &name,
+		BoneGroupModifierData *bm, const Array &parameters) {
+		Array bones = parameters[2];
+		Array xformdata = parameters[3];
+}
+void CharacterModifiers::create_mod(int type, const String &name, const String &gender, const Array &parameters) {
 	switch (type) {
-		case ModifierDataBase::TYPE_BLEND:
-			if (name.ends_with("_plus") || name.ends_with("_minus")) {
-				String group_name = name.replace("_plus", "").replace("_minus", "");
-				if (!modifiers.has(group_name))
-					create<BlendModifierSymData>(group_name);
-				Ref<BlendModifierSymData> mod = modifiers[group_name];
-				if (name.ends_with("_plus"))
-					init_blend_modifier(name, &mod->plus);
-				if (name.ends_with("_minus"))
-					init_blend_modifier(name, &mod->minus);
-			} else {
-				create<BlendModifierData>(name);
-				Ref<BlendModifierData> mod = modifiers[name];
-				init_blend_modifier(name, mod.ptr());
+	case ModifierDataBase::TYPE_BLEND:
+		if (name.ends_with("_plus") || name.ends_with("_minus")) {
+			String group_name = name.replace("_plus", "").replace("_minus", "");
+			if (!modifiers.has(group_name))
+				create<BlendModifierSymData>(group_name, gender);
+			Ref<BlendModifierSymData> mod = modifiers[group_name];
+			if (name.ends_with("_plus"))
+				init_blend_modifier(name, &mod->plus);
+			if (name.ends_with("_minus"))
+				init_blend_modifier(name, &mod->minus);
+		} else {
+			if (modifiers.has(name))
+				break;
+			create<BlendModifierData>(name, gender);
+			Ref<BlendModifierData> mod = modifiers[name];
+			init_blend_modifier(name, mod.ptr());
+		}
+		break;
+	case ModifierDataBase::TYPE_BONE:
+		create<BoneModifierData>(name, gender);
+		{
+			Ref<BoneModifierData> mod = modifiers[name];
+			init_bone_modifier(name, mod.ptr(), parameters);
+		}
+		break;
+	case ModifierDataBase::TYPE_GROUP:
+		create<BoneGroupModifierData>(name, gender);
+		{
+			Ref<BoneGroupModifierData> mod = modifiers[name];
+			init_bone_group_modifier(name, mod.ptr(), parameters);
+		}
+		break;
+	}
+}
+void CharacterModifiers::create_modifiers()
+{
+	if (mods_created)
+		return;
+	MapStorage *ms = MapStorage::get_singleton();
+	PoolVector<String> map_list = ms->get_list();
+	int i;
+	for (i = 0; i < map_list.size(); i++)
+		create_mod(ModifierDataBase::TYPE_BLEND, map_list[i], "common");
+	mods_created = true;
+	ConfigData * cd = ConfigData::get_singleton();
+	Dictionary conf = cd->get();
+	if (conf.has("bone_modifiers")) {
+		Dictionary bone_modifiers = conf["bone_modifiers"];
+		for (const Variant *key = bone_modifiers.next(NULL);
+				key;
+				key = bone_modifiers.next(key)) {
+			Array modifier_list = bone_modifiers[*key];
+			String gender = *key;
+			printf("gender: %ls\n", gender.c_str());
+			for (i = 0; i < modifier_list.size(); i++) {
+				Array mod = modifier_list[i];
+				String mod_type = mod[0];
+				String mod_name = mod[1];
+				printf("%ls %ls\n",
+						mod_type.c_str(),
+						mod_name.c_str());
+				if (mod_type == "bone")
+					create_mod(ModifierDataBase::TYPE_BONE, "bone:" + mod_name, gender, mod);
+				else if (mod_type == "bone-group")
+					create_mod(ModifierDataBase::TYPE_GROUP, "bone:" + mod_name, gender, mod);
 			}
-			break;
+		}
 	}
 }
 void CharacterModifiers::modify(CharacterSlotInstance *si,
@@ -347,6 +462,35 @@ void CharacterModifiers::modify(CharacterSlotInstance *si,
 			modify(si, &_mod->plus, value);
 		else
 			modify(si, &_mod->minus, -value);
+	} else if (mod->type == ModifierDataBase::TYPE_BONE) {
+	}
+}
+void CharacterModifiers::modify(Skeleton *skel,
+		ModifierDataBase *mod,
+		float value) {
+	if (mod->type == ModifierDataBase::TYPE_BONE) {
+		BoneModifierData *_mod = Object::cast_to<BoneModifierData>(mod);
+		assert(skel);
+		if (_mod->bone_id < 0)
+			_mod->bone_id = skel->find_bone(_mod->bone_name);
+		assert(_mod->bone_id >= 0);
+		skel->set_bone_custom_pose(_mod->bone_id,
+				skel->get_bone_custom_pose(_mod->bone_id) *
+						Transform().interpolate_with(_mod->xform, value));
+	}
+}
+void CharacterModifiers::modify_bones(CharacterInstance *ci)
+{
+	int i;
+	Skeleton *skel = ci->get_skeleton();
+	for (i = 0; i < skel->get_bone_count(); i++)
+		skel->set_bone_custom_pose(i, Transform());
+	for (const String *key = modifiers.next(NULL);
+		key;
+		key = modifiers.next(key)) {
+		Vector<String> splitname = (*key).split(":");
+		if (splitname[0] == "bone")
+			modify(skel, modifiers[*key].ptr(), ci->mod_values[splitname[1]]);
 	}
 }
 void CharacterModifiers::modify(CharacterInstance *ci, CharacterSlotInstance *si,
@@ -366,10 +510,11 @@ void CharacterModifiers::modify(CharacterInstance *ci, CharacterSlotInstance *si
 			key;
 			key = modifiers.next(key)) {
 		Vector<String> splitname = (*key).split(":");
-		if (si->slot->helper == splitname[0])
-			if (values.has(splitname[1]) && fabs(values[splitname[1]]) > 0.001) {
+		if (values.has(splitname[1]) && fabs(values[splitname[1]]) > 0.001) {
+			if (si->slot->helper == splitname[0] && (!si->slot->blend_skip)) {
 				modify(si, modifiers[*key].ptr(), values[splitname[1]]);
 			}
+		}
 	}
 	for (i = 0; i < si->vertex_count; i++) {
 		if (si->same_verts.has(i)) {
