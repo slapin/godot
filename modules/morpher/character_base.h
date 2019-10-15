@@ -185,12 +185,15 @@ protected:
 	HashMap<String, HashMap<int, Vector<int> > > same_verts;
 	static void _bind_methods();
 protected:
+	void init_slot(CharacterInstance *ci,
+			CharacterSlotInstance *si);
 	void update_slot(CharacterInstance *ci,
 			CharacterSlotInstance *si);
 
 public:
 	CharacterInstanceList() {
 	}
+	void remove(Node *scene);
 	Node *create(const String &gender, const Transform &xform, const Dictionary &slot_conf);
 	Ref<CharacterInstance> get_instance(Node *scene);
 	void set_mod_value(Node *scene,

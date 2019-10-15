@@ -12,6 +12,7 @@ template <class T>
 static inline T *find_node(Node *node, const String &name = "") {
 	int i;
 	T *ret = NULL;
+	assert(node);
 	List<Node *> queue;
 	queue.push_back(node);
 	while (!queue.empty()) {
@@ -23,6 +24,7 @@ static inline T *find_node(Node *node, const String &name = "") {
 		for (i = 0; i < item->get_child_count(); i++)
 			queue.push_back(item->get_child(i));
 	}
+	assert(ret);
 	return ret;
 }
 
@@ -82,14 +84,25 @@ void CharacterInstanceList::_bind_methods() {
 			&CharacterInstanceList::create);
 	ClassDB::bind_method(D_METHOD("update"),
 			&CharacterInstanceList::update);
+	ClassDB::bind_method(D_METHOD("remove", "scene"),
+			&CharacterInstanceList::remove);
 	ClassDB::bind_method(D_METHOD("set_mod_value", "scene", "mod", "value"),
 			&CharacterInstanceList::set_mod_value);
+	ClassDB::bind_method(D_METHOD("get_mod_value", "scene", "mod"),
+			&CharacterInstanceList::get_mod_value);
 	ClassDB::bind_method(D_METHOD("get_modifier_list"),
 			&CharacterInstanceList::get_modifier_list);
 	ClassDB::bind_method(D_METHOD("get_base_modifier_list"),
 			&CharacterInstanceList::get_base_modifier_list);
 	ClassDB::bind_method(D_METHOD("get_instance_modifier_values"),
-			&CharacterInstanceList::get_base_modifier_list);
+			&CharacterInstanceList::get_instance_modifier_values);
+}
+void CharacterInstanceList::remove(Node *scene)
+{
+	Ref<CharacterInstance> char_instance = scene->get_meta("instance_data");
+	instance_list.erase(char_instance);
+	char_instance.unref();
+	scene->queue_delete();
 }
 Node *CharacterInstanceList::create(const String &gender, const Transform &xform, const Dictionary &slot_conf) {
 	Node *root = SceneTree::get_singleton()->get_root();
@@ -162,13 +175,9 @@ void CharacterInstanceList::update() {
 	}
 }
 
-void CharacterInstanceList::update_slot(CharacterInstance *ci,
+void CharacterInstanceList::init_slot(CharacterInstance *ci,
 		CharacterSlotInstance *si) {
-	if (!si->mesh.ptr())
-		return;
-
 	int i, j;
-	CharacterModifiers *cm = CharacterModifiers::get_singleton();
 	Array surface = si->mesh->surface_get_arrays(0);
 	const String &orig_path = si->mesh->get_meta("orig_path");
 	const PoolVector<Vector2> &uvdata = surface[si->uv_index];
@@ -176,7 +185,6 @@ void CharacterInstanceList::update_slot(CharacterInstance *ci,
 		return;
 	const PoolVector<Vector3> &vdata = surface[Mesh::ARRAY_VERTEX];
 	const PoolVector<Vector3> &normal = surface[Mesh::ARRAY_NORMAL];
-
 	si->meshdata = memnew_arr(float, vdata.size() * 14);
 	si->vertex_count = vdata.size();
 	assert(uvdata.size() > 0);
@@ -222,6 +230,18 @@ void CharacterInstanceList::update_slot(CharacterInstance *ci,
 		same_verts[orig_path] = si->same_verts;
 	} else
 		si->same_verts = same_verts[orig_path];
+}
+
+void CharacterInstanceList::update_slot(CharacterInstance *ci,
+		CharacterSlotInstance *si) {
+	if (!si->mesh.ptr())
+		return;
+
+	CharacterModifiers *cm = CharacterModifiers::get_singleton();
+	if (si->dirty) {
+		init_slot(ci, si);
+		si->dirty = false;
+	}
 	cm->modify(ci, si, ci->mod_values);
 }
 CharacterInstanceList *CharacterInstanceList::get_singleton() {
@@ -267,11 +287,14 @@ Skeleton *CharacterInstanceList::get_skeleton(Node *scene) const
 }
 PoolVector<String> CharacterModifiers::get_modifier_list() const {
 	PoolVector<String> ret;
+	ret.resize(modifiers.size());
+	int count = 0;
 	for (const String *key = modifiers.next(NULL);
 			key;
 			key = modifiers.next(key)) {
-		ret.push_back(*key);
+		ret[count++] = *key;
 	}
+	ret.resize(count);
 	return ret;
 }
 PoolVector<String> CharacterModifiers::get_base_modifier_list() const {
@@ -417,7 +440,12 @@ void CharacterModifiers::modify(CharacterSlotInstance *si,
 	if (mod->type == ModifierDataBase::TYPE_BLEND) {
 		int i, j;
 		PoolVector<int> mod_indices;
+		mod_indices.resize(si->vertex_count);
 		PoolVector<float> mod_data;
+		mod_data.resize(si->vertex_count * 6);
+		int index_count = 0, data_count = 0;
+		PoolVector<int>::Write mod_indices_w = mod_indices.write();
+		PoolVector<float>::Write mod_data_w = mod_data.write();
 		BlendModifierData *_mod = Object::cast_to<BlendModifierData>(mod);
 		assert(_mod->mod_name.length() > 0);
 		Ref<Image> img = ms->get_image(_mod->mod_name);
@@ -440,16 +468,19 @@ void CharacterModifiers::modify(CharacterSlotInstance *si,
 			}
 			const float eps = 0.001f;
 			if (pdelta[0] * pdelta[0] + pdelta[1] * pdelta[1] + pdelta[2] * pdelta[2] > eps * eps) {
-				mod_indices.push_back(i);
+				mod_indices_w[index_count++] = i;
+//				mod_indices.push_back(i);
 				for (j = 0; j < 3; j++) {
-					mod_data.push_back(pdelta[j]);
-					mod_data.push_back(ndelta[j]);
+					mod_data_w[data_count++] = pdelta[j];
+					mod_data_w[data_count++] = ndelta[j];
+//					mod_data.push_back(pdelta[j]);
+//					mod_data.push_back(ndelta[j]);
 				}
 			}
 		}
 		img->unlock();
 		nimg->unlock();
-		for (i = 0; i < mod_indices.size(); i++) {
+		for (i = 0; i < index_count; i++) {
 			int index = mod_indices[i];
 			float vx = mod_data[i * 6 + 0];
 			float vy = mod_data[i * 6 + 2];
@@ -525,7 +556,10 @@ void CharacterModifiers::modify_bones(CharacterInstance *ci)
 void CharacterModifiers::modify(CharacterInstance *ci, CharacterSlotInstance *si,
 		const HashMap<String, float> &values) {
 	int i, j;
+	if (si->slot->blend_skip)
+		return;
 	Array surface = si->mesh->surface_get_arrays(0);
+	assert(si->meshdata);
 
 	for (i = 0; i < si->vertex_count; i++) {
 		si->meshdata[i * 14 + 2] = si->meshdata[i * 14 + 8];
@@ -540,7 +574,7 @@ void CharacterModifiers::modify(CharacterInstance *ci, CharacterSlotInstance *si
 			key = modifiers.next(key)) {
 		Vector<String> splitname = (*key).split(":");
 		if (values.has(splitname[1]) && fabs(values[splitname[1]]) > 0.001) {
-			if (si->slot->helper == splitname[0] && (!si->slot->blend_skip)) {
+			if (si->slot->helper == splitname[0]) {
 				modify(si, modifiers[*key].ptr(), values[splitname[1]]);
 			}
 		}
