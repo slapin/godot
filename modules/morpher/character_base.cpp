@@ -92,7 +92,6 @@ void CharacterInstanceList::_bind_methods() {
 			&CharacterInstanceList::get_base_modifier_list);
 }
 Node *CharacterInstanceList::create(const String &gender, const Transform &xform, const Dictionary &slot_conf) {
-	printf("create %ls\n", gender.c_str());
 	Node *root = SceneTree::get_singleton()->get_root();
 	CharacterGenderList *gl = CharacterGenderList::get_singleton();
 	AccessoryData *ad = AccessoryData::get_singleton();
@@ -106,6 +105,7 @@ Node *CharacterInstanceList::create(const String &gender, const Transform &xform
 	/* TODO: custom allocator */
 	Ref<CharacterInstance> char_instance = memnew(CharacterInstance);
 	char_instance->scene_root = root->get_path_to(sc);
+	char_instance->gender = &gl->genders[gender];
 	cm->create_modifiers();
 
 	for (const String *key = gdata.slot_list.next(NULL);
@@ -140,7 +140,6 @@ Node *CharacterInstanceList::create(const String &gender, const Transform &xform
 	}
 	sc->set_meta("instance_data", char_instance);
 	instance_list.push_back(char_instance);
-	printf("create done %ls\n", gender.c_str());
 	return sc;
 }
 void CharacterInstanceList::update() {
@@ -330,6 +329,15 @@ void CharacterModifiers::init_bone_group_modifier(const String &name,
 		BoneGroupModifierData *bm, const Array &parameters) {
 		Array bones = parameters[2];
 		Array xformdata = parameters[3];
+		int bone_count = bones.size(), i;
+		bm->bones.resize(bone_count);
+		bm->xforms.resize(bone_count);
+		bm->bone_names.resize(bone_count);
+		for (i = 0; i < bone_count; i++) {
+			bm->bones.write()[i] = -1;
+			bm->xforms.write()[i] = parse_transform(xformdata[i]);
+			bm->bone_names.write()[i] = bones[i];
+		}
 }
 void CharacterModifiers::create_mod(int type, const String &name, const String &gender, const Array &parameters) {
 	switch (type) {
@@ -462,7 +470,6 @@ void CharacterModifiers::modify(CharacterSlotInstance *si,
 			modify(si, &_mod->plus, value);
 		else
 			modify(si, &_mod->minus, -value);
-	} else if (mod->type == ModifierDataBase::TYPE_BONE) {
 	}
 }
 void CharacterModifiers::modify(Skeleton *skel,
@@ -477,6 +484,25 @@ void CharacterModifiers::modify(Skeleton *skel,
 		skel->set_bone_custom_pose(_mod->bone_id,
 				skel->get_bone_custom_pose(_mod->bone_id) *
 						Transform().interpolate_with(_mod->xform, value));
+	} else if (mod->type == ModifierDataBase::TYPE_GROUP) {
+		int i;
+		BoneGroupModifierData *_mod = Object::cast_to<BoneGroupModifierData>(mod);
+		assert(skel);
+		if (_mod->bones[0] < 0) {
+			for (i = 0; i < _mod->bones.size(); i++)
+				_mod->bones.write()[i] = skel->find_bone(_mod->bone_names[i]);
+		}
+		for (i = 0; i < _mod->bones.size(); i++) {
+			/* TODO: gender-specific mods */
+			int bone_id = skel->find_bone(_mod->bone_names[i]);
+			if (bone_id >= 0) {
+				/* Transform bone_xform = skel->get_bone_custom_pose(_mod->bones[i]); */
+				Transform bone_xform = skel->get_bone_custom_pose(bone_id);
+				bone_xform *= Transform().interpolate_with(_mod->xforms[i], value);
+				/* skel->set_bone_custom_pose(_mod->bones[i], bone_xform); */
+				skel->set_bone_custom_pose(bone_id, bone_xform);
+			}
+		}
 	}
 }
 void CharacterModifiers::modify_bones(CharacterInstance *ci)
@@ -489,8 +515,11 @@ void CharacterModifiers::modify_bones(CharacterInstance *ci)
 		key;
 		key = modifiers.next(key)) {
 		Vector<String> splitname = (*key).split(":");
-		if (splitname[0] == "bone")
-			modify(skel, modifiers[*key].ptr(), ci->mod_values[splitname[1]]);
+		if (modifiers[*key]->gender == "common" ||
+				modifiers[*key]->gender == ci->get_gender_name()) {
+			if (splitname[0] == "bone")
+				modify(skel, modifiers[*key].ptr(), ci->mod_values[splitname[1]]);
+		}
 	}
 }
 void CharacterModifiers::modify(CharacterInstance *ci, CharacterSlotInstance *si,

@@ -76,6 +76,9 @@ public:
 };
 class BoneGroupModifierData : public ModifierDataBase {
 	friend class CharacterModifiers;
+	PoolVector<int> bones;
+	PoolVector<Transform> xforms;
+	PoolVector<String> bone_names;
 public:
 	BoneGroupModifierData() {
 		type = TYPE_GROUP;
@@ -124,6 +127,7 @@ public:
 class CharacterGender {
 	friend class CharacterGenderList;
 	friend class CharacterInstanceList;
+	friend class CharacterInstance;
 	String name;
 	Ref<PackedScene> scene;
 	HashMap<String, CharacterSlot> slot_list;
@@ -160,11 +164,17 @@ class CharacterInstance : public Reference {
 	HashMap<String, CharacterSlotInstance> slots;
 	HashMap<String, float> mod_values;
 	bool mod_updated;
-	CharacterInstance(): mod_updated(false)
+	CharacterGender *gender;
+	CharacterInstance(): mod_updated(false), gender(NULL)
 	{
 	}
 	Node *get_scene_root() const;
 	Skeleton *get_skeleton() const;
+	const String &get_gender_name() const
+	{
+		assert(gender);
+		return gender->name;
+	}
 };
 
 class CharacterInstanceList : public Reference {
