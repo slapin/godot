@@ -36,6 +36,9 @@ void CharacterGenderList::config() {
 		const Dictionary &g = gdata[i];
 		const String &gname = g["name"];
 		const String &scene = g["scene"];
+		const String &left_foot = g["left_foot"];
+		const String &right_foot = g["right_foot"];
+		const String &pelvis = g["pelvis"];
 		Error err = OK;
 		Ref<PackedScene> pscene = ResourceLoader::load(scene, "", &err);
 		if (err != OK) {
@@ -43,6 +46,9 @@ void CharacterGenderList::config() {
 			continue;
 		}
 		create_gender(gname, pscene);
+		genders[gname].left_foot = left_foot;
+		genders[gname].right_foot = right_foot;
+		genders[gname].pelvis = pelvis;
 	}
 }
 CharacterGenderList::CharacterGenderList() {
@@ -119,6 +125,12 @@ Node *CharacterInstanceList::create(const String &gender, const Transform &xform
 	Ref<CharacterInstance> char_instance = memnew(CharacterInstance);
 	char_instance->scene_root = root->get_path_to(sc);
 	char_instance->gender = &gl->genders[gender];
+	char_instance->left_foot_id = skel->find_bone(char_instance->gender->left_foot);
+	char_instance->right_foot_id = skel->find_bone(char_instance->gender->right_foot);
+	char_instance->pelvis_id = skel->find_bone(char_instance->gender->pelvis);
+	assert(char_instance->left_foot_id >= 0);
+	assert(char_instance->right_foot_id >= 0);
+	assert(char_instance->pelvis_id >= 0);
 	cm->create_modifiers();
 
 	for (const String *key = gdata.slot_list.next(NULL);
@@ -542,6 +554,8 @@ void CharacterModifiers::modify_bones(CharacterInstance *ci)
 	Skeleton *skel = ci->get_skeleton();
 	for (i = 0; i < skel->get_bone_count(); i++)
 		skel->set_bone_custom_pose(i, Transform());
+	Vector3 lf_orig_pos = skel->get_bone_global_pose(ci->left_foot_id).origin;
+	Vector3 rf_orig_pos = skel->get_bone_global_pose(ci->right_foot_id).origin;
 	for (const String *key = modifiers.next(NULL);
 		key;
 		key = modifiers.next(key)) {
@@ -552,6 +566,10 @@ void CharacterModifiers::modify_bones(CharacterInstance *ci)
 				modify(skel, modifiers[*key].ptr(), ci->mod_values[splitname[1]]);
 		}
 	}
+	Vector3 lf_pos = skel->get_bone_global_pose(ci->left_foot_id).origin;
+	Transform pelvis_xform = skel->get_bone_custom_pose(ci->pelvis_id);
+	pelvis_xform.origin += lf_pos - lf_orig_pos;
+	skel->set_bone_custom_pose(ci->pelvis_id, pelvis_xform);
 }
 void CharacterModifiers::modify(CharacterInstance *ci, CharacterSlotInstance *si,
 		const HashMap<String, float> &values) {

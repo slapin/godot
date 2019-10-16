@@ -122,6 +122,10 @@ public:
 	void modify(CharacterInstance *ci, CharacterSlotInstance *si,
 			const HashMap<String, float> &values);
 	static CharacterModifiers *get_singleton();
+	~CharacterModifiers()
+	{
+		modifiers.clear();
+	}
 };
 
 class CharacterGender {
@@ -131,6 +135,9 @@ class CharacterGender {
 	String name;
 	Ref<PackedScene> scene;
 	HashMap<String, CharacterSlot> slot_list;
+	String left_foot;
+	String right_foot;
+	String pelvis;
 };
 
 class CharacterGenderList : public Reference {
@@ -163,6 +170,9 @@ class CharacterInstance : public Reference {
 	NodePath scene_root;
 	HashMap<String, CharacterSlotInstance> slots;
 	HashMap<String, float> mod_values;
+	int left_foot_id;
+	int right_foot_id;
+	int pelvis_id;
 	bool mod_updated;
 	CharacterGender *gender;
 	CharacterInstance(): mod_updated(false), gender(NULL)
