@@ -7,7 +7,8 @@
 #include <cassert>
 
 MapStorage::MapStorage() :
-		pos(0) {
+		pos(0), buffer(NULL) {
+	buffer = memnew_arr(uint8_t, MAX_BUF);
 	printf("map_storage created\n");
 	FileAccess *fd = FileAccess::open("res://characters/config.json", FileAccess::READ);
 	assert(fd);
@@ -84,6 +85,10 @@ void MapStorage::load() {
 		fd->get_buffer(d->buf_normal, comp_size);
 		data[shape_name] = d;
 	}
+}
+MapStorage::~MapStorage()
+{
+	memdelete_arr(buffer);
 }
 Ref<Image> MapStorage::get_image(const String &name) const {
 	assert(data.has(name));

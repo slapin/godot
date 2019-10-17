@@ -24,7 +24,7 @@ class MapStorage {
 		uint8_t *buf_normal;
 		int buf_normal_size;
 	};
-	uint8_t buffer[MAX_BUF];
+	uint8_t *buffer;
 	unsigned long pos;
 	HashMap<String, struct datablock *> data;
 	Dictionary config;
@@ -53,6 +53,7 @@ public:
 	Ref<Image> get_normal_image(const String &name) const;
 	PoolVector<float> get_minmax(const String &shape_name);
 	static MapStorage *get_singleton();
+	~MapStorage();
 };
 
 #endif
