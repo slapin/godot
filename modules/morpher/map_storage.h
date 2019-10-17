@@ -24,7 +24,11 @@ class MapStorage {
 		uint8_t *buf_normal;
 		int buf_normal_size;
 	};
+#ifdef JAVASCRIPT_ENABLED
 	uint8_t *buffer;
+#else
+	uint8_t buffer[MAX_BUF];
+#endif
 	unsigned long pos;
 	HashMap<String, struct datablock *> data;
 	Dictionary config;

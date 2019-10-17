@@ -7,8 +7,10 @@
 #include <cassert>
 
 MapStorage::MapStorage() :
-		pos(0), buffer(NULL) {
+		pos(0) {
+#ifdef JAVASCRIPT_ENABLED
 	buffer = memnew_arr(uint8_t, MAX_BUF);
+#endif
 	printf("map_storage created\n");
 	FileAccess *fd = FileAccess::open("res://characters/config.json", FileAccess::READ);
 	assert(fd);
@@ -88,7 +90,9 @@ void MapStorage::load() {
 }
 MapStorage::~MapStorage()
 {
+#ifdef JAVASCRIPT_ENABLED
 	memdelete_arr(buffer);
+#endif
 }
 Ref<Image> MapStorage::get_image(const String &name) const {
 	assert(data.has(name));
