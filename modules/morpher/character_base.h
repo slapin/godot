@@ -76,12 +76,17 @@ public:
 };
 class BoneGroupModifierData : public ModifierDataBase {
 	friend class CharacterModifiers;
-	PoolVector<int> bones;
-	PoolVector<Transform> xforms;
-	PoolVector<String> bone_names;
+	static const int MAX_BONES = 32;
+	int bones[MAX_BONES];
+	Transform xforms[MAX_BONES];
+	String bone_names[MAX_BONES];
+	int bone_count;
 public:
-	BoneGroupModifierData() {
+	BoneGroupModifierData(): bone_count(0) {
 		type = TYPE_GROUP;
+	}
+	~BoneGroupModifierData()
+	{
 	}
 };
 class CharacterSlotInstance;
@@ -124,7 +129,6 @@ public:
 	static CharacterModifiers *get_singleton();
 	~CharacterModifiers()
 	{
-		modifiers.clear();
 	}
 };
 
@@ -159,8 +163,10 @@ public:
 	void create_gender(const String &name, Ref<PackedScene> base);
 	void remove_gender(const String &name);
 	static CharacterGenderList *get_singleton() {
-		static CharacterGenderList gl;
-		return &gl;
+		static CharacterGenderList *gl = NULL;
+		if (!gl)
+			gl = memnew(CharacterGenderList);
+		return gl;
 	}
 };
 class CharacterInstance : public Reference {

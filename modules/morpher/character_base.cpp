@@ -257,8 +257,10 @@ void CharacterInstanceList::update_slot(CharacterInstance *ci,
 	cm->modify(ci, si, ci->mod_values);
 }
 CharacterInstanceList *CharacterInstanceList::get_singleton() {
-	static CharacterInstanceList cil;
-	return &cil;
+	static CharacterInstanceList *cil = NULL;
+	if (!cil)
+		cil = memnew(CharacterInstanceList);
+	return cil;
 }
 Ref<CharacterInstance> CharacterInstanceList::get_instance(Node *scene) {
 	Ref<CharacterInstance> ret = scene->get_meta("instance_data");
@@ -365,13 +367,12 @@ void CharacterModifiers::init_bone_group_modifier(const String &name,
 		Array bones = parameters[2];
 		Array xformdata = parameters[3];
 		int bone_count = bones.size(), i;
-		bm->bones.resize(bone_count);
-		bm->xforms.resize(bone_count);
-		bm->bone_names.resize(bone_count);
+		bm->bone_count = bone_count;
+		assert(bone_count <= BoneGroupModifierData::MAX_BONES);
 		for (i = 0; i < bone_count; i++) {
-			bm->bones.write()[i] = -1;
-			bm->xforms.write()[i] = parse_transform(xformdata[i]);
-			bm->bone_names.write()[i] = bones[i];
+			bm->bones[i] = -1;
+			bm->xforms[i] = parse_transform(xformdata[i]);
+			bm->bone_names[i] = bones[i];
 		}
 }
 void CharacterModifiers::create_mod(int type, const String &name, const String &gender, const Array &parameters) {
@@ -531,11 +532,11 @@ void CharacterModifiers::modify(Skeleton *skel,
 		int i;
 		BoneGroupModifierData *_mod = Object::cast_to<BoneGroupModifierData>(mod);
 		assert(skel);
-		if (_mod->bones[0] < 0) {
-			for (i = 0; i < _mod->bones.size(); i++)
-				_mod->bones.write()[i] = skel->find_bone(_mod->bone_names[i]);
+		if (_mod->bone_count > 0 && _mod->bones[0] < 0) {
+			for (i = 0; i < _mod->bone_count; i++)
+				_mod->bones[i] = skel->find_bone(_mod->bone_names[i]);
 		}
-		for (i = 0; i < _mod->bones.size(); i++) {
+		for (i = 0; i < _mod->bone_count; i++) {
 			/* TODO: gender-specific mods */
 			int bone_id = skel->find_bone(_mod->bone_names[i]);
 			if (bone_id >= 0) {
@@ -652,6 +653,8 @@ void CharacterModifiers::modify(CharacterInstance *ci, CharacterSlotInstance *si
 }
 
 CharacterModifiers *CharacterModifiers::get_singleton() {
-	static CharacterModifiers cm;
-	return &cm;
+	static CharacterModifiers *cm = NULL;
+	if (!cm)
+		cm = memnew(CharacterModifiers);
+	return cm;
 }
