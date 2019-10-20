@@ -29,7 +29,7 @@ class CharacterSlotInstance {
 	int uv_index;
 	HashMap<int, Vector<int> > same_verts;
 	CharacterInstance *char_instance;
-
+	NodePath node_path;
 public:
 	CharacterSlotInstance();
 	~CharacterSlotInstance();

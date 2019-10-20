@@ -790,7 +790,10 @@ void Octree<T, use_pairs, AL>::_remove_element(Element *p_element) {
 template <class T, bool use_pairs, class AL>
 OctreeElementID Octree<T, use_pairs, AL>::create(T *p_userdata, const AABB &p_aabb, int p_subindex, bool p_pairable, uint32_t p_pairable_type, uint32_t p_pairable_mask) {
 
+	/* FIXME wtf */
 	if (Math::is_nan(p_aabb.size.x))
+		return 0;
+	if (p_aabb.position.x > 1e15 || p_aabb.position.x < -1e15)
 		return 0;
 // check for AABB validity
 #ifdef DEBUG_ENABLED

@@ -161,6 +161,7 @@ Node *CharacterInstanceList::create(const String &gender, const Transform &xform
 		si.mesh = mesh;
 		si.meshdata = NULL;
 		si.uv_index = Mesh::ARRAY_TEX_UV2;
+		si.node_path = sc->get_path_to(mi);
 		char_instance->slots[slot.name] = si;
 	}
 	sc->set_meta("instance_data", char_instance);
@@ -248,6 +249,10 @@ void CharacterInstanceList::update_slot(CharacterInstance *ci,
 		CharacterSlotInstance *si) {
 	if (!si->mesh.ptr())
 		return;
+	Node *sc = ci->get_scene_root();
+	MeshInstance *slot_node = Object::cast_to<MeshInstance>(sc->get_node(si->node_path));
+	assert(slot_node);
+	slot_node->hide();
 
 	CharacterModifiers *cm = CharacterModifiers::get_singleton();
 	if (si->dirty) {
@@ -255,6 +260,7 @@ void CharacterInstanceList::update_slot(CharacterInstance *ci,
 		si->dirty = false;
 	}
 	cm->modify(ci, si, ci->mod_values);
+	slot_node->show();
 }
 CharacterInstanceList *CharacterInstanceList::get_singleton() {
 	static CharacterInstanceList *cil = NULL;
