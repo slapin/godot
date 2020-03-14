@@ -340,6 +340,17 @@ void FabrikInverseKinematic::solve(Task *p_task, real_t blending_delta, bool ove
 	}
 }
 
+void FabrikInverseKinematic::reset(Task *p_task) {
+	ChainItem *ci(&p_task->chain.chain_root);
+	while (ci) {
+		p_task->skeleton->set_bone_global_pose_override(ci->bone, Transform(), 0);
+		if (!ci->children.empty())
+			ci = &ci->children.write[0];
+		else
+			ci = NULL;
+	}
+}
+
 void SkeletonIK::_validate_property(PropertyInfo &property) const {
 
 	if (property.name == "root_bone" || property.name == "tip_bone") {
@@ -430,6 +441,7 @@ void SkeletonIK::_notification(int p_what) {
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
 			reload_chain();
+			stop();
 		} break;
 	}
 }
@@ -542,6 +554,8 @@ void SkeletonIK::start(bool p_one_time) {
 
 void SkeletonIK::stop() {
 	set_process_internal(false);
+	if (task)
+		FabrikInverseKinematic::reset(task);
 }
 
 Transform SkeletonIK::_get_target_transform() {
