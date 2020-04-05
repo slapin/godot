@@ -1,0 +1,14 @@
+#!/usr/bin/env python
+
+Import('env')
+Import('env_modules')
+
+env_skirt = env_modules.Clone()
+thirdparty_dir = "#thirdparty/bullet/"
+
+env_skirt.Prepend(CPPPATH=[thirdparty_dir])
+env_skirt.Append(CXXFLAGS=["-Wno-reorder"])
+
+# Godot source files
+env_skirt.add_source_files(env.modules_sources, "*.cpp")
+
