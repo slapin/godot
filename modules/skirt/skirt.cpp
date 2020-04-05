@@ -51,7 +51,7 @@ float Skirt::distance(int skeleton_id, int p1, int p2) {
 	Vector3 vp2;
 	memcpy(&vp1.coord[0], &particles[skeleton_id].ptr()[p1 * 3], sizeof(float) * 3);
 	memcpy(&vp2.coord[0], &particles[skeleton_id].ptr()[p2 * 3], sizeof(float) * 3);
-	return vp1.distance_squared_to(vp2);
+	return vp1.distance_to(vp2);
 }
 
 void Skirt::build_bone_list(int skeleton_id, List<int> *bones, List<int> *root_bones) {
@@ -150,11 +150,11 @@ void Skirt::verlet_init(int skeleton_id) {
 			if (chain.size() <= i)
 				continue;
 			int bone_id = bone_chains[j][i];
-			int root_bone_id = bone_chains[j][0];
+			//			int root_bone_id = bone_chains[j][0];
 			printf("skel: %d i = %d j = %d bone_id = %d\n", skeleton_id, i, j, bone_id);
 			Transform pose = skel->get_bone_global_pose(bone_id);
-			Transform root_pose = skel->get_bone_global_pose(root_bone_id);
-			pose = pose * root_pose.affine_inverse();
+			//			Transform root_pose = skel->get_bone_global_pose(root_bone_id);
+			//			pose = pose * root_pose.affine_inverse();
 			Vector3 pos = pose.origin;
 			particles[skeleton_id].write[(i * size_x + j) * 3 + 0] = pos.x;
 			particles[skeleton_id].write[(i * size_x + j) * 3 + 1] = pos.y;
@@ -235,13 +235,18 @@ void Skirt::verlet_step(int skeleton_id, float delta) {
 	Vector<float> *p = &particles[skeleton_id];
 	Vector<float> *pp = &particles_prev[skeleton_id];
 	Vector<float> *acc = &accel[skeleton_id];
-	return;
 	for (int i = 0; i < (*p).size(); i++) {
 		float x = (*p)[i];
+		assert(!isinf(x));
 		float temp = x;
 		float oldx = (*pp)[i];
 		float a = (*acc)[i];
+		assert(!isnan(a));
+		assert(!isnan(oldx));
+		assert(!isnan(temp));
 		x += x - oldx + a * delta * delta;
+		assert(!isnan(x));
+		assert(!isinf(x));
 		oldx = temp;
 		(*p).write[i] = x;
 		(*pp).write[i] = oldx;
@@ -251,43 +256,71 @@ void Skirt::verlet_step(int skeleton_id, float delta) {
 void Skirt::forces_step(int skeleton_id, float delta) {
 	const float gravity[] = { 0.0f, -9.8f, 0.0f };
 	int i;
-	for (i = 0; i < (int)accel.size(); i += 3) {
-		accel[skeleton_id].write[i] = gravity[0] * delta;
-		accel[skeleton_id].write[i + 1] = gravity[1] * delta;
-		accel[skeleton_id].write[i + 2] = gravity[2] * delta;
+	for (i = 0; i < (int)accel[skeleton_id].size(); i += 3) {
+		accel[skeleton_id].write[i] = gravity[0];
+		accel[skeleton_id].write[i + 1] = gravity[1];
+		accel[skeleton_id].write[i + 2] = gravity[2];
+		assert(!isnan(accel[skeleton_id][i + 0]));
+		assert(!isnan(accel[skeleton_id][i + 1]));
+		assert(!isnan(accel[skeleton_id][i + 2]));
 	}
 }
 void Skirt::constraints_step(int skeleton_id, float delta) {
-	int i, j;
-	for (i = 0; i < constraints.size(); i += 4) {
-		float x0[3], x1[3];
-		float dx1[3], l1, d1, diff1;
-		int p0, p1;
-		p0 = constraints[i].p1;
-		p1 = constraints[i].p2;
-		// printf("p0 %d p1 %d\n", p0, p1);
-		for (j = 0; j < 3; j++) {
-			x0[j] = particles[skeleton_id][p0 * 3 + j];
-			x1[j] = particles[skeleton_id][p1 * 3 + j];
-			dx1[j] = x1[j] - x0[j];
+	int i, j, k;
+	Skeleton *skel =
+			Object::cast_to<Skeleton>(ObjectDB::get_instance(skeleton_id));
+	for (k = 0; k < 2; k++) {
+		for (i = 0; i < constraints.size();i++) {
+			float x0[3], x1[3];
+			float dx1[3], l1, d1, diff1;
+			int p0, p1;
+			p0 = constraints[i].p1;
+			p1 = constraints[i].p2;
+//			printf("p0 %d p1 %d\n", p0, p1);
+			for (j = 0; j < 3; j++) {
+				x0[j] = particles[skeleton_id][p0 * 3 + j];
+				x1[j] = particles[skeleton_id][p1 * 3 + j];
+				dx1[j] = x1[j] - x0[j];
+#ifdef DEBUG_NANS
+				assert(!isnan(x0[j]));
+				assert(!isnan(x1[j]));
+				assert(!isnan(dx1[j]));
+				assert(!isinf(x0[j]));
+				assert(!isinf(x1[j]));
+				assert(!isinf(dx1[j]));
+#endif
+			}
+#ifdef DEBUG_NANS
+			printf("x0 = %f %f %f\n", x0[0], x0[1], x0[2]);
+			printf("x1 = %f %f %f\n", x1[0], x1[1], x1[2]);
+			printf("dx1 = %f %f %f\n", dx1[0], dx1[1], dx1[2]);
+#endif
+			d1 = constraints[i].distance;
+//			printf("distance %f\n", d1);
+			if (d1 == 0.0f)
+				continue;
+			l1 = Vector3(dx1[0], dx1[1], dx1[2]).length();
+			l1 = CLAMP(l1, 0.0f, 100.0f);
+			diff1 = (l1 - d1) / l1;
+//			printf("distance d1 %f l1 %f diff1 %f\n", d1, l1, diff1);
+			for (j = 0; j < 3; j++) {
+				x0[j] += dx1[j] * 0.5f * diff1;
+				x1[j] -= dx1[j] * 0.5f * diff1;
+			}
+			for (j = 0; j < 3; j++) {
+				particles[skeleton_id].write[p0 * 3 + j] = x0[j];
+				particles[skeleton_id].write[p1 * 3 + j] = x1[j];
+			}
 		}
-		d1 = constraints[i].distance;
-		l1 = Vector3(dx1[0], dx1[1], dx1[2]).length_squared();
-		diff1 = d1 > 0.0f ? (l1 - d1) / d1 : 1.0f;
-		for (j = 0; j < 3; j++) {
-			x0[j] -= dx1[j] * 0.5f * diff1;
-			x1[j] += dx1[j] * 0.5f * diff1;
-		}
-		for (j = 0; j < 3; j++) {
-			particles[skeleton_id].write[p0 * 3 + j] = x0[j];
-			particles[skeleton_id].write[p1 * 3 + j] = x1[j];
+		/* pin top row */
+		for (i = 0; i < size_x; i++) {
+			int bone = bone_chains[i][0];
+			Transform pose = skel->get_bone_global_pose(bone);
+			for (j = 0; j < 3; j++)
+				particles[skeleton_id].write[i * 3 + j] =
+						pose.origin.coord[j];
 		}
 	}
-	/* pin top row */
-	for (i = 0; i < size_x; i++)
-		for (j = 0; j < 3; j++)
-			particles[skeleton_id].write[i * 3 + j] =
-					particles_prev[skeleton_id][i * 3 + j];
 }
 
 void Skirt::physics_process() {
@@ -405,7 +438,6 @@ void Skirt::connect_signals() {
 }
 void Skirt::update_bones() {
 	List<int> skeletons;
-	return;
 	mutex->lock();
 	if (particles.empty())
 		return;
@@ -445,8 +477,8 @@ void Skirt::update_bones() {
 					//					printf("local target: %ls\n", String(local_target).c_str());
 					Vector3 local_up = localize.xform(Vector3(0.0f, 1.0f, 0.0f));
 					Transform rot;
-					if (facing.has(bone))
-						rot.basis = facing[bone].basis;
+//					if (facing.has(bone))
+//						rot.basis = facing[bone].basis;
 					pose = pose.looking_at(local_target, local_up) * rot.affine_inverse();
 				}
 				skel->set_bone_pose(bone, pose);
@@ -521,7 +553,7 @@ void SkirtDebug::_notification(int p_what) {
 			set_process(true);
 			set_process_priority(24);
 			Ref<SpatialMaterial> mat = new SpatialMaterial();
-//			mat->set_albedo(Color(1.0f, 0.0f, 0.0f, 1.0f));
+			//			mat->set_albedo(Color(1.0f, 0.0f, 0.0f, 1.0f));
 			mat->set_flag(SpatialMaterial::FLAG_UNSHADED, true);
 			mat->set_flag(SpatialMaterial::FLAG_USE_POINT_SIZE, true);
 			mat->set_flag(SpatialMaterial::FLAG_DISABLE_DEPTH_TEST, true);
@@ -572,26 +604,38 @@ void SkirtDebug::draw_debug(int skeleton_id) {
 			add_vertex(p1);
 			end();
 		}
-
 	}
 	begin(Mesh::PRIMITIVE_POINTS, NULL);
 	set_color(Color(1.0f, 0.0f, 0.0f, 1.0f));
 	add_vertex(skel_transform.origin);
 	end();
-	begin(Mesh::PRIMITIVE_POINTS, NULL);
+	begin(Mesh::PRIMITIVE_LINES, NULL);
 	set_color(Color(0.3f, 1.0f, 0.3f, 1.0f));
 	for (i = 0; i < skirt->size_x; i++) {
 		for (j = 0; j < skirt->size_y; j++) {
 			int pbase = j * skirt->size_x + i;
-			int root_bone = skirt->bone_chains[i][0];
-			int parent = skel->get_bone_parent(root_bone);
-			Transform root_xform = skel->get_bone_global_pose(parent);
+			int pnext = j * skirt->size_x + (i + 1) % skirt->size_x;
+			int pnext2 = (j + 1) * skirt->size_x + i;
+			//			int root_bone = skirt->bone_chains[i][0];
+			//			int parent = skel->get_bone_parent(root_bone);
+			//			Transform root_xform = skel->get_bone_global_pose(parent);
 
-			Vector3 p1;
+			Vector3 p1, p2, p3;
 			p1.x = skirt->particles[skeleton_id][pbase * 3];
 			p1.y = skirt->particles[skeleton_id][pbase * 3 + 1];
 			p1.z = skirt->particles[skeleton_id][pbase * 3 + 2];
-			add_vertex((skel_transform * root_xform).xform(p1));
+			p2.x = skirt->particles[skeleton_id][pnext * 3];
+			p2.y = skirt->particles[skeleton_id][pnext * 3 + 1];
+			p2.z = skirt->particles[skeleton_id][pnext * 3 + 2];
+			add_vertex((skel_transform).xform(p1));
+			add_vertex((skel_transform).xform(p2));
+			if (j < skirt->size_y - 1) {
+				p3.x = skirt->particles[skeleton_id][pnext2 * 3];
+				p3.y = skirt->particles[skeleton_id][pnext2 * 3 + 1];
+				p3.z = skirt->particles[skeleton_id][pnext2 * 3 + 2];
+				add_vertex((skel_transform).xform(p1));
+				add_vertex((skel_transform).xform(p3));
+			}
 		}
 	}
 	end();
