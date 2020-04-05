@@ -466,8 +466,8 @@ void Skirt::update_bones() {
 				Transform rest_inv = rest_pose.affine_inverse();
 				Transform custom_inv = custom_pose.affine_inverse();
 				Transform localize = custom_inv * rest_inv * parent_inv;
-				Vector3 local_pos = localize.xform(local_pos);
-				//				pose.origin = local_pos;
+				Vector3 local_pos = localize.xform(pos);
+				pose.origin = local_pos;
 				if (j < bone_chains[i].size() - 1) {
 					Vector3 target;
 					target.x = particles[skel_id][((j + 1) * size_x + i) * 3 + 0];
