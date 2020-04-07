@@ -1,12 +1,12 @@
 #include <cstdio>
-
-#include <BulletSoftBody/btSoftBodyHelpers.h>
-
-#include "skirt.h"
+#include <ctime>
+#include <cassert>
+#include <sys/time.h>
 #include <scene/3d/skeleton.h>
 #include <scene/main/node.h>
 #include <scene/main/scene_tree.h>
 #include <scene/main/viewport.h>
+#include "skirt.h"
 
 Skirt *Skirt::instance;
 
@@ -91,48 +91,6 @@ void Skirt::build_bone_chain(int skeleton_id, int root_bone, List<int> *chain) {
 		} while (found == true);
 	}
 }
-void Skirt::build_facing_data(int skeleton_id) {
-	int i;
-	Skeleton *skel =
-			Object::cast_to<Skeleton>(ObjectDB::get_instance(skeleton_id));
-	if (!skel)
-		return;
-	Vector<Vector3> midpoints;
-	for (i = 0; i < bone_chains.size(); i++) {
-		const List<int> &chain = bone_chains[i];
-		int chain_pos = 0;
-		for (const List<int>::Element *ce = chain.front(); ce; ce = ce->next()) {
-			int bone = ce->get();
-			int next_bone = -1;
-			if (ce->next())
-				next_bone = ce->next()->get();
-			Transform pose, next_pose, result;
-			pose = skel->get_bone_global_pose(bone);
-			if (next_bone >= 0) {
-				next_pose = skel->get_bone_global_pose(next_bone);
-				Vector3 dir = next_pose.origin - pose.origin;
-				int cprev_bone = get_prev_bone(i, chain_pos);
-				int cnext_bone = get_next_bone(i, chain_pos);
-				Transform lpose = skel->get_bone_global_pose(cprev_bone);
-				Transform rpose = skel->get_bone_global_pose(cnext_bone);
-				Vector3 left1 = lpose.origin - pose.origin;
-				Vector3 left2 = pose.origin - rpose.origin;
-				Vector3 left = left1.linear_interpolate(left2, 0.5f);
-				Vector3 up = -dir.cross(left);
-				result.origin = pose.origin;
-				result.basis[0] = left.normalized();
-				result.basis[1] = up.normalized();
-				result.basis[2] = -dir.normalized();
-				result = pose.looking_at(next_pose.origin, Vector3(0.0f, 1.0f, 0.0f));
-				int parent = skel->get_bone_parent(bone);
-				Transform parent_pose = skel->get_bone_global_pose(parent);
-				Transform parent_inv = parent_pose.affine_inverse();
-				facing[bone] = parent_inv * result;
-			}
-			chain_pos++;
-		}
-	}
-}
 
 void Skirt::verlet_init(int skeleton_id) {
 	int i;
@@ -153,8 +111,6 @@ void Skirt::verlet_init(int skeleton_id) {
 			//			int root_bone_id = bone_chains[j][0];
 			printf("skel: %d i = %d j = %d bone_id = %d\n", skeleton_id, i, j, bone_id);
 			Transform pose = skel->get_bone_global_pose(bone_id);
-			//			Transform root_pose = skel->get_bone_global_pose(root_bone_id);
-			//			pose = pose * root_pose.affine_inverse();
 			Vector3 pos = pose.origin;
 			particles[skeleton_id].write[(i * size_x + j) * 3 + 0] = pos.x;
 			particles[skeleton_id].write[(i * size_x + j) * 3 + 1] = pos.y;
@@ -209,7 +165,6 @@ void Skirt::sort_chains(int skeleton_id) {
 	triangles.resize((size_x - 1) * (size_y - 1) * 6);
 	nodes.resize(size_x * size_y);
 	int triangle_offset = 0;
-	printf("size: %d x %d\n", size_x, size_y);
 	for (i = 0; i < size_y; i++) {
 		int j;
 		for (j = 0; j < size_x; j++) {
@@ -244,7 +199,7 @@ void Skirt::verlet_step(int skeleton_id, float delta) {
 		assert(!isnan(a));
 		assert(!isnan(oldx));
 		assert(!isnan(temp));
-		x += x - oldx + a * delta * delta;
+		x += (x - oldx) * (1.0f - damping) + a * delta * delta;
 		assert(!isnan(x));
 		assert(!isinf(x));
 		oldx = temp;
@@ -269,43 +224,27 @@ void Skirt::constraints_step(int skeleton_id, float delta) {
 	int i, j, k;
 	Skeleton *skel =
 			Object::cast_to<Skeleton>(ObjectDB::get_instance(skeleton_id));
-	for (k = 0; k < 2; k++) {
+
+	for (k = 0; k < 5; k++) {
 		for (i = 0; i < constraints.size();i++) {
 			float x0[3], x1[3];
 			float dx1[3], l1, d1, diff1;
 			int p0, p1;
 			p0 = constraints[i].p1;
 			p1 = constraints[i].p2;
-//			printf("p0 %d p1 %d\n", p0, p1);
 			for (j = 0; j < 3; j++) {
 				x0[j] = particles[skeleton_id][p0 * 3 + j];
 				x1[j] = particles[skeleton_id][p1 * 3 + j];
 				dx1[j] = x1[j] - x0[j];
-#ifdef DEBUG_NANS
-				assert(!isnan(x0[j]));
-				assert(!isnan(x1[j]));
-				assert(!isnan(dx1[j]));
-				assert(!isinf(x0[j]));
-				assert(!isinf(x1[j]));
-				assert(!isinf(dx1[j]));
-#endif
 			}
-#ifdef DEBUG_NANS
-			printf("x0 = %f %f %f\n", x0[0], x0[1], x0[2]);
-			printf("x1 = %f %f %f\n", x1[0], x1[1], x1[2]);
-			printf("dx1 = %f %f %f\n", dx1[0], dx1[1], dx1[2]);
-#endif
 			d1 = constraints[i].distance;
-//			printf("distance %f\n", d1);
 			if (d1 == 0.0f)
 				continue;
 			l1 = Vector3(dx1[0], dx1[1], dx1[2]).length();
-			l1 = CLAMP(l1, 0.0f, 100.0f);
 			diff1 = (l1 - d1) / l1;
-//			printf("distance d1 %f l1 %f diff1 %f\n", d1, l1, diff1);
 			for (j = 0; j < 3; j++) {
-				x0[j] += dx1[j] * 0.5f * diff1;
-				x1[j] -= dx1[j] * 0.5f * diff1;
+				x0[j] += dx1[j] * 0.5f * diff1 * stiffness;
+				x1[j] -= dx1[j] * 0.5f * diff1 * stiffness;
 			}
 			for (j = 0; j < 3; j++) {
 				particles[skeleton_id].write[p0 * 3 + j] = x0[j];
@@ -315,10 +254,10 @@ void Skirt::constraints_step(int skeleton_id, float delta) {
 		/* pin top row */
 		for (i = 0; i < size_x; i++) {
 			int bone = bone_chains[i][0];
-			Transform pose = skel->get_bone_global_pose(bone);
+			Transform pin = skel->get_bone_global_pose(bone);
 			for (j = 0; j < 3; j++)
 				particles[skeleton_id].write[i * 3 + j] =
-						pose.origin.coord[j];
+						pin.origin.coord[j];
 		}
 	}
 }
@@ -376,13 +315,24 @@ void Skirt::physics_process() {
 						bone_chains.push_back(chain);
 				}
 				sort_chains(skel_id);
-				build_facing_data(skel_id);
-				printf("node: %ls\n", String(skel->get_name()).c_str());
-				printf("root bones: %d\n", bones_start.size());
-				printf("bones: %d\n", bones.size());
-				printf("chains: %d\n", bone_chains.size());
 			}
-			mutex->lock();
+			if (!colliders.has(skel_id) || colliders[skel_id].size() == 0) {
+				struct collider pelvis_col, left_col, right_col;
+				pelvis_col.create_from_bone(skel, "pelvis", "spine03", -0.2f, 0.12f);
+				left_col.create_from_bone(skel, "upperleg02_L", "lowerleg01_L", 0.4f, 0.1f);
+				right_col.create_from_bone(skel, "upperleg02_R", "lowerleg01_R", 0.4f, 0.1f);
+				pelvis_bone = pelvis_col.bone;
+				left_bone = left_col.bone;
+				right_bone = right_col.bone;
+				colliders[skel_id][pelvis_bone] = pelvis_col;
+				colliders[skel_id][left_bone] = left_col;
+				colliders[skel_id][right_bone] = right_col;
+				assert(pelvis_bone < skel->get_bone_count());
+				assert(left_bone < skel->get_bone_count());
+				assert(right_bone < skel->get_bone_count());
+				printf("colliders: %d: %d %d %d\n", colliders[skel_id].size(), pelvis_bone, left_bone, right_bone);
+				assert(colliders[skel_id].size() == 3);
+			}
 			if (!particles.has(skel_id)) {
 				verlet_init(skel_id);
 				if (constraints.size() == 0) {
@@ -393,26 +343,6 @@ void Skirt::physics_process() {
 			forces_step(skel_id, skel->get_physics_process_delta_time());
 			verlet_step(skel_id, skel->get_physics_process_delta_time());
 			constraints_step(skel_id, skel->get_physics_process_delta_time());
-			mutex->unlock();
-#if 0
-			if (particles.size() == 0) {
-				particles.resize(bones.size() * 3);
-				int offset = 0;
-				for (i = 0; i < bone_chains.size(); i++) {
-					List<int> chain = bone_chains[i];
-					for (List<int>::Element *b = chain.front(); b; b = b->next()) {
-						int bone_id = b->get();
-						Transform pose = skel->get_bone_global_pose(bone_id);
-						Vector3 particle = pose.origin;
-						particles.write[offset * 3] = particle.x;
-						particles.write[offset * 3 + 1] = particle.y;
-						particles.write[offset * 3 + 2] = particle.z;
-						offset++;
-					}
-				}
-
-			}
-#endif
 		}
 	}
 }
@@ -436,57 +366,78 @@ void Skirt::connect_signals() {
 		skirt_debug->set_as_toplevel(true);
 	}
 }
+#define START_PROFILING(n) struct timeval n ## _tv_start; gettimeofday(&n ## _tv_start, NULL);
+#define END_PROFILING(n) \
+	struct timeval n ## _tv_end; gettimeofday(&n ## _tv_end, NULL); \
+	float n ## _r1 = n ## _tv_end.tv_sec - n ## _tv_start.tv_sec; \
+	float n ## _r2 = n ## _tv_end.tv_usec - n ## _tv_start.tv_usec; \
+	float n ## _r = (float)n ## _r1 * 1000.0f + (float)n ## _r2 / 1000.0f; \
+	printf("timing: %s %f\n", #n, n ## _r);
 void Skirt::update_bones() {
+	int i, j;
+	int update_counter = 0;
 	List<int> skeletons;
-	mutex->lock();
 	if (particles.empty())
 		return;
 	particles.get_key_list(&skeletons);
+	Vector<int> bone_chain_sizes;
+	bone_chain_sizes.resize(bone_chains.size());
+	int *sizes = bone_chain_sizes.ptrw();
+	for (i = 0; i < bone_chains.size(); i++)
+		sizes[i] = bone_chains[i].size();
 	for (List<int>::Element *e = skeletons.front(); e; e = e->next()) {
-		int i, j;
 		int skel_id = e->get();
 		Skeleton *skel = Object::cast_to<Skeleton>(ObjectDB::get_instance(skel_id));
 		if (!skel)
 			continue;
-		assert(size_x == bone_chains.size());
+		const float *p = particles[skel_id].ptr();
+
 		for (i = 0; i < size_x; i++) {
+			Transform pose, parent_pose, rest_pose, custom_pose;
 			j = 0;
 			for (const List<int>::Element *b = bone_chains[i].front(); b; b = b->next()) {
 				Vector3 pos;
 				int bone = b->get();
-				int parent = skel->get_bone_parent(bone);
-				Transform parent_pose = skel->get_bone_global_pose(parent);
-				Transform pose = skel->get_bone_pose(bone);
-				Transform rest_pose = skel->get_bone_rest(bone);
-				Transform custom_pose = skel->get_bone_custom_pose(bone);
-				pos.x = particles[skel_id][(j * size_x + i) * 3 + 0];
-				pos.y = particles[skel_id][(j * size_x + i) * 3 + 1];
-				pos.z = particles[skel_id][(j * size_x + i) * 3 + 2];
+				if (j == 0) {
+					int parent = skel->get_bone_parent(bone);
+					parent_pose = get_parent_bone_transform(skel_id, parent);
+				}
+				pose = skel->get_bone_pose(bone);
+				rest_pose = skel->get_bone_rest(bone);
+				custom_pose = skel->get_bone_custom_pose(bone);
+				pos.x = p[(j * size_x + i) * 3 + 0];
+				pos.y = p[(j * size_x + i) * 3 + 1];
+				pos.z = p[(j * size_x + i) * 3 + 2];
 				Transform parent_inv = parent_pose.affine_inverse();
 				Transform rest_inv = rest_pose.affine_inverse();
 				Transform custom_inv = custom_pose.affine_inverse();
 				Transform localize = custom_inv * rest_inv * parent_inv;
 				Vector3 local_pos = localize.xform(pos);
 				pose.origin = local_pos;
-				if (j < bone_chains[i].size() - 1) {
-					Vector3 target;
-					target.x = particles[skel_id][((j + 1) * size_x + i) * 3 + 0];
-					target.y = particles[skel_id][((j + 1) * size_x + i) * 3 + 1];
-					target.z = particles[skel_id][((j + 1) * size_x + i) * 3 + 2];
+				Vector3 target;
+				if (j < sizes[i] - 1) {
+					target.x = p[((j + 1) * size_x + i) * 3 + 0];
+					target.y = p[((j + 1) * size_x + i) * 3 + 1];
+					target.z = p[((j + 1) * size_x + i) * 3 + 2];
 					Vector3 local_target = localize.xform(target);
-					//					printf("local target: %ls\n", String(local_target).c_str());
 					Vector3 local_up = localize.xform(Vector3(0.0f, 1.0f, 0.0f));
-					Transform rot;
-//					if (facing.has(bone))
-//						rot.basis = facing[bone].basis;
-					pose = pose.looking_at(local_target, local_up) * rot.affine_inverse();
+					pose = pose.looking_at(local_target, local_up);
 				}
 				skel->set_bone_pose(bone, pose);
+				parent_pose = parent_pose * rest_pose * custom_pose * pose;
+				update_counter++;
 				j++;
 			}
 		}
+		struct collider pelvis_col, left_col, right_col;
+		List<int> collider_list;
+		colliders[skel_id].get_key_list(&collider_list);
+		for (List<int>::Element *c = collider_list.front(); c; c = c->next()) {
+			int bone = c->get();
+			assert(colliders[skel_id].has(bone));
+			colliders[skel_id][bone].update(skel);
+		}
 	}
-	mutex->unlock();
 }
 
 int Skirt::get_next_bone(int chain, int chain_pos) {
@@ -513,7 +464,7 @@ int Skirt::get_prev_bone(int chain, int chain_pos) {
 	return chain_list[chain_pos];
 }
 
-Skirt::Skirt() {
+Skirt::Skirt(): Object(), stiffness(0.5), damping(0.2) {
 	instance = this;
 	mutex = Mutex::create();
 	call_deferred("connect_signals");
@@ -524,17 +475,47 @@ Skirt::~Skirt() {
 	memdelete(mutex);
 }
 
+Transform Skirt::get_parent_bone_transform(int skel_id, int bone)
+{
+		if (parent_bones.has(skel_id) && parent_bones[skel_id].has(bone))
+			return parent_bones[skel_id][bone];
+		Skeleton *skel = Object::cast_to<Skeleton>(ObjectDB::get_instance(skel_id));
+		if (!skel)
+			return Transform();
+		Transform pose = skel->get_bone_global_pose(bone);
+		parent_bones[skel_id][bone] = pose;
+		return pose;
+}
+
 void SkirtUpdate::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_ENTER_TREE:
 			skirt = Skirt::get_instance();
 			printf("instance %p\n", skirt);
 			set_process_internal(true);
-			set_process_priority(16);
+			set_process_priority(2);
 			break;
 		case NOTIFICATION_INTERNAL_PROCESS:
-			if (skirt)
+			if (skirt) {
+				List<int> skeletons;
 				skirt->update_bones();
+				skirt->pinning_bones.clear();
+				skirt->parent_bones.clear();
+				skirt->particles.get_key_list(&skeletons);
+				for (List<int>::Element *e = skeletons.front(); e; e = e->next()) {
+					int skel_id = e->get();
+					Skeleton *skel = Object::cast_to<Skeleton>(ObjectDB::get_instance(skel_id));
+					if (!skel)
+						continue;
+					for (int i = 0; i < skirt->size_x; i++) {
+						int bone = skirt->bone_chains[i][0];
+						int parent = skel->get_bone_parent(bone);
+						Transform parent_pose = skel->get_bone_global_pose(parent);
+						skirt->parent_bones[skel_id][parent] = parent_pose;
+					}
+
+				}
+			}
 			break;
 		case NOTIFICATION_EXIT_TREE:
 			set_process_internal(false);
@@ -553,7 +534,6 @@ void SkirtDebug::_notification(int p_what) {
 			set_process(true);
 			set_process_priority(24);
 			Ref<SpatialMaterial> mat = new SpatialMaterial();
-			//			mat->set_albedo(Color(1.0f, 0.0f, 0.0f, 1.0f));
 			mat->set_flag(SpatialMaterial::FLAG_UNSHADED, true);
 			mat->set_flag(SpatialMaterial::FLAG_USE_POINT_SIZE, true);
 			mat->set_flag(SpatialMaterial::FLAG_DISABLE_DEPTH_TEST, true);
@@ -609,6 +589,7 @@ void SkirtDebug::draw_debug(int skeleton_id) {
 	set_color(Color(1.0f, 0.0f, 0.0f, 1.0f));
 	add_vertex(skel_transform.origin);
 	end();
+#if 0
 	begin(Mesh::PRIMITIVE_LINES, NULL);
 	set_color(Color(0.3f, 1.0f, 0.3f, 1.0f));
 	for (i = 0; i < skirt->size_x; i++) {
@@ -616,10 +597,6 @@ void SkirtDebug::draw_debug(int skeleton_id) {
 			int pbase = j * skirt->size_x + i;
 			int pnext = j * skirt->size_x + (i + 1) % skirt->size_x;
 			int pnext2 = (j + 1) * skirt->size_x + i;
-			//			int root_bone = skirt->bone_chains[i][0];
-			//			int parent = skel->get_bone_parent(root_bone);
-			//			Transform root_xform = skel->get_bone_global_pose(parent);
-
 			Vector3 p1, p2, p3;
 			p1.x = skirt->particles[skeleton_id][pbase * 3];
 			p1.y = skirt->particles[skeleton_id][pbase * 3 + 1];
@@ -639,4 +616,64 @@ void SkirtDebug::draw_debug(int skeleton_id) {
 		}
 	}
 	end();
+#endif
+	begin(Mesh::PRIMITIVE_LINES, NULL);
+	List<int> col_bones;
+	skirt->colliders[skeleton_id].get_key_list(&col_bones);
+	assert(col_bones.size() > 0);
+	Vector<Vector3> circle;
+	for (i = 0; i < 8; i++) {
+		float angle = M_PI * 2.0f * (float)i / 8.0f;
+		circle.push_back(Vector3(sinf(angle), 0.0f, cosf(angle)));
+	}
+	for (List<int>::Element *e = col_bones.front(); e; e = e->next()) {
+		int bone = e->get();
+		assert(bone >= 0);
+		struct Skirt::collider col = skirt->colliders[skeleton_id][bone];
+		Vector3 p1 = col.p1;
+		Vector3 p2 = col.p2;
+		if (bone == skirt->left_bone)
+			set_color(Color(0.4f, 0.4f, 1.0f, 1.0f));
+		else if (bone == skirt->right_bone)
+			set_color(Color(0.6f, 0.6f, 1.0f, 1.0f));
+		else
+			set_color(Color(0.8f, 0.8f, 1.0f, 1.0f));
+		add_vertex(skel_transform.xform(p1));
+		add_vertex(skel_transform.xform(p2));
+		for (i = 0; i < circle.size(); i++) {
+			add_vertex(skel_transform.xform(p1));
+			add_vertex(skel_transform.xform(p1 + circle[i] * col.radius));
+			add_vertex(skel_transform.xform(p2));
+			add_vertex(skel_transform.xform(p2 + circle[i] * col.radius));
+		}
+	}
+	end();
+}
+
+void Skirt::collider::create_from_bone(Skeleton *skel, const String &name, const String &end_name, float height, float r)
+{
+	bone = skel->find_bone(name);
+	end_bone = skel->find_bone(end_name);
+
+	parent = skel->get_bone_parent(bone);
+	xform = skel->get_bone_pose(bone);
+	xform_parent = skel->get_bone_global_pose(parent);
+	xform_rest = skel->get_bone_rest(bone);
+	xform_custom = skel->get_bone_custom_pose(bone);
+	end_offset = skel->get_bone_global_pose(end_bone).origin;
+	h = height;
+	radius  = r;
+	p1 = (xform_parent * xform_rest * xform_custom * xform).origin;
+	offset = (end_offset - p1).normalized() * h;
+	p2 = p1 + offset;
+	this->name = name;
+}
+void Skirt::collider::update(Skeleton *skel)
+{
+	xform = skel->get_bone_pose(bone);
+	xform_parent = skel->get_bone_global_pose(parent);
+	p1 = (xform_parent * xform_rest * xform_custom * xform).origin;
+	end_offset = skel->get_bone_global_pose(end_bone).origin;
+	offset = (end_offset - p1).normalized() * h;
+	p2 = p1 + offset;
 }

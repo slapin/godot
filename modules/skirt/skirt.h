@@ -2,8 +2,8 @@
 #include <scene/main/node.h>
 #include <scene/3d/immediate_geometry.h>
 
-class btSoftBody;
 class Skirt;
+class Skeleton;
 
 class SkirtDebug: public ImmediateGeometry {
 	GDCLASS(SkirtDebug, ImmediateGeometry);
@@ -23,9 +23,10 @@ public:
 	~Skirt();
 	void physics_process();
 	void connect_signals();
+	float damping;
+	float stiffness;
 private:
 	static Skirt *instance;
-	btSoftBody *bt_soft_body;
 	Mutex *mutex;
 protected:
 	int size_x, size_y;
@@ -34,6 +35,23 @@ protected:
 		int p1;
 		int p2;
 	};
+	struct collider {
+		StringName name;
+		Transform xform, xform_parent, xform_rest, xform_custom;
+		Vector3 offset;
+		Vector3 end_offset;
+		int bone, parent, end_bone;
+		float h;
+		float radius;
+		void create_from_bone(Skeleton *skel, const String &bone, const String &end_bone, float height, float r);
+		void update(Skeleton *skel);
+		Vector3 p1, p2;
+	};
+	HashMap<int, HashMap<int, struct collider> > colliders;
+	struct collider *create_from_bones(int joint_bone);
+	int pelvis_bone;
+	int left_bone;
+	int right_bone;
 	void add_constraint(int p1, int p2, float distance);
 	void remove_constraint(int id);
 	void create_constraints(int skeleton_id);
@@ -46,11 +64,12 @@ protected:
 	HashMap<int, Vector<float> > particles;
 	HashMap<int, Vector<float> > particles_prev;
 	HashMap<int, Vector<float> > accel;
+	HashMap <int, HashMap<int, Transform> > pinning_bones;
+	HashMap <int, HashMap<int, Transform> > parent_bones;
 	void build_bone_list(int skeleton_id, List<int> *bones, List<int> *root_bones);
 	void build_bone_chain(int skeleton_id, int root_bone, List<int> *chain);
 	int get_next_bone(int chain, int chain_pos);
 	int get_prev_bone(int chain, int chain_pos);
-	void build_facing_data(int skeleton_id);
 	void sort_chains(int skeleton_id);
 	void verlet_init(int skeleton_id);
 	void verlet_step(int skeleton_id, float delta);
@@ -60,6 +79,8 @@ protected:
 	friend class SkirtUpdate;
 	friend class SkirtDebug;
 	void update_bones();
+	Transform get_parent_bone_transform(int skel_id, int bone);
+	Transform get_pinning_bone_transform(int skel_id, int bone);
 };
 
 class SkirtUpdate: public Node {
