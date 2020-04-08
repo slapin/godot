@@ -45,7 +45,9 @@ protected:
 		float radius;
 		void create_from_bone(Skeleton *skel, const String &bone, const String &end_bone, float height, float r);
 		void update(Skeleton *skel);
+		bool is_colliding(Vector3 p, Vector3 *penetration);
 		Vector3 p1, p2;
+		List<Vector3> penetration_list;
 	};
 	HashMap<int, HashMap<int, struct collider> > colliders;
 	struct collider *create_from_bones(int joint_bone);

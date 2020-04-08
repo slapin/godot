@@ -259,6 +259,24 @@ void Skirt::constraints_step(int skeleton_id, float delta) {
 				particles[skeleton_id].write[i * 3 + j] =
 						pin.origin.coord[j];
 		}
+		List<int> collider_list;
+		colliders[skeleton_id].get_key_list(&collider_list);
+		for (List<int>::Element *e = collider_list.front(); e; e = e->next()) {
+			int bone = e->get();
+			for (i = 0; i < size_x * size_y; i++) {
+				Vector3 p;
+				p.x = particles[skeleton_id][i * 3 + 0];
+				p.y = particles[skeleton_id][i * 3 + 1];
+				p.z = particles[skeleton_id][i * 3 + 2];
+				Vector3 penetration;
+				if (colliders[skeleton_id][bone].is_colliding(p, &penetration)) {
+					p = p + penetration;
+					particles[skeleton_id].write[i * 3 + 0] = p.x;
+					particles[skeleton_id].write[i * 3 + 1] = p.y;
+					particles[skeleton_id].write[i * 3 + 2] = p.z;
+				}
+			}
+		}
 	}
 }
 
@@ -318,9 +336,9 @@ void Skirt::physics_process() {
 			}
 			if (!colliders.has(skel_id) || colliders[skel_id].size() == 0) {
 				struct collider pelvis_col, left_col, right_col;
-				pelvis_col.create_from_bone(skel, "pelvis", "spine03", -0.2f, 0.12f);
-				left_col.create_from_bone(skel, "upperleg02_L", "lowerleg01_L", 0.4f, 0.1f);
-				right_col.create_from_bone(skel, "upperleg02_R", "lowerleg01_R", 0.4f, 0.1f);
+				pelvis_col.create_from_bone(skel, "pelvis", "spine03", -0.2f, 0.20f);
+				left_col.create_from_bone(skel, "upperleg02_L", "lowerleg01_L", 0.35f, 0.25f);
+				right_col.create_from_bone(skel, "upperleg02_R", "lowerleg01_R", 0.35f, 0.25f);
 				pelvis_bone = pelvis_col.bone;
 				left_bone = left_col.bone;
 				right_bone = right_col.bone;
@@ -464,7 +482,7 @@ int Skirt::get_prev_bone(int chain, int chain_pos) {
 	return chain_list[chain_pos];
 }
 
-Skirt::Skirt(): Object(), stiffness(0.5), damping(0.2) {
+Skirt::Skirt(): Object(), stiffness(0.3), damping(0.1) {
 	instance = this;
 	mutex = Mutex::create();
 	call_deferred("connect_signals");
@@ -589,35 +607,6 @@ void SkirtDebug::draw_debug(int skeleton_id) {
 	set_color(Color(1.0f, 0.0f, 0.0f, 1.0f));
 	add_vertex(skel_transform.origin);
 	end();
-#if 0
-	begin(Mesh::PRIMITIVE_LINES, NULL);
-	set_color(Color(0.3f, 1.0f, 0.3f, 1.0f));
-	for (i = 0; i < skirt->size_x; i++) {
-		for (j = 0; j < skirt->size_y; j++) {
-			int pbase = j * skirt->size_x + i;
-			int pnext = j * skirt->size_x + (i + 1) % skirt->size_x;
-			int pnext2 = (j + 1) * skirt->size_x + i;
-			Vector3 p1, p2, p3;
-			p1.x = skirt->particles[skeleton_id][pbase * 3];
-			p1.y = skirt->particles[skeleton_id][pbase * 3 + 1];
-			p1.z = skirt->particles[skeleton_id][pbase * 3 + 2];
-			p2.x = skirt->particles[skeleton_id][pnext * 3];
-			p2.y = skirt->particles[skeleton_id][pnext * 3 + 1];
-			p2.z = skirt->particles[skeleton_id][pnext * 3 + 2];
-			add_vertex((skel_transform).xform(p1));
-			add_vertex((skel_transform).xform(p2));
-			if (j < skirt->size_y - 1) {
-				p3.x = skirt->particles[skeleton_id][pnext2 * 3];
-				p3.y = skirt->particles[skeleton_id][pnext2 * 3 + 1];
-				p3.z = skirt->particles[skeleton_id][pnext2 * 3 + 2];
-				add_vertex((skel_transform).xform(p1));
-				add_vertex((skel_transform).xform(p3));
-			}
-		}
-	}
-	end();
-#endif
-	begin(Mesh::PRIMITIVE_LINES, NULL);
 	List<int> col_bones;
 	skirt->colliders[skeleton_id].get_key_list(&col_bones);
 	assert(col_bones.size() > 0);
@@ -626,12 +615,13 @@ void SkirtDebug::draw_debug(int skeleton_id) {
 		float angle = M_PI * 2.0f * (float)i / 8.0f;
 		circle.push_back(Vector3(sinf(angle), 0.0f, cosf(angle)));
 	}
-	for (List<int>::Element *e = col_bones.front(); e; e = e->next()) {
-		int bone = e->get();
+	for (List<int>::Element *s = col_bones.front(); s; s = s->next()) {
+		int bone = s->get();
 		assert(bone >= 0);
 		struct Skirt::collider col = skirt->colliders[skeleton_id][bone];
 		Vector3 p1 = col.p1;
 		Vector3 p2 = col.p2;
+		begin(Mesh::PRIMITIVE_LINES, NULL);
 		if (bone == skirt->left_bone)
 			set_color(Color(0.4f, 0.4f, 1.0f, 1.0f));
 		else if (bone == skirt->right_bone)
@@ -646,8 +636,43 @@ void SkirtDebug::draw_debug(int skeleton_id) {
 			add_vertex(skel_transform.xform(p2));
 			add_vertex(skel_transform.xform(p2 + circle[i] * col.radius));
 		}
-	}
+		end();
+		begin(Mesh::PRIMITIVE_POINTS, NULL);
+		for (List<Vector3>::Element *e = col.penetration_list.front(); e; e = e->next()) {
+			Vector3 pt = e->get();
+			set_color(Color(1.0f, 0.0f, 0.0f, 1.0f));
+			add_vertex(skel_transform.xform(pt));
+		}
+		col.penetration_list.clear();
+		end();
+
+		begin(Mesh::PRIMITIVE_LINES, NULL);
+		set_color(Color(0.3f, 1.0f, 0.3f, 1.0f));
+		for (i = 0; i < skirt->size_x; i++) {
+			for (j = 0; j < skirt->size_y; j++) {
+				int pbase = j * skirt->size_x + i;
+				int pnext = j * skirt->size_x + (i + 1) % skirt->size_x;
+				int pnext2 = (j + 1) * skirt->size_x + i;
+				Vector3 p1, p2, p3;
+				p1.x = skirt->particles[skeleton_id][pbase * 3];
+				p1.y = skirt->particles[skeleton_id][pbase * 3 + 1];
+				p1.z = skirt->particles[skeleton_id][pbase * 3 + 2];
+				p2.x = skirt->particles[skeleton_id][pnext * 3];
+				p2.y = skirt->particles[skeleton_id][pnext * 3 + 1];
+				p2.z = skirt->particles[skeleton_id][pnext * 3 + 2];
+				add_vertex((skel_transform).xform(p1));
+				add_vertex((skel_transform).xform(p2));
+				if (j < skirt->size_y - 1) {
+				        p3.x = skirt->particles[skeleton_id][pnext2 * 3];
+				        p3.y = skirt->particles[skeleton_id][pnext2 * 3 + 1];
+				        p3.z = skirt->particles[skeleton_id][pnext2 * 3 + 2];
+				        add_vertex((skel_transform).xform(p1));
+				        add_vertex((skel_transform).xform(p3));
+				}
+			}
+		}
 	end();
+}
 }
 
 void Skirt::collider::create_from_bone(Skeleton *skel, const String &name, const String &end_name, float height, float r)
@@ -676,4 +701,26 @@ void Skirt::collider::update(Skeleton *skel)
 	end_offset = skel->get_bone_global_pose(end_bone).origin;
 	offset = (end_offset - p1).normalized() * h;
 	p2 = p1 + offset;
+}
+bool Skirt::collider::is_colliding(Vector3 p, Vector3 *penetration)
+{
+	Vector3 coldir = p - p1;
+	Vector3 px(1.0, 1.0, 2.5);
+	Vector3 coldirx = p * px - p1;
+	Vector3 v = p2 - p1;
+	float dot = coldir.dot(v.normalized());
+	float dotx = coldirx.dot(v.normalized());
+	if (dotx < -radius)
+		return false;
+	if (dotx > v.length() + radius)
+		return false;
+	Vector3 projpx = v.normalized() * dotx;
+	if (p.distance_squared_to(projpx) > radius * radius)
+		return false;
+	Vector3 projp = v.normalized() * dot;
+	Vector3 pdir = (p - projp);
+	float plength = radius - pdir.length() + 0.1;
+	*penetration = pdir.normalized() * plength;
+	penetration_list.push_back(p);
+	return true;
 }
