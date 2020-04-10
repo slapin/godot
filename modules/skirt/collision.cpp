@@ -29,7 +29,7 @@ void SkirtSimulation::process_collisions()
 
 void collider::create_from_bone(const Skeleton *skel, const String &name,
     const String &end_name,
-    float height, float r, const Vector3 &cv)
+    float height, float r, const Vector3 &cv, const Vector3 &offt)
 {
 	bone = skel->find_bone(name);
 	end_bone = skel->find_bone(end_name);
@@ -47,6 +47,12 @@ void collider::create_from_bone(const Skeleton *skel, const String &name,
 	p2 = p1 + offset;
 	this->name = name;
     change = cv;
+    toffset = offt;
+    Transform xcheck;
+    xcheck.origin = p1;
+    xcheck.looking_at(p2, Vector3(0, 1, 0));
+    xcheck.orthonormalize();
+    toffset_mod = xcheck.xform_inv(toffset);
 }
 void collider::update(const Skeleton *skel)
 {
@@ -56,10 +62,15 @@ void collider::update(const Skeleton *skel)
 	end_offset = skel->get_bone_global_pose(end_bone).origin;
 	offset = (end_offset - p1).normalized() * h;
 	p2 = p1 + offset;
+    Transform xcheck;
+    xcheck.origin = p1;
+    xcheck.looking_at(p2, Vector3(0, 1, 0));
+    xcheck.orthonormalize();
+    toffset_mod = xcheck.xform_inv(toffset);
 }
 bool collider::is_colliding(Vector3 p, Vector3 *penetration)
 {
-	Vector3 coldir = p - p1;
+	Vector3 coldir = p - p1 - toffset_mod;
     Vector3 change(1.0, 1.0, 0.6);
 	Vector3 v = p2 - p1;
     float dx = v.length();
@@ -70,11 +81,11 @@ bool collider::is_colliding(Vector3 p, Vector3 *penetration)
 		return false;
     dot = CLAMP(dot, 0.0f, v.length());
 	Vector3 projp = p1 + v.normalized() * dot;
-    Vector3 px = (p - projp) * change;
+    Vector3 px = (p - projp - toffset_mod) * change;
 	if (px.length_squared() > radius * radius)
 		return false;
-	Vector3 pdir = (p - projp) * change;
-	float plength = radius - pdir.length() + 0.005;
+	Vector3 pdir = (p - projp - toffset_mod) * change;
+	float plength = radius - pdir.length() + 0.0001f;
 
     assert(plength >= 0.0f);
 	*penetration = pdir.normalized() * plength;
