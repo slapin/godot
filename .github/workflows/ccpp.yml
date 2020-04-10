@@ -13,7 +13,7 @@ jobs:
 
     steps:
             - name: install-dependencies
-              run: sudo apt-get install build-essential scons pkg-config libx11-dev libxcursor-dev libxinerama-dev \
+              run: sudo apt-get install build-essential scons pkg-config libx11-dev libxcursor-dev libxinerama-dev
                    libgl-dev libglu-dev libasound2-dev libpulse-dev libudev-dev libxi-dev libxrandr-dev yasm
             - uses: actions/checkout@master
             - name: build
