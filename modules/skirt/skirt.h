@@ -28,6 +28,7 @@ struct collider {
 	Vector3 offset;
 	Vector3 end_offset;
 	Vector3 change;
+	Vector3 toffset, toffset_mod;
 	int bone, parent, end_bone;
 	float h;
 	float radius;
@@ -35,7 +36,8 @@ struct collider {
 		const String &bone,
 		const String &end_bone,
 		float height, float r,
-		const Vector3 &cv = Vector3(1, 1, 1));
+		const Vector3 &cv = Vector3(1, 1, 1),
+		const Vector3 &offset = Vector3());
 	void update(const Skeleton *skel);
 	bool is_colliding(Vector3 p, Vector3 *penetration);
 	Vector3 p1, p2;
@@ -50,6 +52,8 @@ protected:
 	float damping;
 	float stiffness;
 	int size_x, size_y;
+	Vector3 gravity;
+	Vector3 external_pos_prev;
 public:
 	HashMap<int, struct collider> colliders;
 	List<int> debug_penetration_list;
@@ -63,7 +67,7 @@ public:
 	float *get_accel();
 	void init(int size_x, int size_y);
 	void verlet_step(float delta);
-	void forces_step(float delta);
+	void forces_step(float delta, const Transform &external_pos);
 	void constraints_step(float delta,
 		const struct constraint *c,
 		int count, const Vector3 *pin);

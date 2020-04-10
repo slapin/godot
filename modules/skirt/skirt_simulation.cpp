@@ -1,6 +1,7 @@
 #include <cassert>
 #include "skirt.h"
-SkirtSimulation::SkirtSimulation(): damping(0.1f) , stiffness(0.5f)
+SkirtSimulation::SkirtSimulation(): damping(0.04f),
+     stiffness(0.2f), gravity(Vector3(0, -9.8, 0))
 {
 }
 void SkirtSimulation::init(int size_x, int size_y)
@@ -58,13 +59,20 @@ void SkirtSimulation::verlet_step(float delta) {
 		pp[i] = oldx;
 	}
 }
-void SkirtSimulation::forces_step(float delta) {
-	const float gravity[] = { 0.0f, -9.8f, 0.0f };
+void SkirtSimulation::forces_step(float delta, const Transform &external_pos) {
 	int i;
+    Vector3 vel = external_pos.origin - external_pos_prev;
+    Transform base = external_pos;
+    base.origin = Vector3();
+    base.xform_inv(vel);
+    Vector3 acc = -vel / delta;
+    Vector3 local_gravity = base.xform_inv(gravity);
+    printf("acc: %f %f %f\n", vel.length(), acc.length(), delta);
 	for (i = 0; i < (int)particles.size(); i++) {
-        get_accel()[i] = gravity[i % 3];
+        get_accel()[i] = local_gravity.coord[i % 3] * 1.8f + acc.coord[i % 3] * 12.0f;
 		assert(!isnan(get_accel()[i]));
 	}
+    external_pos_prev = external_pos.origin;
 }
 
 void SkirtSimulation::set_particle(int id, const Vector3 &pt)

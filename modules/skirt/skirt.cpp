@@ -30,16 +30,17 @@ void Skirt::create_constraints(int skeleton_id) {
 	for (i = 0; i < size_y + 1; i++) {
 		for (j = 0; j < size_x; j++) {
 			int base_p = i * size_x + j;
+			float l = 1.0f + 0.08f * (float)i + 0.4f /(1.0f + ((float)(i * i)));
 			if (j > 0) {
 				float d = sim_hash[skeleton_id].distance(base_p, base_p - 1);
-				add_constraint(base_p, base_p - 1, d * 1.1f);
+				add_constraint(base_p, base_p - 1, d * l);
 			}	
 			else
-				add_constraint(base_p, base_p + size_x - 1, sim_hash[skeleton_id].distance(base_p, base_p + size_x - 1) * 1.1f);
+				add_constraint(base_p, base_p + size_x - 1, sim_hash[skeleton_id].distance(base_p, base_p + size_x - 1) * l);
 			if (j < size_x - 1)
-				add_constraint(base_p, base_p + 1, sim_hash[skeleton_id].distance(base_p, base_p + 1) * 1.1f);
+				add_constraint(base_p, base_p + 1, sim_hash[skeleton_id].distance(base_p, base_p + 1) * l);
 			else
-				add_constraint(base_p, base_p + 1 - size_x, sim_hash[skeleton_id].distance(base_p, base_p + 1 - size_x) * 1.1f);
+				add_constraint(base_p, base_p + 1 - size_x, sim_hash[skeleton_id].distance(base_p, base_p + 1 - size_x) * l);
 			if (i > 0)
 				add_constraint(base_p, base_p - size_x, sim_hash[skeleton_id].distance(base_p, base_p - size_x) * 1.1);
 			if (i < size_y)
@@ -109,9 +110,9 @@ void Skirt::verlet_init(int skeleton_id) {
 	}
 	for (j = 0; j < size_x; j++) {
 		sim_hash[skeleton_id].set_particle(size_y * size_x + j,
-			sim_hash[skeleton_id].get_particle((size_y - 1) * size_x + j) + Vector3(0, -0.05f, 0));
+			sim_hash[skeleton_id].get_particle((size_y - 1) * size_x + j) + Vector3(0, -0.1f, 0));
 		sim_hash[skeleton_id].set_particle_prev(size_y * size_x + j,
-			sim_hash[skeleton_id].get_particle_prev((size_y - 1) * size_x + j) + Vector3(0, -0.05f, 0));
+			sim_hash[skeleton_id].get_particle_prev((size_y - 1) * size_x + j) + Vector3(0, -0.1f, 0));
 	}
 }
 
@@ -251,7 +252,7 @@ void Skirt::physics_process() {
 				sort_chains(skel_id);
 			}
 			if (!sim_hash.has(skel_id)) {
-				struct collider pelvis_l_col, pelvis_r_col, left_col, right_col;
+				struct collider pelvis_col, pelvis2_col, pelvis_l_col, pelvis_r_col, left_col, right_col;
 				struct col_data {
 					struct collider col;
 					String b1;
@@ -259,29 +260,34 @@ void Skirt::physics_process() {
 					float h;
 					float r;
 					Vector3 cv;
+					Vector3 offt;
 				};
 				printf("simhash %d, %d\n", skel_id, size_x * size_y);
 				sim_hash[skel_id] = SkirtSimulation();
 				sim_hash[skel_id].init(size_x, size_y + 1);
 				static struct col_data cdata[] = {
-					{pelvis_l_col, "pelvis_L", "upperleg01_L", 0.05f, 0.07f, Vector3(1.0, 1.0, 2.0)},
-					{pelvis_r_col, "pelvis_R", "upperleg01_R", 0.05f, 0.07f, Vector3(1.0, 1.0, 2.0)},
-					{left_col, "upperleg02_L", "lowerleg01_L", 0.3f, 0.06f, Vector3(1.0, 1.0, 0.99)},
-					{right_col, "upperleg02_R", "lowerleg01_R", 0.3f, 0.06f, Vector3(1.0, 1.0, 0.99)},
+//					{pelvis_col, "upperleg01_L", "upperleg02_L", 0.2f, 0.08f, Vector3(1.0, 1.0, 1.0), Vector3(0, 0, 0.03)},
+//					{pelvis2_col, "upperleg01_R", "upperleg02_R", 0.2f, 0.08f, Vector3(1.0, 1.0, 1.0), Vector3(0, 0, 0.03)},
+//					{pelvis_l_col, "upperleg02_L", "spine05", 0.05f, 0.1f, Vector3(0.9, 1.0, 1.0), Vector3(0, 0.0, 0.0)},
+//					{pelvis_r_col, "upperleg02_R", "spine05", 0.05f, 0.1f, Vector3(0.9, 1.0, 1.0), Vector3(0, 0.0, 0.0)},
+					{pelvis_col, "spine05", "spine04", 0.2f, 0.2f, Vector3(1.0, 1.0, 1.0), Vector3(0, 0.0, 0.0)},
+					{left_col, "lowerleg01_L", "upperleg02_L", 0.3f, 0.08f, Vector3(0.9, 1.0, 1.0), Vector3()},
+					{right_col, "lowerleg01_L", "upperleg02_L", 0.3f, 0.08f, Vector3(0.9, 1.0, 1.0), Vector3()},
 				};
 				for (i = 0;i < (int)(sizeof(cdata) / sizeof(cdata[0])); i++) {
-					cdata[i].col.create_from_bone(skel, cdata[i].b1, cdata[i].b2, cdata[i].h, cdata[i].r, cdata[i].cv);
+					cdata[i].col.create_from_bone(skel, cdata[i].b1, cdata[i].b2, cdata[i].h, cdata[i].r, cdata[i].cv, cdata[i].offt);
 					assert(cdata[i].col.bone < skel->get_bone_count());
 					sim_hash[skel_id].add_collider(cdata[i].col.bone, cdata[i].col);
 				}
-				assert(sim_hash[skel_id].colliders.size() == 4);
+//				assert(sim_hash[skel_id].colliders.size() == 6);
 				verlet_init(skel_id);
 				if (constraints.size() == 0) {
 					create_constraints(skel_id);
 					printf("constraints: %d\n", constraints.size());
 				}
 			}
-			sim_hash[skel_id].forces_step(skel->get_physics_process_delta_time());
+			Transform local_pos = skel->get_global_transform();
+			sim_hash[skel_id].forces_step(skel->get_physics_process_delta_time(), local_pos);
 			sim_hash[skel_id].verlet_step(skel->get_physics_process_delta_time());
 			constraints_step(skel_id, skel->get_physics_process_delta_time());
 		}
@@ -301,10 +307,12 @@ void Skirt::connect_signals() {
 		root->add_child(skirt_update);
 		skirt_update->set_name("skirt_update");
 		printf("created bone updater\n");
+#if 0
 		SkirtDebug *skirt_debug = new SkirtDebug();
 		root->add_child(skirt_debug);
 		skirt_debug->set_name("debug_draw");
 		skirt_debug->set_as_toplevel(true);
+#endif
 	}
 }
 #define START_PROFILING(n) struct timeval n ## _tv_start; gettimeofday(&n ## _tv_start, NULL);

@@ -39,6 +39,7 @@ doc_classes/*        @godotengine/documentation
 /modules/regex/      @LeeZH
 /modules/upnp/       @godotengine/network
 /modules/websocket/  @godotengine/network
+/modules/skirt/      @slapin
 
 /platform/javascript/ @eska014
 /platform/uwp/       @vnen

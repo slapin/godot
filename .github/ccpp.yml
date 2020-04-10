@@ -1,0 +1,23 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ 3.2-skirt ]
+  pull_request:
+    branches: [ 3.2-skirt ]
+
+jobs:
+  build:
+
+    runs-on: [ubuntu-16.04]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: build
+      run: scons platform=x11 target=release_debug
+    - uses: actions/upload-artifact@v1.0.0
+      name: Upload
+      with:
+        name: godot.x11.opt.tools.64
+        path: bin
+
