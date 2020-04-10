@@ -9,10 +9,80 @@ class SkirtDebug: public ImmediateGeometry {
 	GDCLASS(SkirtDebug, ImmediateGeometry);
 	friend class Skirt;
 	Skirt *skirt;
+	HashMap<int, Vector<int> > stale_collisions;
 	void _notification(int p_what);
 	void draw_debug(int skel_id);
 public:
 	SkirtDebug();
+};
+
+struct constraint {
+	float distance;
+	int p1;
+	int p2;
+};
+
+struct collider {
+	StringName name;
+	Transform xform, xform_parent, xform_rest, xform_custom;
+	Vector3 offset;
+	Vector3 end_offset;
+	Vector3 change;
+	int bone, parent, end_bone;
+	float h;
+	float radius;
+	void create_from_bone(const Skeleton *skel,
+		const String &bone,
+		const String &end_bone,
+		float height, float r,
+		const Vector3 &cv = Vector3(1, 1, 1));
+	void update(const Skeleton *skel);
+	bool is_colliding(Vector3 p, Vector3 *penetration);
+	Vector3 p1, p2;
+};
+
+class SkirtSimulation {
+	int skeleton_id;
+	Vector<float> particles;
+	Vector<float> particles_prev;
+	Vector<float> accel;
+protected:
+	float damping;
+	float stiffness;
+	int size_x, size_y;
+public:
+	HashMap<int, struct collider> colliders;
+	List<int> debug_penetration_list;
+
+	SkirtSimulation();
+	const float *get_particles() const;
+	float *get_particles();
+	const float *get_particles_prev() const;
+	float *get_particles_prev();
+	const float *get_accel() const;
+	float *get_accel();
+	void init(int size_x, int size_y);
+	void verlet_step(float delta);
+	void forces_step(float delta);
+	void constraints_step(float delta,
+		const struct constraint *c,
+		int count, const Vector3 *pin);
+	void set_particle(int id, const Vector3 &pt);
+	void set_particle_prev(int id, const Vector3 &pt);
+	Vector3 get_particle(int id);
+	Vector3 get_particle_prev(int id);
+	float distance(int p1, int p2);
+	void add_collider(int bone, struct collider &col);
+	void update_colliders(const Skeleton *skel);
+	void process_collisions();
+	inline int get_size_x() const
+	{
+		return size_x;
+	}
+	inline int get_size_y() const
+	{
+		return size_y;
+	}
 };
 
 class Skirt: public Object {
@@ -23,37 +93,14 @@ public:
 	~Skirt();
 	void physics_process();
 	void connect_signals();
-	float damping;
 	float stiffness;
 private:
 	static Skirt *instance;
 	Mutex *mutex;
 protected:
+	HashMap<int, SkirtSimulation> sim_hash;
 	int size_x, size_y;
-	struct constraint {
-		float distance;
-		int p1;
-		int p2;
-	};
-	struct collider {
-		StringName name;
-		Transform xform, xform_parent, xform_rest, xform_custom;
-		Vector3 offset;
-		Vector3 end_offset;
-		int bone, parent, end_bone;
-		float h;
-		float radius;
-		void create_from_bone(Skeleton *skel, const String &bone, const String &end_bone, float height, float r);
-		void update(Skeleton *skel);
-		bool is_colliding(Vector3 p, Vector3 *penetration);
-		Vector3 p1, p2;
-		List<Vector3> penetration_list;
-	};
-	HashMap<int, HashMap<int, struct collider> > colliders;
 	struct collider *create_from_bones(int joint_bone);
-	int pelvis_bone;
-	int left_bone;
-	int right_bone;
 	void add_constraint(int p1, int p2, float distance);
 	void remove_constraint(int id);
 	void create_constraints(int skeleton_id);
@@ -63,9 +110,6 @@ protected:
 	HashMap<int, Transform> facing;
 	Vector<int> triangles;
 	Vector<int> nodes;
-	HashMap<int, Vector<float> > particles;
-	HashMap<int, Vector<float> > particles_prev;
-	HashMap<int, Vector<float> > accel;
 	HashMap <int, HashMap<int, Transform> > pinning_bones;
 	HashMap <int, HashMap<int, Transform> > parent_bones;
 	void build_bone_list(int skeleton_id, List<int> *bones, List<int> *root_bones);
@@ -74,15 +118,18 @@ protected:
 	int get_prev_bone(int chain, int chain_pos);
 	void sort_chains(int skeleton_id);
 	void verlet_init(int skeleton_id);
-	void verlet_step(int skeleton_id, float delta);
-	void forces_step(int skeleton_id, float delta);
 	void constraints_step(int skeleton_id, float delta);
-	float distance(int skeleton_id, int p1, int p2);
 	friend class SkirtUpdate;
 	friend class SkirtDebug;
 	void update_bones();
 	Transform get_parent_bone_transform(int skel_id, int bone);
 	Transform get_pinning_bone_transform(int skel_id, int bone);
+	Vector3 get_particle(const float *, int id) const;
+	void set_particle(float *particles, int id, const Vector3 &p);
+	float * get_particles_w(int skeleton_id);
+	const float * get_particles(int skeleton_id) const;
+	float * get_particles_prev_w(int skeleton_id);
+	const float * get_particles_prev(int skeleton_id) const;
 };
 
 class SkirtUpdate: public Node {
