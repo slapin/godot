@@ -16,7 +16,7 @@ jobs:
               run: sudo apt-get install build-essential scons pkg-config libx11-dev libxcursor-dev libxinerama-dev \
                    libgl1-mesa-dev libglu-dev libasound2-dev libpulse-dev libudev-dev libxi-dev libxrandr-dev yasm
             - uses: actions/checkout@3.2-skirt
-              name: build
+            - name: build
               run: scons platform=x11 target=release_debug
             - uses: actions/upload-artifact@v1.0.0
               name: Upload
