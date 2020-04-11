@@ -14,13 +14,35 @@ jobs:
     steps:
             - name: install-dependencies
               run: sudo apt-get install build-essential scons pkg-config libx11-dev libxcursor-dev libxinerama-dev
-                   libgl-dev libglu-dev libasound2-dev libpulse-dev libudev-dev libxi-dev libxrandr-dev yasm
+              libgl-dev libglu-dev libasound2-dev libasound2:i386 libpulse-dev libudev-dev libxi-dev libxrandr-dev yasm mingw-w64
+              libpulse0:i386 
             - uses: actions/checkout@master
             - name: build
-              run: scons platform=x11 target=release_debug
+              run: scons platform=x11 target=release_debug bits=64 tools=yes -j3
+            - name: build
+              run: scons platform=x11 target=release_debug bits=64 tools=no -j3
+            - name: build
+              run: scons platform=x11 target=release bits=64 tools=no -j3
+            - name: build
+              run: scons platform=x11 target=release bits=32 tools=no -j3
             - uses: actions/upload-artifact@v1.0.0
               name: Upload
               with:
                       name: godot.x11.opt.tools.64
+                      path: bin
+            - uses: actions/upload-artifact@v1.0.0
+              name: Upload
+              with:
+                      name: godot.x11.opt.debug.64
+                      path: bin
+            - uses: actions/upload-artifact@v1.0.0
+              name: Upload
+              with:
+                      name: godot.x11.opt.64
+                      path: bin
+            - uses: actions/upload-artifact@v1.0.0
+              name: Upload
+              with:
+                      name: godot.x11.opt.32
                       path: bin
 
