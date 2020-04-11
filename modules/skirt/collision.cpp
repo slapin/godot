@@ -71,7 +71,6 @@ void collider::update(const Skeleton *skel)
 bool collider::is_colliding(Vector3 p, Vector3 *penetration)
 {
 	Vector3 coldir = p - p1 - toffset_mod;
-    Vector3 change(1.0, 1.0, 0.6);
 	Vector3 v = p2 - p1;
     float dx = v.length();
 	float dot = coldir.dot(v.normalized());
