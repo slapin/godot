@@ -23,7 +23,7 @@ struct constraint {
 };
 
 struct collider {
-	StringName name;
+	String name;
 	Transform xform, xform_parent, xform_rest, xform_custom;
 	Vector3 offset;
 	Vector3 end_offset;
@@ -104,6 +104,9 @@ private:
 protected:
 	HashMap<int, SkirtSimulation> sim_hash;
 	int size_x, size_y;
+#ifdef SKIRT_DEBUG
+	SkirtDebug *debug;
+#endif
 	struct collider *create_from_bones(int joint_bone);
 	void add_constraint(int p1, int p2, float distance);
 	void remove_constraint(int id);

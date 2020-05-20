@@ -11,14 +11,11 @@ void SkirtSimulation::process_collisions()
 	for (List<int>::Element *e = collider_list.front(); e; e = e->next()) {
 		int bone = e->get();
         struct collider *col = &colliders[bone];
-//        if (String(col->name) != "pelvis")
-//            continue;
 		for (i = 1; i < size_y; i++) {
             for (j = 0; j < size_x; j++) {
                 p = get_particle(i * size_x + j);
                 if (col->is_colliding(p, &penetration)) {
-                    p = p + penetration * 0.5;
- //                   printf("p: %f %f %f\n", penetration.x, penetration.y, penetration.z);
+                    p = p + penetration;
                     set_particle(i * size_x + j, p);
                     debug_penetration_list.push_back(i * size_x + j);
                 }
@@ -70,7 +67,7 @@ void collider::update(const Skeleton *skel)
 }
 bool collider::is_colliding(Vector3 p, Vector3 *penetration)
 {
-	Vector3 coldir = p - p1 - toffset_mod;
+	Vector3 coldir = p - p1;
 	Vector3 v = p2 - p1;
     float dx = v.length();
 	float dot = coldir.dot(v.normalized());
@@ -80,10 +77,10 @@ bool collider::is_colliding(Vector3 p, Vector3 *penetration)
 		return false;
     dot = CLAMP(dot, 0.0f, v.length());
 	Vector3 projp = p1 + v.normalized() * dot;
-    Vector3 px = (p - projp - toffset_mod) * change;
+    Vector3 px = (p - projp);
 	if (px.length_squared() > radius * radius)
 		return false;
-	Vector3 pdir = (p - projp - toffset_mod) * change;
+	Vector3 pdir = (p - projp);
 	float plength = radius - pdir.length() + 0.0001f;
 
     assert(plength >= 0.0f);

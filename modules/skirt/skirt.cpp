@@ -30,7 +30,7 @@ void Skirt::create_constraints(int skeleton_id) {
 	for (i = 0; i < size_y + 1; i++) {
 		for (j = 0; j < size_x; j++) {
 			int base_p = i * size_x + j;
-			float l = 1.0f + 0.08f * (float)i + 0.4f /(1.0f + ((float)(i * i)));
+			float l = 1.01f;
 			if (j > 0) {
 				float d = sim_hash[skeleton_id].distance(base_p, base_p - 1);
 				add_constraint(base_p, base_p - 1, d * l);
@@ -42,9 +42,9 @@ void Skirt::create_constraints(int skeleton_id) {
 			else
 				add_constraint(base_p, base_p + 1 - size_x, sim_hash[skeleton_id].distance(base_p, base_p + 1 - size_x) * l);
 			if (i > 0)
-				add_constraint(base_p, base_p - size_x, sim_hash[skeleton_id].distance(base_p, base_p - size_x) * 1.1);
+				add_constraint(base_p, base_p - size_x, sim_hash[skeleton_id].distance(base_p, base_p - size_x) * l);
 			if (i < size_y)
-				add_constraint(base_p, base_p + size_x, sim_hash[skeleton_id].distance(base_p, base_p + size_x) * 1.1);
+				add_constraint(base_p, base_p + size_x, sim_hash[skeleton_id].distance(base_p, base_p + size_x) * l);
 		}
 	}
 	printf("constraints: %d\n", constraints.size());
@@ -100,8 +100,6 @@ void Skirt::verlet_init(int skeleton_id) {
 			if (chain.size() <= i)
 				continue;
 			int bone_id = bone_chains[j][i];
-			//			int root_bone_id = bone_chains[j][0];
-//			printf("skel: %d i = %d j = %d bone_id = %d\n", skeleton_id, i, j, bone_id);
 			Transform pose = skel->get_bone_global_pose(bone_id);
 			Vector3 pos = pose.origin;
 			sim_hash[skeleton_id].set_particle(i * size_x + j, pos);
@@ -266,20 +264,17 @@ void Skirt::physics_process() {
 				sim_hash[skel_id] = SkirtSimulation();
 				sim_hash[skel_id].init(size_x, size_y + 1);
 				static struct col_data cdata[] = {
-//					{pelvis_col, "upperleg01_L", "upperleg02_L", 0.2f, 0.08f, Vector3(1.0, 1.0, 1.0), Vector3(0, 0, 0.03)},
-//					{pelvis2_col, "upperleg01_R", "upperleg02_R", 0.2f, 0.08f, Vector3(1.0, 1.0, 1.0), Vector3(0, 0, 0.03)},
-//					{pelvis_l_col, "upperleg02_L", "spine05", 0.05f, 0.1f, Vector3(0.9, 1.0, 1.0), Vector3(0, 0.0, 0.0)},
-//					{pelvis_r_col, "upperleg02_R", "spine05", 0.05f, 0.1f, Vector3(0.9, 1.0, 1.0), Vector3(0, 0.0, 0.0)},
-					{pelvis_col, "spine05", "spine04", 0.2f, 0.2f, Vector3(1.0, 1.0, 1.0), Vector3(0, 0.0, 0.0)},
-					{left_col, "lowerleg01_L", "upperleg02_L", 0.3f, 0.08f, Vector3(0.9, 1.0, 1.0), Vector3()},
-					{right_col, "lowerleg01_L", "upperleg02_L", 0.3f, 0.08f, Vector3(0.9, 1.0, 1.0), Vector3()},
+					{pelvis_col, "spine05", "spine04", 0.08f, 0.10f, Vector3(1.0f, 1.0f, 1.0f), Vector3()},
+					{pelvis_l_col, "upperleg02_L", "spine04", 0.08f, 0.10f, Vector3(1.0f, 1.0f, 1.0f), Vector3()},
+					{pelvis_r_col, "upperleg02_R", "spine04", 0.08f, 0.10f, Vector3(1.0f, 1.0f, 1.0f), Vector3()},
+					{left_col, "lowerleg01_L", "upperleg02_L", 0.3f, 0.075f, Vector3(1.0f, 1.0f, 0.5f), Vector3()},
+					{right_col, "lowerleg01_R", "upperleg02_R", 0.3f, 0.075f, Vector3(1.0f, 1.0f, 0.5f), Vector3()},
 				};
 				for (i = 0;i < (int)(sizeof(cdata) / sizeof(cdata[0])); i++) {
 					cdata[i].col.create_from_bone(skel, cdata[i].b1, cdata[i].b2, cdata[i].h, cdata[i].r, cdata[i].cv, cdata[i].offt);
 					assert(cdata[i].col.bone < skel->get_bone_count());
 					sim_hash[skel_id].add_collider(cdata[i].col.bone, cdata[i].col);
 				}
-//				assert(sim_hash[skel_id].colliders.size() == 6);
 				verlet_init(skel_id);
 				if (constraints.size() == 0) {
 					create_constraints(skel_id);
@@ -303,15 +298,15 @@ void Skirt::connect_signals() {
 	sc->connect("physics_frame", this, "physics_process");
 	Node *root = Object::cast_to<Node>(sc->get_root());
 	if (root) {
-		Node *skirt_update = new SkirtUpdate();
+		Node *skirt_update = memnew(SkirtUpdate);
 		root->add_child(skirt_update);
 		skirt_update->set_name("skirt_update");
 		printf("created bone updater\n");
-#if 0
-		SkirtDebug *skirt_debug = new SkirtDebug();
-		root->add_child(skirt_debug);
-		skirt_debug->set_name("debug_draw");
-		skirt_debug->set_as_toplevel(true);
+#ifdef SKIRT_DEBUG
+		debug = memnew(SkirtDebug);
+		root->add_child(debug);
+		debug->set_name("debug_draw");
+		debug->set_as_toplevel(true);
 #endif
 	}
 }
