@@ -2098,7 +2098,11 @@ static void _find_identifiers_in_base(const GDScriptCompletionContext &p_context
 
 				if (!p_only_functions) {
 					List<PropertyInfo> members;
-					tmp.get_property_list(&members);
+					if (p_base.value.get_type() != Variant::NIL) {
+						p_base.value.get_property_list(&members);
+					} else {
+						tmp.get_property_list(&members);
+					}
 
 					for (List<PropertyInfo>::Element *E = members.front(); E; E = E->next()) {
 						if (String(E->get().name).find("/") == -1) {
@@ -3110,6 +3114,14 @@ static Error _lookup_symbol_from_base(const GDScriptParser::DataType &p_base, co
 							if (base_type.class_type->variables[i].identifier == p_symbol) {
 								r_result.type = ScriptLanguage::LookupResult::RESULT_SCRIPT_LOCATION;
 								r_result.location = base_type.class_type->variables[i].line;
+								return OK;
+							}
+						}
+
+						for (int i = 0; i < base_type.class_type->subclasses.size(); i++) {
+							if (base_type.class_type->subclasses[i]->name == p_symbol) {
+								r_result.type = ScriptLanguage::LookupResult::RESULT_SCRIPT_LOCATION;
+								r_result.location = base_type.class_type->subclasses[i]->line;
 								return OK;
 							}
 						}

@@ -178,6 +178,8 @@ public:
 	virtual Point2 get_screen_position(int p_screen = -1) const;
 	virtual Size2 get_screen_size(int p_screen = -1) const;
 	virtual int get_screen_dpi(int p_screen = -1) const;
+	virtual float get_screen_scale(int p_screen = -1) const;
+	virtual float get_screen_max_scale() const;
 	virtual Point2 get_window_position() const;
 	virtual void set_window_position(const Point2 &p_position);
 	virtual Size2 get_max_window_size() const;
@@ -242,6 +244,11 @@ public:
 
 	String get_locale() const;
 	String get_latin_keyboard_variant() const;
+	int keyboard_get_layout_count() const;
+	int keyboard_get_current_layout() const;
+	void keyboard_set_current_layout(int p_index);
+	String keyboard_get_layout_language(int p_index) const;
+	String keyboard_get_layout_name(int p_index) const;
 
 	String get_model_name() const;
 
@@ -563,12 +570,15 @@ class _Directory : public Reference {
 
 	GDCLASS(_Directory, Reference);
 	DirAccess *d;
+	bool dir_open = false;
 
 protected:
 	static void _bind_methods();
 
 public:
 	Error open(const String &p_path);
+
+	bool is_open() const;
 
 	Error list_dir_begin(bool p_skip_navigational = false, bool p_skip_hidden = false); // This starts dir listing.
 	String get_next();

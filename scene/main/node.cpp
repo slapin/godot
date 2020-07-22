@@ -1189,7 +1189,7 @@ void Node::add_child_below_node(Node *p_node, Node *p_child, bool p_legible_uniq
 
 	add_child(p_child, p_legible_unique_name);
 
-	if (is_a_parent_of(p_node)) {
+	if (p_node->data.parent == this) {
 		move_child(p_child, p_node->get_position_in_parent() + 1);
 	} else {
 		WARN_PRINTS("Cannot move under node " + p_node->get_name() + " as " + p_child->get_name() + " does not share a parent.");
@@ -2247,42 +2247,51 @@ void Node::_duplicate_and_reown(Node *p_new_parent, const Map<Node *, Node *> &p
 // if the emitter node comes later in tree order than the receiver
 void Node::_duplicate_signals(const Node *p_original, Node *p_copy) const {
 
-	if (this != p_original && (get_owner() != p_original && get_owner() != p_original->get_owner()))
+	if ((this != p_original) && !(p_original->is_a_parent_of(this))) {
 		return;
-
-	List<Connection> conns;
-	get_all_signal_connections(&conns);
-
-	for (List<Connection>::Element *E = conns.front(); E; E = E->next()) {
-
-		if (E->get().flags & CONNECT_PERSIST) {
-			//user connected
-			NodePath p = p_original->get_path_to(this);
-			Node *copy = p_copy->get_node(p);
-
-			Node *target = Object::cast_to<Node>(E->get().target);
-			if (!target) {
-				continue;
-			}
-			NodePath ptarget = p_original->get_path_to(target);
-
-			Node *copytarget = target;
-
-			// Atempt to find a path to the duplicate target, if it seems it's not part
-			// of the duplicated and not yet parented hierarchy then at least try to connect
-			// to the same target as the original
-
-			if (p_copy->has_node(ptarget))
-				copytarget = p_copy->get_node(ptarget);
-
-			if (copy && copytarget && !copy->is_connected(E->get().signal, copytarget, E->get().method)) {
-				copy->connect(E->get().signal, copytarget, E->get().method, E->get().binds, E->get().flags);
-			}
-		}
 	}
 
-	for (int i = 0; i < get_child_count(); i++) {
-		get_child(i)->_duplicate_signals(p_original, p_copy);
+	List<const Node *> process_list;
+	process_list.push_back(this);
+	while (!process_list.empty()) {
+
+		const Node *n = process_list.front()->get();
+		process_list.pop_front();
+
+		List<Connection> conns;
+		n->get_all_signal_connections(&conns);
+
+		for (List<Connection>::Element *E = conns.front(); E; E = E->next()) {
+			if (E->get().flags & CONNECT_PERSIST) {
+				//user connected
+				NodePath p = p_original->get_path_to(n);
+				Node *copy = p_copy->get_node(p);
+
+				Node *target = Object::cast_to<Node>(E->get().target);
+				if (!target) {
+					continue;
+				}
+				NodePath ptarget = p_original->get_path_to(target);
+
+				Node *copytarget = target;
+
+				// Attempt to find a path to the duplicate target, if it seems it's not part
+				// of the duplicated and not yet parented hierarchy then at least try to connect
+				// to the same target as the original
+
+				if (p_copy->has_node(ptarget)) {
+					copytarget = p_copy->get_node(ptarget);
+				}
+
+				if (copy && copytarget && !copy->is_connected(E->get().signal, copytarget, E->get().method)) {
+					copy->connect(E->get().signal, copytarget, E->get().method, E->get().binds, E->get().flags);
+				}
+			}
+		}
+
+		for (int i = 0; i < n->get_child_count(); i++) {
+			process_list.push_back(n->get_child(i));
+		}
 	}
 }
 

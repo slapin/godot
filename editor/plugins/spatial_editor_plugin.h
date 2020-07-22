@@ -266,8 +266,8 @@ private:
 
 	bool freelook_active;
 	real_t freelook_speed;
+	Vector2 previous_mouse_position;
 
-	TextureRect *crosshair;
 	Label *info_label;
 	Label *cinema_label;
 	Label *locked_label;
@@ -375,7 +375,9 @@ private:
 		Point2 region_begin, region_end;
 
 		Cursor() {
-			x_rot = y_rot = 0.5;
+			// These rotations place the camera in +X +Y +Z, aka south east, facing north west.
+			x_rot = 0.5;
+			y_rot = -0.5;
 			distance = 4;
 			region_select = false;
 		}

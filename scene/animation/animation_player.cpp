@@ -416,8 +416,7 @@ void AnimationPlayer::_animation_process_animation(AnimationData *p_anim, float 
 				Animation::UpdateMode update_mode = a->value_track_get_update_mode(i);
 
 				if (update_mode == Animation::UPDATE_CAPTURE) {
-
-					if (p_started) {
+					if (p_started || pa->capture == Variant()) {
 						pa->capture = pa->object->get_indexed(pa->subpath);
 					}
 
@@ -1097,7 +1096,8 @@ void AnimationPlayer::get_animation_list(List<StringName> *p_animations) const {
 }
 
 void AnimationPlayer::set_blend_time(const StringName &p_animation1, const StringName &p_animation2, float p_time) {
-
+	ERR_FAIL_COND(!animation_set.has(p_animation1));
+	ERR_FAIL_COND(!animation_set.has(p_animation2));
 	ERR_FAIL_COND_MSG(p_time < 0, "Blend time cannot be smaller than 0.");
 
 	BlendKey bk;
@@ -1543,7 +1543,7 @@ void AnimationPlayer::get_argument_options(const StringName &p_function, int p_i
 #endif
 
 	String pf = p_function;
-	if (p_function == "play" || p_function == "play_backwards" || p_function == "remove_animation" || p_function == "has_animation" || p_function == "queue") {
+	if (p_idx == 0 && (p_function == "play" || p_function == "play_backwards" || p_function == "remove_animation" || p_function == "has_animation" || p_function == "queue")) {
 		List<StringName> al;
 		get_animation_list(&al);
 		for (List<StringName>::Element *E = al.front(); E; E = E->next()) {

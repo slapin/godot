@@ -29,6 +29,7 @@
 /*************************************************************************/
 
 #include "gdscript_extend_parser.h"
+
 #include "../gdscript.h"
 #include "core/io/json.h"
 #include "gdscript_language_protocol.h"
@@ -62,7 +63,7 @@ void ExtendGDScriptParser::update_diagnostics() {
 		const GDScriptWarning &warning = E->get();
 		lsp::Diagnostic diagnostic;
 		diagnostic.severity = lsp::DiagnosticSeverity::Warning;
-		diagnostic.message = warning.get_message();
+		diagnostic.message = "(" + warning.get_name() + "): " + warning.get_message();
 		diagnostic.source = "gdscript";
 		diagnostic.code = warning.code;
 		lsp::Range range;

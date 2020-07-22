@@ -320,6 +320,14 @@ int _OS::get_screen_dpi(int p_screen) const {
 	return OS::get_singleton()->get_screen_dpi(p_screen);
 }
 
+float _OS::get_screen_scale(int p_screen) const {
+	return OS::get_singleton()->get_screen_scale(p_screen);
+}
+
+float _OS::get_screen_max_scale() const {
+	return OS::get_singleton()->get_screen_max_scale();
+}
+
 Point2 _OS::get_window_position() const {
 	return OS::get_singleton()->get_window_position();
 }
@@ -567,6 +575,26 @@ String _OS::get_latin_keyboard_variant() const {
 		case OS::LATIN_KEYBOARD_COLEMAK: return "COLEMAK";
 		default: return "ERROR";
 	}
+}
+
+int _OS::keyboard_get_layout_count() const {
+	return OS::get_singleton()->keyboard_get_layout_count();
+}
+
+int _OS::keyboard_get_current_layout() const {
+	return OS::get_singleton()->keyboard_get_current_layout();
+}
+
+void _OS::keyboard_set_current_layout(int p_index) {
+	OS::get_singleton()->keyboard_set_current_layout(p_index);
+}
+
+String _OS::keyboard_get_layout_language(int p_index) const {
+	return OS::get_singleton()->keyboard_get_layout_language(p_index);
+}
+
+String _OS::keyboard_get_layout_name(int p_index) const {
+	return OS::get_singleton()->keyboard_get_layout_name(p_index);
 }
 
 String _OS::get_model_name() const {
@@ -848,7 +876,7 @@ Dictionary _OS::get_datetime_from_unix_time(int64_t unix_time_val) const {
 	} else {
 		dayno = (unix_time_val - SECS_DAY + 1) / SECS_DAY;
 		dayclock = unix_time_val - dayno * SECS_DAY;
-		date.weekday = static_cast<OS::Weekday>((dayno - 3) % 7 + 7);
+		date.weekday = static_cast<OS::Weekday>(((dayno % 7) + 11) % 7);
 		do {
 			year--;
 			dayno += YEARSIZE(year);
@@ -1232,6 +1260,8 @@ void _OS::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_screen_position", "screen"), &_OS::get_screen_position, DEFVAL(-1));
 	ClassDB::bind_method(D_METHOD("get_screen_size", "screen"), &_OS::get_screen_size, DEFVAL(-1));
 	ClassDB::bind_method(D_METHOD("get_screen_dpi", "screen"), &_OS::get_screen_dpi, DEFVAL(-1));
+	ClassDB::bind_method(D_METHOD("get_screen_scale", "screen"), &_OS::get_screen_scale, DEFVAL(-1));
+	ClassDB::bind_method(D_METHOD("get_screen_max_scale"), &_OS::get_screen_max_scale);
 	ClassDB::bind_method(D_METHOD("get_window_position"), &_OS::get_window_position);
 	ClassDB::bind_method(D_METHOD("set_window_position", "position"), &_OS::set_window_position);
 	ClassDB::bind_method(D_METHOD("get_window_size"), &_OS::get_window_size);
@@ -1322,6 +1352,12 @@ void _OS::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_locale"), &_OS::get_locale);
 	ClassDB::bind_method(D_METHOD("get_latin_keyboard_variant"), &_OS::get_latin_keyboard_variant);
 	ClassDB::bind_method(D_METHOD("get_model_name"), &_OS::get_model_name);
+
+	ClassDB::bind_method(D_METHOD("keyboard_get_layout_count"), &_OS::keyboard_get_layout_count);
+	ClassDB::bind_method(D_METHOD("keyboard_get_current_layout"), &_OS::keyboard_get_current_layout);
+	ClassDB::bind_method(D_METHOD("keyboard_set_current_layout", "index"), &_OS::keyboard_set_current_layout);
+	ClassDB::bind_method(D_METHOD("keyboard_get_layout_language", "index"), &_OS::keyboard_get_layout_language);
+	ClassDB::bind_method(D_METHOD("keyboard_get_layout_name", "index"), &_OS::keyboard_get_layout_name);
 
 	ClassDB::bind_method(D_METHOD("can_draw"), &_OS::can_draw);
 	ClassDB::bind_method(D_METHOD("is_userfs_persistent"), &_OS::is_userfs_persistent);
@@ -2333,13 +2369,17 @@ Error _Directory::open(const String &p_path) {
 	if (d)
 		memdelete(d);
 	d = alt;
+	dir_open = true;
 
 	return OK;
 }
 
-Error _Directory::list_dir_begin(bool p_skip_navigational, bool p_skip_hidden) {
+bool _Directory::is_open() const {
+	return d && dir_open;
+}
 
-	ERR_FAIL_COND_V_MSG(!d, ERR_UNCONFIGURED, "Directory must be opened before use.");
+Error _Directory::list_dir_begin(bool p_skip_navigational, bool p_skip_hidden) {
+	ERR_FAIL_COND_V_MSG(!is_open(), ERR_UNCONFIGURED, "Directory must be opened before use.");
 
 	_list_skip_navigational = p_skip_navigational;
 	_list_skip_hidden = p_skip_hidden;
@@ -2348,8 +2388,7 @@ Error _Directory::list_dir_begin(bool p_skip_navigational, bool p_skip_hidden) {
 }
 
 String _Directory::get_next() {
-
-	ERR_FAIL_COND_V_MSG(!d, "", "Directory must be opened before use.");
+	ERR_FAIL_COND_V_MSG(!is_open(), "", "Directory must be opened before use.");
 
 	String next = d->get_next();
 	while (next != "" && ((_list_skip_navigational && (next == "." || next == "..")) || (_list_skip_hidden && d->current_is_hidden()))) {
@@ -2359,45 +2398,45 @@ String _Directory::get_next() {
 	return next;
 }
 bool _Directory::current_is_dir() const {
-
-	ERR_FAIL_COND_V_MSG(!d, false, "Directory must be opened before use.");
+	ERR_FAIL_COND_V_MSG(!is_open(), false, "Directory must be opened before use.");
 	return d->current_is_dir();
 }
 
 void _Directory::list_dir_end() {
-
-	ERR_FAIL_COND_MSG(!d, "Directory must be opened before use.");
+	ERR_FAIL_COND_MSG(!is_open(), "Directory must be opened before use.");
 	d->list_dir_end();
 }
 
 int _Directory::get_drive_count() {
-
-	ERR_FAIL_COND_V_MSG(!d, 0, "Directory must be opened before use.");
+	ERR_FAIL_COND_V_MSG(!is_open(), 0, "Directory must be opened before use.");
 	return d->get_drive_count();
 }
 String _Directory::get_drive(int p_drive) {
-
-	ERR_FAIL_COND_V_MSG(!d, "", "Directory must be opened before use.");
+	ERR_FAIL_COND_V_MSG(!is_open(), "", "Directory must be opened before use.");
 	return d->get_drive(p_drive);
 }
 int _Directory::get_current_drive() {
-	ERR_FAIL_COND_V_MSG(!d, 0, "Directory must be opened before use.");
+	ERR_FAIL_COND_V_MSG(!is_open(), 0, "Directory must be opened before use.");
 	return d->get_current_drive();
 }
 
 Error _Directory::change_dir(String p_dir) {
+	ERR_FAIL_COND_V_MSG(!d, ERR_UNCONFIGURED, "Directory is not configured properly.");
+	Error err = d->change_dir(p_dir);
 
-	ERR_FAIL_COND_V_MSG(!d, ERR_UNCONFIGURED, "Directory must be opened before use.");
-	return d->change_dir(p_dir);
+	if (err != OK) {
+		return err;
+	}
+	dir_open = true;
+
+	return OK;
 }
 String _Directory::get_current_dir() {
-
-	ERR_FAIL_COND_V_MSG(!d, "", "Directory must be opened before use.");
+	ERR_FAIL_COND_V_MSG(!is_open(), "", "Directory must be opened before use.");
 	return d->get_current_dir();
 }
 Error _Directory::make_dir(String p_dir) {
-
-	ERR_FAIL_COND_V_MSG(!d, ERR_UNCONFIGURED, "Directory must be opened before use.");
+	ERR_FAIL_COND_V_MSG(!is_open(), ERR_UNCONFIGURED, "Directory must be opened before use.");
 	if (!p_dir.is_rel_path()) {
 		DirAccess *d = DirAccess::create_for_path(p_dir);
 		Error err = d->make_dir(p_dir);
@@ -2407,8 +2446,7 @@ Error _Directory::make_dir(String p_dir) {
 	return d->make_dir(p_dir);
 }
 Error _Directory::make_dir_recursive(String p_dir) {
-
-	ERR_FAIL_COND_V_MSG(!d, ERR_UNCONFIGURED, "Directory must be opened before use.");
+	ERR_FAIL_COND_V_MSG(!is_open(), ERR_UNCONFIGURED, "Directory must be opened before use.");
 	if (!p_dir.is_rel_path()) {
 		DirAccess *d = DirAccess::create_for_path(p_dir);
 		Error err = d->make_dir_recursive(p_dir);
@@ -2419,9 +2457,7 @@ Error _Directory::make_dir_recursive(String p_dir) {
 }
 
 bool _Directory::file_exists(String p_file) {
-
-	ERR_FAIL_COND_V_MSG(!d, false, "Directory must be opened before use.");
-
+	ERR_FAIL_COND_V_MSG(!d, false, "Directory is not configured properly.");
 	if (!p_file.is_rel_path()) {
 		return FileAccess::exists(p_file);
 	}
@@ -2430,33 +2466,29 @@ bool _Directory::file_exists(String p_file) {
 }
 
 bool _Directory::dir_exists(String p_dir) {
-	ERR_FAIL_COND_V_MSG(!d, false, "Directory must be opened before use.");
+	ERR_FAIL_COND_V_MSG(!d, false, "Directory is not configured properly.");
 	if (!p_dir.is_rel_path()) {
 
 		DirAccess *d = DirAccess::create_for_path(p_dir);
 		bool exists = d->dir_exists(p_dir);
 		memdelete(d);
 		return exists;
-
-	} else {
-		return d->dir_exists(p_dir);
 	}
+
+	return d->dir_exists(p_dir);
 }
 
 int _Directory::get_space_left() {
-
-	ERR_FAIL_COND_V_MSG(!d, 0, "Directory must be opened before use.");
+	ERR_FAIL_COND_V_MSG(!is_open(), 0, "Directory must be opened before use.");
 	return d->get_space_left() / 1024 * 1024; //return value in megabytes, given binding is int
 }
 
 Error _Directory::copy(String p_from, String p_to) {
-
-	ERR_FAIL_COND_V_MSG(!d, ERR_UNCONFIGURED, "Directory must be opened before use.");
+	ERR_FAIL_COND_V_MSG(!is_open(), ERR_UNCONFIGURED, "Directory must be opened before use.");
 	return d->copy(p_from, p_to);
 }
 Error _Directory::rename(String p_from, String p_to) {
-
-	ERR_FAIL_COND_V_MSG(!d, ERR_UNCONFIGURED, "Directory must be opened before use.");
+	ERR_FAIL_COND_V_MSG(!is_open(), ERR_UNCONFIGURED, "Directory must be opened before use.");
 	if (!p_from.is_rel_path()) {
 		DirAccess *d = DirAccess::create_for_path(p_from);
 		Error err = d->rename(p_from, p_to);
@@ -2467,8 +2499,7 @@ Error _Directory::rename(String p_from, String p_to) {
 	return d->rename(p_from, p_to);
 }
 Error _Directory::remove(String p_name) {
-
-	ERR_FAIL_COND_V_MSG(!d, ERR_UNCONFIGURED, "Directory must be opened before use.");
+	ERR_FAIL_COND_V_MSG(!is_open(), ERR_UNCONFIGURED, "Directory must be opened before use.");
 	if (!p_name.is_rel_path()) {
 		DirAccess *d = DirAccess::create_for_path(p_name);
 		Error err = d->remove(p_name);

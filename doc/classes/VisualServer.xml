@@ -3453,6 +3453,16 @@
 				Sets the default clear color which is used when a specific clear color has not been selected.
 			</description>
 		</method>
+		<method name="set_shader_time_scale">
+			<return type="void">
+			</return>
+			<argument index="0" name="scale" type="float">
+			</argument>
+			<description>
+				Sets the scale to apply to the passage of time for the shaders' [code]TIME[/code] builtin.
+				The default value is [code]1.0[/code], which means [code]TIME[/code] will count the real time as it goes by, without narrowing or stretching it.
+			</description>
+		</method>
 		<method name="shader_create">
 			<return type="RID">
 			</return>
@@ -4221,6 +4231,11 @@
 			</description>
 		</method>
 	</methods>
+	<members>
+		<member name="render_loop_enabled" type="bool" setter="set_render_loop_enabled" getter="is_render_loop_enabled">
+			If [code]false[/code], disables rendering completely, but the engine logic is still being processed. You can call [method force_draw] to draw a frame even with rendering disabled.
+		</member>
+	</members>
 	<signals>
 		<signal name="frame_post_draw">
 			<description>
@@ -4416,7 +4431,7 @@
 			Flag used to mark that the array uses 16-bit bones instead of 8-bit.
 		</constant>
 		<constant name="ARRAY_COMPRESS_DEFAULT" value="97280" enum="ArrayFormat">
-			Used to set flags [constant ARRAY_COMPRESS_VERTEX], [constant ARRAY_COMPRESS_NORMAL], [constant ARRAY_COMPRESS_TANGENT], [constant ARRAY_COMPRESS_COLOR], [constant ARRAY_COMPRESS_TEX_UV], [constant ARRAY_COMPRESS_TEX_UV2] and [constant ARRAY_COMPRESS_WEIGHTS] quickly.
+			Used to set flags [constant ARRAY_COMPRESS_NORMAL], [constant ARRAY_COMPRESS_TANGENT], [constant ARRAY_COMPRESS_COLOR], [constant ARRAY_COMPRESS_TEX_UV], [constant ARRAY_COMPRESS_TEX_UV2] and [constant ARRAY_COMPRESS_WEIGHTS] quickly.
 		</constant>
 		<constant name="PRIMITIVE_POINTS" value="0" enum="PrimitiveType">
 			Primitive to draw consists of points.
