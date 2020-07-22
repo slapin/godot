@@ -34,9 +34,9 @@
 #include "core/project_settings.h"
 #include "physics_server_sw.h"
 
-_FORCE_INLINE_ static bool _can_collide_with(CollisionObjectSW *p_object, uint32_t p_collision_mask, bool p_collide_with_bodies, bool p_collide_with_areas) {
+_FORCE_INLINE_ static bool _can_collide_with(CollisionObjectSW *p_object, uint32_t p_collision_mask, bool p_collide_with_bodies, bool p_collide_with_areas, bool p_ignore_layers = false) {
 
-	if (!(p_object->get_collision_layer() & p_collision_mask)) {
+	if (!p_ignore_layers && !(p_object->get_collision_layer() & p_collision_mask)) {
 		return false;
 	}
 
@@ -115,7 +115,7 @@ bool PhysicsDirectSpaceStateSW::intersect_ray(const Vector3 &p_from, const Vecto
 
 	for (int i = 0; i < amount; i++) {
 
-		if (!_can_collide_with(space->intersection_query_results[i], p_collision_mask, p_collide_with_bodies, p_collide_with_areas))
+		if (!_can_collide_with(space->intersection_query_results[i], p_collision_mask, p_collide_with_bodies, p_collide_with_areas, p_pick_ray))
 			continue;
 
 		if (p_pick_ray && !(space->intersection_query_results[i]->is_ray_pickable()))
@@ -996,6 +996,9 @@ bool SpaceSW::test_body_motion(BodySW *p_body, const Transform &p_from, const Ve
 }
 
 void *SpaceSW::_broadphase_pair(CollisionObjectSW *A, int p_subindex_A, CollisionObjectSW *B, int p_subindex_B, void *p_self) {
+	if (!A->test_collision_mask(B)) {
+		return nullptr;
+	}
 
 	CollisionObjectSW::Type type_A = A->get_type();
 	CollisionObjectSW::Type type_B = B->get_type();
@@ -1034,6 +1037,9 @@ void *SpaceSW::_broadphase_pair(CollisionObjectSW *A, int p_subindex_A, Collisio
 }
 
 void SpaceSW::_broadphase_unpair(CollisionObjectSW *A, int p_subindex_A, CollisionObjectSW *B, int p_subindex_B, void *p_data, void *p_self) {
+	if (!p_data) {
+		return;
+	}
 
 	SpaceSW *self = (SpaceSW *)p_self;
 	self->collision_pairs--;

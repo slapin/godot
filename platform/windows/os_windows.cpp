@@ -255,6 +255,13 @@ void OS_Windows::initialize_core() {
 
 	process_map = memnew((Map<ProcessID, ProcessInfo>));
 
+	// Add current Godot PID to the list of known PIDs
+	ProcessInfo current_pi = {};
+	PROCESS_INFORMATION current_pi_pi = {};
+	current_pi.pi = current_pi_pi;
+	current_pi.pi.hProcess = GetCurrentProcess();
+	process_map->insert(GetCurrentProcessId(), current_pi);
+
 	IP_Unix::make_default();
 
 	cursor_shape = CURSOR_ARROW;
@@ -593,10 +600,36 @@ LRESULT OS_Windows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 					old_x = mm->get_position().x;
 					old_y = mm->get_position().y;
 					if (window_has_focus && main_loop)
-						input->parse_input_event(mm);
+						input->accumulate_input_event(mm);
 				}
 				return 0;
 			}
+		} break;
+		case WM_POINTERENTER: {
+			if (mouse_mode == MOUSE_MODE_CAPTURED && use_raw_input) {
+				break;
+			}
+
+			if ((get_current_tablet_driver() != "winink") || !winink_available) {
+				break;
+			}
+
+			uint32_t pointer_id = LOWORD(wParam);
+			POINTER_INPUT_TYPE pointer_type = PT_POINTER;
+			if (!win8p_GetPointerType(pointer_id, &pointer_type)) {
+				break;
+			}
+
+			if (pointer_type != PT_PEN) {
+				break;
+			}
+
+			block_mm = true;
+			return 0;
+		} break;
+		case WM_POINTERLEAVE: {
+			block_mm = false;
+			return 0;
 		} break;
 		case WM_POINTERUPDATE: {
 			if (mouse_mode == MOUSE_MODE_CAPTURED && use_raw_input) {
@@ -713,11 +746,14 @@ LRESULT OS_Windows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 			old_x = mm->get_position().x;
 			old_y = mm->get_position().y;
 			if (window_has_focus && main_loop)
-				input->parse_input_event(mm);
-
-			return 0; //Pointer event handled return 0 to avoid duplicate WM_MOUSEMOVE event
+				input->accumulate_input_event(mm);
+			return 0;
 		} break;
 		case WM_MOUSEMOVE: {
+			if (block_mm) {
+				break;
+			}
+
 			if (mouse_mode == MOUSE_MODE_CAPTURED && use_raw_input) {
 				break;
 			}
@@ -1055,9 +1091,9 @@ LRESULT OS_Windows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 		case WM_KEYDOWN: {
 
 			if (wParam == VK_SHIFT)
-				shift_mem = uMsg == WM_KEYDOWN;
+				shift_mem = (uMsg == WM_KEYDOWN || uMsg == WM_SYSKEYDOWN);
 			if (wParam == VK_CONTROL)
-				control_mem = uMsg == WM_KEYDOWN;
+				control_mem = (uMsg == WM_KEYDOWN || uMsg == WM_SYSKEYDOWN);
 			if (wParam == VK_MENU) {
 				alt_mem = (uMsg == WM_KEYDOWN || uMsg == WM_SYSKEYDOWN);
 				if (lParam & (1 << 24))
@@ -1150,10 +1186,11 @@ LRESULT OS_Windows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 			if (LOWORD(lParam) == HTCLIENT) {
 				if (window_has_focus && (mouse_mode == MOUSE_MODE_HIDDEN || mouse_mode == MOUSE_MODE_CAPTURED)) {
 					//Hide the cursor
-					if (hCursor == NULL)
+					if (hCursor == NULL) {
 						hCursor = SetCursor(NULL);
-					else
+					} else {
 						SetCursor(NULL);
+					}
 				} else {
 					if (hCursor != NULL) {
 						CursorShape c = cursor_shape;
@@ -1696,7 +1733,7 @@ void OS_Windows::set_clipboard(const String &p_text) {
 
 	// Convert LF line endings to CRLF in clipboard content
 	// Otherwise, line endings won't be visible when pasted in other software
-	String text = p_text.replace("\n", "\r\n");
+	String text = p_text.replace("\r\n", "\n").replace("\n", "\r\n"); // avoid \r\r\n
 
 	if (!OpenClipboard(hWnd)) {
 		ERR_FAIL_MSG("Unable to open clipboard.");
@@ -1828,9 +1865,9 @@ void OS_Windows::set_mouse_mode(MouseMode p_mode) {
 	if (mouse_mode == p_mode)
 		return;
 
-	_set_mouse_mode_impl(p_mode);
-
 	mouse_mode = p_mode;
+
+	_set_mouse_mode_impl(p_mode);
 }
 
 void OS_Windows::_set_mouse_mode_impl(MouseMode p_mode) {
@@ -1854,7 +1891,11 @@ void OS_Windows::_set_mouse_mode_impl(MouseMode p_mode) {
 	}
 
 	if (p_mode == MOUSE_MODE_CAPTURED || p_mode == MOUSE_MODE_HIDDEN) {
-		hCursor = SetCursor(NULL);
+		if (hCursor == NULL) {
+			hCursor = SetCursor(NULL);
+		} else {
+			SetCursor(NULL);
+		}
 	} else {
 		CursorShape c = cursor_shape;
 		cursor_shape = CURSOR_MAX;
@@ -2509,12 +2550,29 @@ void OS_Windows::delay_usec(uint32_t p_usec) const {
 uint64_t OS_Windows::get_ticks_usec() const {
 
 	uint64_t ticks;
-	uint64_t time;
+
 	// This is the number of clock ticks since start
 	if (!QueryPerformanceCounter((LARGE_INTEGER *)&ticks))
 		ticks = (UINT64)timeGetTime();
+
 	// Divide by frequency to get the time in seconds
-	time = ticks * 1000000L / ticks_per_second;
+	// original calculation shown below is subject to overflow
+	// with high ticks_per_second and a number of days since the last reboot.
+	// time = ticks * 1000000L / ticks_per_second;
+
+	// we can prevent this by either using 128 bit math
+	// or separating into a calculation for seconds, and the fraction
+	uint64_t seconds = ticks / ticks_per_second;
+
+	// compiler will optimize these two into one divide
+	uint64_t leftover = ticks % ticks_per_second;
+
+	// remainder
+	uint64_t time = (leftover * 1000000L) / ticks_per_second;
+
+	// seconds
+	time += seconds * 1000000L;
+
 	// Subtract the time at game start to get
 	// the time since the game started
 	time -= ticks_start;
@@ -3212,6 +3270,101 @@ OS::LatinKeyboardVariant OS_Windows::get_latin_keyboard_variant() const {
 	return LATIN_KEYBOARD_QWERTY;
 }
 
+int OS_Windows::keyboard_get_layout_count() const {
+	return GetKeyboardLayoutList(0, NULL);
+}
+
+int OS_Windows::keyboard_get_current_layout() const {
+	HKL cur_layout = GetKeyboardLayout(0);
+
+	int layout_count = GetKeyboardLayoutList(0, NULL);
+	HKL *layouts = (HKL *)memalloc(layout_count * sizeof(HKL));
+	GetKeyboardLayoutList(layout_count, layouts);
+
+	for (int i = 0; i < layout_count; i++) {
+		if (cur_layout == layouts[i]) {
+			memfree(layouts);
+			return i;
+		}
+	}
+	memfree(layouts);
+	return -1;
+}
+
+void OS_Windows::keyboard_set_current_layout(int p_index) {
+	int layout_count = GetKeyboardLayoutList(0, NULL);
+
+	ERR_FAIL_INDEX(p_index, layout_count);
+
+	HKL *layouts = (HKL *)memalloc(layout_count * sizeof(HKL));
+	GetKeyboardLayoutList(layout_count, layouts);
+	ActivateKeyboardLayout(layouts[p_index], KLF_SETFORPROCESS);
+	memfree(layouts);
+}
+
+String OS_Windows::keyboard_get_layout_language(int p_index) const {
+	int layout_count = GetKeyboardLayoutList(0, NULL);
+
+	ERR_FAIL_INDEX_V(p_index, layout_count, "");
+
+	HKL *layouts = (HKL *)memalloc(layout_count * sizeof(HKL));
+	GetKeyboardLayoutList(layout_count, layouts);
+
+	wchar_t buf[LOCALE_NAME_MAX_LENGTH];
+	memset(buf, 0, LOCALE_NAME_MAX_LENGTH * sizeof(wchar_t));
+	LCIDToLocaleName(MAKELCID(LOWORD(layouts[p_index]), SORT_DEFAULT), buf, LOCALE_NAME_MAX_LENGTH, 0);
+
+	memfree(layouts);
+
+	return String(buf).substr(0, 2);
+}
+
+String _get_full_layout_name_from_registry(HKL p_layout) {
+	String id = "SYSTEM\\CurrentControlSet\\Control\\Keyboard Layouts\\" + String::num_int64((int64_t)p_layout, 16, false).lpad(8, "0");
+	String ret;
+
+	HKEY hkey;
+	wchar_t layout_text[1024];
+	memset(layout_text, 0, 1024 * sizeof(wchar_t));
+
+	if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, (LPCWSTR)id.c_str(), 0, KEY_QUERY_VALUE, &hkey) != ERROR_SUCCESS) {
+		return ret;
+	}
+
+	DWORD buffer = 1024;
+	DWORD vtype = REG_SZ;
+	if (RegQueryValueExW(hkey, L"Layout Text", NULL, &vtype, (LPBYTE)layout_text, &buffer) == ERROR_SUCCESS) {
+		ret = String(layout_text);
+	}
+	RegCloseKey(hkey);
+	return ret;
+}
+
+String OS_Windows::keyboard_get_layout_name(int p_index) const {
+	int layout_count = GetKeyboardLayoutList(0, NULL);
+
+	ERR_FAIL_INDEX_V(p_index, layout_count, "");
+
+	HKL *layouts = (HKL *)memalloc(layout_count * sizeof(HKL));
+	GetKeyboardLayoutList(layout_count, layouts);
+
+	String ret = _get_full_layout_name_from_registry(layouts[p_index]); // Try reading full name from Windows registry, fallback to locale name if failed (e.g. on Wine).
+	if (ret == String()) {
+		wchar_t buf[LOCALE_NAME_MAX_LENGTH];
+		memset(buf, 0, LOCALE_NAME_MAX_LENGTH * sizeof(wchar_t));
+		LCIDToLocaleName(MAKELCID(LOWORD(layouts[p_index]), SORT_DEFAULT), buf, LOCALE_NAME_MAX_LENGTH, 0);
+
+		wchar_t name[1024];
+		memset(name, 0, 1024 * sizeof(wchar_t));
+		GetLocaleInfoEx(buf, LOCALE_SLOCALIZEDDISPLAYNAME, (LPWSTR)&name, 1024);
+
+		ret = String(name);
+	}
+	memfree(layouts);
+
+	return ret;
+}
+
 void OS_Windows::release_rendering_thread() {
 
 	gl_context->release_current();
@@ -3466,11 +3619,11 @@ int OS_Windows::get_tablet_driver_count() const {
 	return tablet_drivers.size();
 }
 
-const char *OS_Windows::get_tablet_driver_name(int p_driver) const {
+String OS_Windows::get_tablet_driver_name(int p_driver) const {
 	if (p_driver < 0 || p_driver >= tablet_drivers.size()) {
 		return "";
 	} else {
-		return tablet_drivers[p_driver].utf8().get_data();
+		return tablet_drivers[p_driver];
 	}
 }
 
@@ -3479,6 +3632,9 @@ String OS_Windows::get_current_tablet_driver() const {
 }
 
 void OS_Windows::set_current_tablet_driver(const String &p_driver) {
+	if (get_tablet_driver_count() == 0) {
+		return;
+	}
 	bool found = false;
 	for (int i = 0; i < get_tablet_driver_count(); i++) {
 		if (p_driver == get_tablet_driver_name(i)) {
@@ -3487,6 +3643,7 @@ void OS_Windows::set_current_tablet_driver(const String &p_driver) {
 	}
 	if (found) {
 		if (hWnd) {
+			block_mm = false;
 			if ((tablet_driver == "wintab") && wintab_available && wtctx) {
 				wintab_WTEnable(wtctx, false);
 				wintab_WTClose(wtctx);

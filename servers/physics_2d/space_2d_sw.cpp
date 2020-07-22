@@ -34,9 +34,9 @@
 #include "core/os/os.h"
 #include "core/pair.h"
 #include "physics_2d_server_sw.h"
-_FORCE_INLINE_ static bool _can_collide_with(CollisionObject2DSW *p_object, uint32_t p_collision_mask, bool p_collide_with_bodies, bool p_collide_with_areas) {
 
-	if (!(p_object->get_collision_layer() & p_collision_mask)) {
+_FORCE_INLINE_ static bool _can_collide_with(CollisionObject2DSW *p_object, uint32_t p_collision_mask, bool p_collide_with_bodies, bool p_collide_with_areas, bool p_ignore_layers = false) {
+	if (!p_ignore_layers && !(p_object->get_collision_layer() & p_collision_mask)) {
 		return false;
 	}
 
@@ -63,8 +63,7 @@ int Physics2DDirectSpaceStateSW::_intersect_point_impl(const Vector2 &p_point, S
 	int cc = 0;
 
 	for (int i = 0; i < amount; i++) {
-
-		if (!_can_collide_with(space->intersection_query_results[i], p_collision_mask, p_collide_with_bodies, p_collide_with_areas))
+		if (!_can_collide_with(space->intersection_query_results[i], p_collision_mask, p_collide_with_bodies, p_collide_with_areas, p_filter_by_canvas))
 			continue;
 
 		if (p_exclude.has(space->intersection_query_results[i]->get_self()))
@@ -1122,6 +1121,9 @@ bool Space2DSW::test_body_motion(Body2DSW *p_body, const Transform2D &p_from, co
 }
 
 void *Space2DSW::_broadphase_pair(CollisionObject2DSW *A, int p_subindex_A, CollisionObject2DSW *B, int p_subindex_B, void *p_self) {
+	if (!A->test_collision_mask(B)) {
+		return nullptr;
+	}
 
 	CollisionObject2DSW::Type type_A = A->get_type();
 	CollisionObject2DSW::Type type_B = B->get_type();
@@ -1160,6 +1162,9 @@ void *Space2DSW::_broadphase_pair(CollisionObject2DSW *A, int p_subindex_A, Coll
 }
 
 void Space2DSW::_broadphase_unpair(CollisionObject2DSW *A, int p_subindex_A, CollisionObject2DSW *B, int p_subindex_B, void *p_data, void *p_self) {
+	if (!p_data) {
+		return;
+	}
 
 	Space2DSW *self = (Space2DSW *)p_self;
 	self->collision_pairs--;

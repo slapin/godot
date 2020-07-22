@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 using GodotTools.Ides;
 using GodotTools.Ides.Rider;
 using GodotTools.Internals;
@@ -250,7 +251,31 @@ namespace GodotTools
                     // Not an error. Tells the caller to fallback to the global external editor settings or the built-in editor.
                     return Error.Unavailable;
                 case ExternalEditorId.VisualStudio:
-                    throw new NotSupportedException();
+                {
+                    string scriptPath = ProjectSettings.GlobalizePath(script.ResourcePath);
+
+                    var args = new List<string>
+                    {
+                        GodotSharpDirs.ProjectSlnPath,
+                        line >= 0 ? $"{scriptPath};{line + 1};{col + 1}" : scriptPath
+                    };
+
+                    string command = Path.Combine(GodotSharpDirs.DataEditorToolsDir, "GodotTools.OpenVisualStudio.exe");
+
+                    try
+                    {
+                        if (Godot.OS.IsStdoutVerbose())
+                            Console.WriteLine($"Running: \"{command}\" {string.Join(" ", args.Select(a => $"\"{a}\""))}");
+
+                        OS.RunProcess(command, args);
+                    }
+                    catch (Exception e)
+                    {
+                        GD.PushError($"Error when trying to run code editor: VisualStudio. Exception message: '{e.Message}'");
+                    }
+
+                    break;
+                }
                 case ExternalEditorId.VisualStudioForMac:
                     goto case ExternalEditorId.MonoDevelop;
                 case ExternalEditorId.Rider:
@@ -436,7 +461,7 @@ namespace GodotTools
                 aboutLabel.Text =
                     "C# support in Godot Engine is in late alpha stage and, while already usable, " +
                     "it is not meant for use in production.\n\n" +
-                    "Projects can be exported to Linux, macOS, Windows and Android, but not yet to iOS, HTML5 or UWP. " +
+                    "Projects can be exported to Linux, macOS, Windows, Android, iOS and HTML5, but not yet to UWP. " +
                     "Bugs and usability issues will be addressed gradually over future releases, " +
                     "potentially including compatibility breaking changes as new features are implemented for a better overall C# experience.\n\n" +
                     "If you experience issues with this Mono build, please report them on Godot's issue tracker with details about your system, MSBuild version, IDE, etc.:\n\n" +
@@ -467,6 +492,9 @@ namespace GodotTools
                     ProjectUtils.MigrateFromOldConfigNames(msbuildProject);
 
                     // Apply the other fixes only after configurations have been migrated
+
+                    // Make sure the existing project has the ProjectTypeGuids property (for VisualStudio)
+                    ProjectUtils.EnsureHasProjectTypeGuids(msbuildProject);
 
                     // Make sure the existing project has Api assembly references configured correctly
                     ProjectUtils.FixApiHintPath(msbuildProject);
@@ -511,7 +539,8 @@ namespace GodotTools
 
             if (OS.IsWindows)
             {
-                settingsHintStr += $",MonoDevelop:{(int)ExternalEditorId.MonoDevelop}" +
+                settingsHintStr += $",Visual Studio:{(int)ExternalEditorId.VisualStudio}" +
+                                   $",MonoDevelop:{(int)ExternalEditorId.MonoDevelop}" +
                                    $",Visual Studio Code:{(int)ExternalEditorId.VsCode}" +
                                    $",JetBrains Rider:{(int)ExternalEditorId.Rider}";
             }

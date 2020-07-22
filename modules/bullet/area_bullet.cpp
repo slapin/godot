@@ -53,7 +53,7 @@ AreaBullet::AreaBullet() :
 		spOv_gravityVec(0, -1, 0),
 		spOv_gravityMag(10),
 		spOv_linearDump(0.1),
-		spOv_angularDump(1),
+		spOv_angularDump(0.1),
 		spOv_priority(0),
 		isScratched(false) {
 
@@ -181,6 +181,7 @@ void AreaBullet::reload_body() {
 void AreaBullet::set_space(SpaceBullet *p_space) {
 	// Clear the old space if there is one
 	if (space) {
+		clear_overlaps(false);
 		isScratched = false;
 
 		// Remove this object form the physics world

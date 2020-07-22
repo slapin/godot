@@ -582,11 +582,14 @@ void ScriptEditor::_close_tab(int p_idx, bool p_save, bool p_history_back) {
 
 	ScriptEditorBase *current = Object::cast_to<ScriptEditorBase>(tab_container->get_child(selected));
 	if (current) {
+		Ref<Script> script = current->get_edited_resource();
 		if (p_save) {
-			apply_scripts();
+			// Do not try to save internal scripts
+			if (!(script->get_path() == "" || script->get_path().find("local://") != -1 || script->get_path().find("::") != -1)) {
+				_menu_option(FILE_SAVE);
+			}
 		}
 
-		Ref<Script> script = current->get_edited_resource();
 		if (script != NULL) {
 			previous_scripts.push_back(script->get_path());
 			notify_script_close(script);
@@ -902,7 +905,6 @@ void ScriptEditor::_file_dialog_action(String p_file) {
 			Error err;
 			FileAccess *file = FileAccess::open(p_file, FileAccess::WRITE, &err);
 			if (err) {
-				memdelete(file);
 				editor->show_warning(TTR("Error writing TextFile:") + "\n" + p_file, TTR("Error!"));
 				break;
 			}
@@ -3297,7 +3299,7 @@ ScriptEditor::ScriptEditor(EditorNode *p_editor) {
 	file_menu->get_popup()->add_separator();
 	file_menu->get_popup()->add_shortcut(ED_SHORTCUT("script_editor/save", TTR("Save"), KEY_MASK_ALT | KEY_MASK_CMD | KEY_S), FILE_SAVE);
 	file_menu->get_popup()->add_shortcut(ED_SHORTCUT("script_editor/save_as", TTR("Save As...")), FILE_SAVE_AS);
-	file_menu->get_popup()->add_shortcut(ED_SHORTCUT("script_editor/save_all", TTR("Save All"), KEY_MASK_CMD | KEY_MASK_SHIFT | KEY_MASK_ALT | KEY_S), FILE_SAVE_ALL);
+	file_menu->get_popup()->add_shortcut(ED_SHORTCUT("script_editor/save_all", TTR("Save All"), KEY_MASK_SHIFT | KEY_MASK_ALT | KEY_S), FILE_SAVE_ALL);
 	file_menu->get_popup()->add_separator();
 	file_menu->get_popup()->add_shortcut(ED_SHORTCUT("script_editor/reload_script_soft", TTR("Soft Reload Script"), KEY_MASK_CMD | KEY_MASK_SHIFT | KEY_R), FILE_TOOL_RELOAD_SOFT);
 	file_menu->get_popup()->add_shortcut(ED_SHORTCUT("script_editor/copy_path", TTR("Copy Script Path")), FILE_COPY_PATH);

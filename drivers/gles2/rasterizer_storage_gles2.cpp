@@ -711,7 +711,11 @@ void RasterizerStorageGLES2::texture_set_data(RID p_texture, const Ref<Image> &p
 	texture->ignore_mipmaps = compressed && !img->has_mipmaps();
 
 	if ((texture->flags & VS::TEXTURE_FLAG_MIPMAPS) && !texture->ignore_mipmaps)
-		glTexParameteri(texture->target, GL_TEXTURE_MIN_FILTER, config.use_fast_texture_filter ? GL_LINEAR_MIPMAP_NEAREST : GL_LINEAR_MIPMAP_LINEAR);
+		if (texture->flags & VS::TEXTURE_FLAG_FILTER) {
+			glTexParameteri(texture->target, GL_TEXTURE_MIN_FILTER, config.use_fast_texture_filter ? GL_LINEAR_MIPMAP_NEAREST : GL_LINEAR_MIPMAP_LINEAR);
+		} else {
+			glTexParameteri(texture->target, GL_TEXTURE_MIN_FILTER, config.use_fast_texture_filter ? GL_NEAREST_MIPMAP_NEAREST : GL_NEAREST_MIPMAP_LINEAR);
+		}
 	else {
 		if (texture->flags & VS::TEXTURE_FLAG_FILTER) {
 			glTexParameteri(texture->target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -957,7 +961,11 @@ void RasterizerStorageGLES2::texture_set_flags(RID p_texture, uint32_t p_flags) 
 		if (!had_mipmaps && texture->mipmaps == 1) {
 			glGenerateMipmap(texture->target);
 		}
-		glTexParameteri(texture->target, GL_TEXTURE_MIN_FILTER, config.use_fast_texture_filter ? GL_LINEAR_MIPMAP_NEAREST : GL_LINEAR_MIPMAP_LINEAR);
+		if (texture->flags & VS::TEXTURE_FLAG_FILTER) {
+			glTexParameteri(texture->target, GL_TEXTURE_MIN_FILTER, config.use_fast_texture_filter ? GL_LINEAR_MIPMAP_NEAREST : GL_LINEAR_MIPMAP_LINEAR);
+		} else {
+			glTexParameteri(texture->target, GL_TEXTURE_MIN_FILTER, config.use_fast_texture_filter ? GL_NEAREST_MIPMAP_NEAREST : GL_NEAREST_MIPMAP_LINEAR);
+		}
 
 	} else {
 		if (texture->flags & VS::TEXTURE_FLAG_FILTER) {
@@ -1426,7 +1434,7 @@ void RasterizerStorageGLES2::_update_shader(Shader *p_shader) const {
 			p_shader->canvas_item.uses_time = false;
 			p_shader->canvas_item.uses_modulate = false;
 			p_shader->canvas_item.uses_color = false;
-			p_shader->canvas_item.reads_vertex = false;
+			p_shader->canvas_item.uses_vertex = false;
 			p_shader->canvas_item.batch_flags = 0;
 
 			shaders.actions_canvas.render_mode_values["blend_add"] = Pair<int *, int>(&p_shader->canvas_item.blend_mode, Shader::CanvasItem::BLEND_MODE_ADD);
@@ -1444,8 +1452,7 @@ void RasterizerStorageGLES2::_update_shader(Shader *p_shader) const {
 			shaders.actions_canvas.usage_flag_pointers["TIME"] = &p_shader->canvas_item.uses_time;
 			shaders.actions_canvas.usage_flag_pointers["MODULATE"] = &p_shader->canvas_item.uses_modulate;
 			shaders.actions_canvas.usage_flag_pointers["COLOR"] = &p_shader->canvas_item.uses_color;
-
-			shaders.actions_canvas.read_flag_pointers["VERTEX"] = &p_shader->canvas_item.reads_vertex;
+			shaders.actions_canvas.usage_flag_pointers["VERTEX"] = &p_shader->canvas_item.uses_vertex;
 
 			actions = &shaders.actions_canvas;
 			actions->uniforms = &p_shader->uniforms;
@@ -1538,7 +1545,7 @@ void RasterizerStorageGLES2::_update_shader(Shader *p_shader) const {
 		if (p_shader->canvas_item.uses_modulate | p_shader->canvas_item.uses_color) {
 			p_shader->canvas_item.batch_flags |= Shader::CanvasItem::PREVENT_COLOR_BAKING;
 		}
-		if (p_shader->canvas_item.reads_vertex) {
+		if (p_shader->canvas_item.uses_vertex) {
 			p_shader->canvas_item.batch_flags |= Shader::CanvasItem::PREVENT_VERTEX_BAKING;
 		}
 	}
@@ -2668,9 +2675,7 @@ PoolVector<uint8_t> RasterizerStorageGLES2::mesh_surface_get_array(RID p_mesh, i
 	ERR_FAIL_INDEX_V(p_surface, mesh->surfaces.size(), PoolVector<uint8_t>());
 
 	Surface *surface = mesh->surfaces[p_surface];
-#ifndef TOOLS_ENABLED
-	ERR_PRINT("OpenGL ES 2.0 does not allow retrieving mesh array data");
-#endif
+
 	return surface->data;
 }
 
@@ -2714,7 +2719,7 @@ Vector<PoolVector<uint8_t> > RasterizerStorageGLES2::mesh_surface_get_blend_shap
 	ERR_FAIL_COND_V(!mesh, Vector<PoolVector<uint8_t> >());
 	ERR_FAIL_INDEX_V(p_surface, mesh->surfaces.size(), Vector<PoolVector<uint8_t> >());
 #ifndef TOOLS_ENABLED
-	ERR_PRINT("OpenGL ES 2.0 does not allow retrieving mesh array data");
+	ERR_PRINT("OpenGL ES 2.0 does not allow retrieving blend shape data");
 #endif
 
 	return mesh->surfaces[p_surface]->blend_shape_data;
@@ -5973,7 +5978,7 @@ void RasterizerStorageGLES2::initialize() {
 #ifdef JAVASCRIPT_ENABLED
 	config.support_half_float_vertices = false;
 #endif
-	bool disable_half_float = GLOBAL_GET("rendering/gles2/debug/disable_half_float");
+	bool disable_half_float = GLOBAL_GET("rendering/gles2/compatibility/disable_half_float");
 	if (disable_half_float) {
 		config.support_half_float_vertices = false;
 	}

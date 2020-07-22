@@ -30,6 +30,9 @@
 		<member name="Geometry" type="Geometry" setter="" getter="">
 			The [Geometry] singleton.
 		</member>
+		<member name="GodotSharp" type="GodotSharp" setter="" getter="">
+			The [GodotSharp] singleton.
+		</member>
 		<member name="IP" type="IP" setter="" getter="">
 			The [IP] singleton.
 		</member>
@@ -933,6 +936,9 @@
 		</constant>
 		<constant name="BUTTON_MASK_XBUTTON2" value="256" enum="ButtonList">
 			Extra mouse button 2 mask.
+		</constant>
+		<constant name="JOY_INVALID_OPTION" value="-1" enum="JoystickList">
+			Invalid button or axis.
 		</constant>
 		<constant name="JOY_BUTTON_0" value="0" enum="JoystickList">
 			Gamepad button 0.

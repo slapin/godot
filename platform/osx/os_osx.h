@@ -65,6 +65,13 @@ public:
 		uint32_t unicode;
 	};
 
+	struct WarpEvent {
+		NSTimeInterval timestamp;
+		NSPoint delta;
+	};
+	List<WarpEvent> warp_events;
+	NSTimeInterval last_warp = 0;
+
 	Vector<KeyEvent> key_event_buffer;
 	int key_event_pos;
 
@@ -138,16 +145,6 @@ public:
 
 	CrashHandler crash_handler;
 
-	float _mouse_scale(float p_scale) {
-		if (_display_scale() > 1.0)
-			return p_scale;
-		else
-			return 1.0;
-	}
-
-	float _display_scale() const;
-	float _display_scale(id screen) const;
-
 	void _update_window();
 
 	int video_driver_index;
@@ -170,6 +167,7 @@ public:
 	};
 
 	Map<String, Vector<GlobalMenuItem> > global_menus;
+	List<String> global_menus_order;
 
 	void _update_global_menu();
 
@@ -247,6 +245,11 @@ public:
 	virtual String get_executable_path() const;
 
 	virtual LatinKeyboardVariant get_latin_keyboard_variant() const;
+	virtual int keyboard_get_layout_count() const;
+	virtual int keyboard_get_current_layout() const;
+	virtual void keyboard_set_current_layout(int p_index);
+	virtual String keyboard_get_layout_language(int p_index) const;
+	virtual String keyboard_get_layout_name(int p_index) const;
 
 	virtual void move_window_to_foreground();
 
@@ -256,6 +259,8 @@ public:
 	virtual Point2 get_screen_position(int p_screen = -1) const;
 	virtual Size2 get_screen_size(int p_screen = -1) const;
 	virtual int get_screen_dpi(int p_screen = -1) const;
+	virtual float get_screen_scale(int p_screen = -1) const;
+	virtual float get_screen_max_scale() const;
 
 	virtual Point2 get_window_position() const;
 	virtual void set_window_position(const Point2 &p_position);

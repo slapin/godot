@@ -743,6 +743,7 @@ struct _VariantCall {
 #define VCALL_PTR5R(m_type, m_method) \
 	static void _call_##m_type##_##m_method(Variant &r_ret, Variant &p_self, const Variant **p_args) { r_ret = reinterpret_cast<m_type *>(p_self._data._ptr)->m_method(*p_args[0], *p_args[1], *p_args[2], *p_args[3], *p_args[4]); }
 
+	VCALL_PTR0R(AABB, abs);
 	VCALL_PTR0R(AABB, get_area);
 	VCALL_PTR0R(AABB, has_no_area);
 	VCALL_PTR0R(AABB, has_no_surface);
@@ -824,6 +825,18 @@ struct _VariantCall {
 	VCALL_PTR1R(Basis, scaled);
 	VCALL_PTR0R(Basis, get_scale);
 	VCALL_PTR0R(Basis, get_euler);
+	VCALL_PTR0R(Basis, get_euler_xyz);
+	VCALL_PTR1(Basis, set_euler_xyz);
+	VCALL_PTR0R(Basis, get_euler_xzy);
+	VCALL_PTR1(Basis, set_euler_xzy);
+	VCALL_PTR0R(Basis, get_euler_yzx);
+	VCALL_PTR1(Basis, set_euler_yzx);
+	VCALL_PTR0R(Basis, get_euler_yxz);
+	VCALL_PTR1(Basis, set_euler_yxz);
+	VCALL_PTR0R(Basis, get_euler_zxy);
+	VCALL_PTR1(Basis, set_euler_zxy);
+	VCALL_PTR0R(Basis, get_euler_zyx);
+	VCALL_PTR1(Basis, set_euler_zyx);
 	VCALL_PTR1R(Basis, tdotx);
 	VCALL_PTR1R(Basis, tdoty);
 	VCALL_PTR1R(Basis, tdotz);
@@ -1061,6 +1074,9 @@ struct _VariantCall {
 		List<StringName> value_ordered;
 #endif
 		Map<StringName, Variant> variant_value;
+#ifdef DEBUG_ENABLED
+		List<StringName> variant_value_ordered;
+#endif
 	};
 
 	static ConstantData *constant_data;
@@ -1076,6 +1092,9 @@ struct _VariantCall {
 	static void add_variant_constant(int p_type, StringName p_constant_name, const Variant &p_constant_value) {
 
 		constant_data[p_type].variant_value[p_constant_name] = p_constant_value;
+#ifdef DEBUG_ENABLED
+		constant_data[p_type].variant_value_ordered.push_back(p_constant_name);
+#endif
 	}
 };
 
@@ -1441,9 +1460,14 @@ void Variant::get_constants_for_type(Variant::Type p_type, List<StringName> *p_c
 #endif
 	}
 
+#ifdef DEBUG_ENABLED
+	for (List<StringName>::Element *E = cd.variant_value_ordered.front(); E; E = E->next()) {
+		p_constants->push_back(E->get());
+#else
 	for (Map<StringName, Variant>::Element *E = cd.variant_value.front(); E; E = E->next()) {
 
 		p_constants->push_back(E->key());
+#endif
 	}
 }
 
@@ -1886,6 +1910,7 @@ void register_variant_methods() {
 
 	//pointerbased
 
+	ADDFUNC0R(AABB, AABB, AABB, abs, varray());
 	ADDFUNC0R(AABB, REAL, AABB, get_area, varray());
 	ADDFUNC0R(AABB, BOOL, AABB, has_no_area, varray());
 	ADDFUNC0R(AABB, BOOL, AABB, has_no_surface, varray());

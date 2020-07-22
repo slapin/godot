@@ -1682,8 +1682,9 @@ int String::hex_to_int(bool p_with_prefix) const {
 		} else {
 			return 0;
 		}
-
-		ERR_FAIL_COND_V_MSG(hex > INT32_MAX / 16, sign == 1 ? INT32_MAX : INT32_MIN, "Cannot represent " + *this + " as integer, provided value is " + (sign == 1 ? "too big." : "too small."));
+		// Check for overflow/underflow, with special case to ensure INT32_MIN does not result in error
+		bool overflow = ((hex > INT32_MAX / 16) && (sign == 1 || (sign == -1 && hex != (INT32_MAX >> 4) + 1))) || (sign == -1 && hex == (INT32_MAX >> 4) + 1 && c > '0');
+		ERR_FAIL_COND_V_MSG(overflow, sign == 1 ? INT32_MAX : INT32_MIN, "Cannot represent " + *this + " as integer, provided value is " + (sign == 1 ? "too big." : "too small."));
 		hex *= 16;
 		hex += n;
 		s++;
@@ -1724,8 +1725,8 @@ int64_t String::hex_to_int64(bool p_with_prefix) const {
 		} else {
 			return 0;
 		}
-
-		ERR_FAIL_COND_V_MSG(hex > INT64_MAX / 16, sign == 1 ? INT64_MAX : INT64_MIN, "Cannot represent " + *this + " as 64-bit integer, provided value is " + (sign == 1 ? "too big." : "too small."));
+		bool overflow = ((hex > INT64_MAX / 16) && (sign == 1 || (sign == -1 && hex != (INT64_MAX >> 4) + 1))) || (sign == -1 && hex == (INT64_MAX >> 4) + 1 && c > '0');
+		ERR_FAIL_COND_V_MSG(overflow, sign == 1 ? INT64_MAX : INT64_MIN, "Cannot represent " + *this + " as 64-bit integer, provided value is " + (sign == 1 ? "too big." : "too small."));
 		hex *= 16;
 		hex += n;
 		s++;
@@ -1764,8 +1765,9 @@ int64_t String::bin_to_int64(bool p_with_prefix) const {
 		} else {
 			return 0;
 		}
-
-		ERR_FAIL_COND_V_MSG(binary > INT64_MAX / 2, sign == 1 ? INT64_MAX : INT64_MIN, "Cannot represent " + *this + " as 64-bit integer, provided value is " + (sign == 1 ? "too big." : "too small."));
+		// Check for overflow/underflow, with special case to ensure INT64_MIN does not result in error
+		bool overflow = ((binary > INT64_MAX / 2) && (sign == 1 || (sign == -1 && binary != (INT64_MAX >> 1) + 1))) || (sign == -1 && binary == (INT64_MAX >> 1) + 1 && c > '0');
+		ERR_FAIL_COND_V_MSG(overflow, sign == 1 ? INT64_MAX : INT64_MIN, "Cannot represent " + *this + " as 64-bit integer, provided value is " + (sign == 1 ? "too big." : "too small."));
 		binary *= 2;
 		binary += n;
 		s++;
@@ -1788,8 +1790,8 @@ int String::to_int() const {
 
 		CharType c = operator[](i);
 		if (c >= '0' && c <= '9') {
-
-			ERR_FAIL_COND_V_MSG(integer > INT32_MAX / 10, sign == 1 ? INT32_MAX : INT32_MIN, "Cannot represent " + *this + " as integer, provided value is " + (sign == 1 ? "too big." : "too small."));
+			bool overflow = (integer > INT32_MAX / 10) || (integer == INT32_MAX / 10 && ((sign == 1 && c > '7') || (sign == -1 && c > '8')));
+			ERR_FAIL_COND_V_MSG(overflow, sign == 1 ? INT32_MAX : INT32_MIN, "Cannot represent " + *this + " as integer, provided value is " + (sign == 1 ? "too big." : "too small."));
 			integer *= 10;
 			integer += c - '0';
 
@@ -1813,16 +1815,14 @@ int64_t String::to_int64() const {
 	int64_t sign = 1;
 
 	for (int i = 0; i < to; i++) {
-
 		CharType c = operator[](i);
 		if (c >= '0' && c <= '9') {
-
-			ERR_FAIL_COND_V_MSG(integer > INT64_MAX / 10, sign == 1 ? INT64_MAX : INT64_MIN, "Cannot represent " + *this + " as 64-bit integer, provided value is " + (sign == 1 ? "too big." : "too small."));
+			bool overflow = (integer > INT64_MAX / 10) || (integer == INT64_MAX / 10 && ((sign == 1 && c > '7') || (sign == -1 && c > '8')));
+			ERR_FAIL_COND_V_MSG(overflow, sign == 1 ? INT64_MAX : INT64_MIN, "Cannot represent " + *this + " as 64-bit integer, provided value is " + (sign == 1 ? "too big." : "too small."));
 			integer *= 10;
 			integer += c - '0';
 
 		} else if (integer == 0 && c == '-') {
-
 			sign = -sign;
 		}
 	}
@@ -1847,8 +1847,8 @@ int String::to_int(const char *p_str, int p_len) {
 
 		char c = p_str[i];
 		if (c >= '0' && c <= '9') {
-
-			ERR_FAIL_COND_V_MSG(integer > INT32_MAX / 10, sign == 1 ? INT32_MAX : INT32_MIN, "Cannot represent " + String(p_str).substr(0, to) + " as integer, provided value is " + (sign == 1 ? "too big." : "too small."));
+			bool overflow = (integer > INT32_MAX / 10) || (integer == INT32_MAX / 10 && ((sign == 1 && c > '7') || (sign == -1 && c > '8')));
+			ERR_FAIL_COND_V_MSG(overflow, sign == 1 ? INT32_MAX : INT32_MIN, "Cannot represent " + String(p_str).substr(0, to) + " as integer, provided value is " + (sign == 1 ? "too big." : "too small."));
 			integer *= 10;
 			integer += c - '0';
 
@@ -4211,27 +4211,40 @@ String String::sprintf(const Array &values, bool *error) const {
 					}
 
 					double value = values[value_index];
-					String str = String::num(value, min_decimals);
+					bool is_negative = (value < 0);
+					String str = String::num(ABS(value), min_decimals);
 
 					// Pad decimals out.
 					str = str.pad_decimals(min_decimals);
 
-					// Show sign
-					if (show_sign && str.left(1) != "-") {
-						str = str.insert(0, "+");
+					int initial_len = str.length();
+
+					// Padding. Leave room for sign later if required.
+					int pad_chars_count = (is_negative || show_sign) ? min_chars - 1 : min_chars;
+					String pad_char = pad_with_zeroes ? String("0") : String(" ");
+					if (left_justified) {
+						if (pad_with_zeroes) {
+							return "left justification cannot be used with zeros as the padding";
+						} else {
+							str = str.rpad(pad_chars_count, pad_char);
+						}
+					} else {
+						str = str.lpad(pad_chars_count, pad_char);
 					}
 
-					// Padding
-					if (left_justified) {
-						str = str.rpad(min_chars);
-					} else {
-						str = str.lpad(min_chars);
+					// Add sign if needed.
+					if (show_sign || is_negative) {
+						String sign_char = is_negative ? "-" : "+";
+						if (left_justified) {
+							str = str.insert(0, sign_char);
+						} else {
+							str = str.insert(pad_with_zeroes ? 0 : str.length() - initial_len, sign_char);
+						}
 					}
 
 					formatted += str;
 					++value_index;
 					in_format = false;
-
 					break;
 				}
 				case 's': { // String

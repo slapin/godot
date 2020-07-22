@@ -593,7 +593,9 @@ void EditorNode::_fs_changed() {
 			preset.unref();
 		}
 		if (preset.is_null()) {
-			export_error = vformat("Invalid export preset name: %s.", preset_name);
+			export_error = vformat(
+					"Invalid export preset name: %s. Make sure `export_presets.cfg` is present in the current directory.",
+					preset_name);
 		} else {
 			Ref<EditorExportPlatform> platform = preset->get_platform();
 			if (platform.is_null()) {
@@ -1108,20 +1110,25 @@ void EditorNode::_save_scene_with_preview(String p_file, int p_idx) {
 
 		_find_node_types(editor_data.get_edited_scene_root(), c2d, c3d);
 
-		bool is2d;
-		if (c3d < c2d) {
-			is2d = true;
-		} else {
-			is2d = false;
-		}
 		save.step(TTR("Creating Thumbnail"), 1);
 		//current view?
 
 		Ref<Image> img;
-		if (is2d) {
+		// If neither 3D or 2D nodes are present, make a 1x1 black texture.
+		// We cannot fallback on the 2D editor, because it may not have been used yet,
+		// which would result in an invalid texture.
+		if (c3d == 0 && c2d == 0) {
+			img.instance();
+			img->create(1, 1, 0, Image::FORMAT_RGB8);
+		} else if (c3d < c2d) {
 			img = scene_root->get_texture()->get_data();
 		} else {
-			img = SpatialEditor::get_singleton()->get_editor_viewport(0)->get_viewport_node()->get_texture()->get_data();
+			// The 3D editor may be disabled as a feature, but scenes can still be opened.
+			// This check prevents the preview from regenerating in case those scenes are then saved.
+			Ref<EditorFeatureProfile> profile = feature_profile_manager->get_current_profile();
+			if (profile.is_valid() && !profile->is_feature_disabled(EditorFeatureProfile::FEATURE_3D)) {
+				img = SpatialEditor::get_singleton()->get_editor_viewport(0)->get_viewport_node()->get_texture()->get_data();
+			}
 		}
 
 		if (img.is_valid()) {
@@ -1960,7 +1967,6 @@ void EditorNode::_run(bool p_current, const String &p_custom) {
 	play_custom_scene_button->set_pressed(false);
 	play_custom_scene_button->set_icon(gui_base->get_icon("PlayCustom", "EditorIcons"));
 
-	String main_scene;
 	String run_filename;
 	String args;
 	bool skip_breakpoints;
@@ -2385,8 +2391,7 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 
 		} break;
 		case RUN_PLAY: {
-			_menu_option_confirm(RUN_STOP, true);
-			_run(false);
+			run_play();
 
 		} break;
 		case RUN_PLAY_CUSTOM_SCENE: {
@@ -2397,8 +2402,7 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 				play_custom_scene_button->set_pressed(false);
 			} else {
 				String last_custom_scene = run_custom_filename;
-				_menu_option_confirm(RUN_STOP, true);
-				_run(false, last_custom_scene);
+				run_play_custom(last_custom_scene);
 			}
 
 		} break;
@@ -2437,10 +2441,7 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 		} break;
 
 		case RUN_PLAY_SCENE: {
-
-			_save_default_environment();
-			_menu_option_confirm(RUN_STOP, true);
-			_run(true);
+			run_play_current();
 
 		} break;
 		case RUN_PLAY_NATIVE: {
@@ -2847,8 +2848,8 @@ void EditorNode::_update_debug_options() {
 	bool check_file_server = EditorSettings::get_singleton()->get_project_metadata("debug_options", "run_file_server", false);
 	bool check_debug_collisons = EditorSettings::get_singleton()->get_project_metadata("debug_options", "run_debug_collisons", false);
 	bool check_debug_navigation = EditorSettings::get_singleton()->get_project_metadata("debug_options", "run_debug_navigation", false);
-	bool check_live_debug = EditorSettings::get_singleton()->get_project_metadata("debug_options", "run_live_debug", false);
-	bool check_reload_scripts = EditorSettings::get_singleton()->get_project_metadata("debug_options", "run_reload_scripts", false);
+	bool check_live_debug = EditorSettings::get_singleton()->get_project_metadata("debug_options", "run_live_debug", true);
+	bool check_reload_scripts = EditorSettings::get_singleton()->get_project_metadata("debug_options", "run_reload_scripts", true);
 
 	if (check_deploy_remote) _menu_option_confirm(RUN_DEPLOY_REMOTE_DEBUG, true);
 	if (check_file_server) _menu_option_confirm(RUN_FILE_SERVER, true);
@@ -3426,13 +3427,13 @@ Error EditorNode::load_scene(const String &p_scene, bool p_ignore_broken_deps, b
 	if (!new_scene) {
 
 		sdata.unref();
-		_dialog_display_load_error(lpath, ERR_FILE_NOT_FOUND);
+		_dialog_display_load_error(lpath, ERR_FILE_CORRUPT);
 		opening_prev = false;
 		if (prev != -1) {
 			set_current_scene(prev);
 			editor_data.remove_scene(idx);
 		}
-		return ERR_FILE_NOT_FOUND;
+		return ERR_FILE_CORRUPT;
 	}
 
 	if (p_set_inherited) {
@@ -3820,22 +3821,14 @@ Ref<Texture> EditorNode::get_object_icon(const Object *p_object, const String &p
 Ref<Texture> EditorNode::get_class_icon(const String &p_class, const String &p_fallback) const {
 	ERR_FAIL_COND_V_MSG(p_class.empty(), NULL, "Class name cannot be empty.");
 
-	if (gui_base->has_icon(p_class, "EditorIcons")) {
-		return gui_base->get_icon(p_class, "EditorIcons");
-	}
-
 	if (ScriptServer::is_global_class(p_class)) {
-		String icon_path = EditorNode::get_editor_data().script_class_get_icon_path(p_class);
-		Ref<ImageTexture> icon = _load_custom_class_icon(icon_path);
-		if (icon.is_valid()) {
-			return icon;
-		}
-
-		Ref<Script> script = ResourceLoader::load(ScriptServer::get_global_class_path(p_class), "Script");
+		Ref<ImageTexture> icon;
+		Ref<Script> script = EditorNode::get_editor_data().script_class_load_script(p_class);
+		StringName name = p_class;
 
 		while (script.is_valid()) {
-			String current_icon_path;
-			script->get_language()->get_global_class_name(script->get_path(), NULL, &current_icon_path);
+			name = EditorNode::get_editor_data().script_class_get_name(script->get_path());
+			String current_icon_path = EditorNode::get_editor_data().script_class_get_icon_path(name);
 			icon = _load_custom_class_icon(current_icon_path);
 			if (icon.is_valid()) {
 				return icon;
@@ -3844,7 +3837,7 @@ Ref<Texture> EditorNode::get_class_icon(const String &p_class, const String &p_f
 		}
 
 		if (icon.is_null()) {
-			icon = gui_base->get_icon(ScriptServer::get_global_class_base(p_class), "EditorIcons");
+			icon = gui_base->get_icon(ScriptServer::get_global_class_base(name), "EditorIcons");
 		}
 
 		return icon;
@@ -3862,8 +3855,13 @@ Ref<Texture> EditorNode::get_class_icon(const String &p_class, const String &p_f
 		}
 	}
 
-	if (p_fallback.length() && gui_base->has_icon(p_fallback, "EditorIcons"))
+	if (gui_base->has_icon(p_class, "EditorIcons")) {
+		return gui_base->get_icon(p_class, "EditorIcons");
+	}
+
+	if (p_fallback.length() && gui_base->has_icon(p_fallback, "EditorIcons")) {
 		return gui_base->get_icon(p_fallback, "EditorIcons");
+	}
 
 	return NULL;
 }
@@ -4297,7 +4295,6 @@ void EditorNode::_update_dock_slots_visibility() {
 		}
 
 		right_hsplit->hide();
-		bottom_panel->hide();
 	} else {
 		for (int i = 0; i < DOCK_SLOT_MAX; i++) {
 
@@ -4327,7 +4324,6 @@ void EditorNode::_update_dock_slots_visibility() {
 				dock_slot[i]->set_current_tab(0);
 			}
 		}
-		bottom_panel->show();
 
 		if (right_l_vsplit->is_visible() || right_r_vsplit->is_visible())
 			right_hsplit->show();
@@ -4544,8 +4540,33 @@ void EditorNode::run_play() {
 	_run(false);
 }
 
+void EditorNode::run_play_current() {
+	_save_default_environment();
+	_menu_option_confirm(RUN_STOP, true);
+	_run(true);
+}
+
+void EditorNode::run_play_custom(const String &p_custom) {
+	_menu_option_confirm(RUN_STOP, true);
+	_run(false, p_custom);
+}
+
 void EditorNode::run_stop() {
 	_menu_option_confirm(RUN_STOP, false);
+}
+
+bool EditorNode::is_run_playing() const {
+	EditorRun::Status status = editor_run.get_status();
+	return (status == EditorRun::STATUS_PLAY || status == EditorRun::STATUS_PAUSED);
+}
+
+String EditorNode::get_run_playing_scene() const {
+	String run_filename = editor_run.get_running_scene();
+	if (run_filename == "" && is_run_playing()) {
+		run_filename = GLOBAL_DEF("application/run/main_scene", ""); // Must be the main scene then.
+	}
+
+	return run_filename;
 }
 
 int EditorNode::get_current_tab() {
@@ -4945,7 +4966,7 @@ void EditorNode::set_distraction_free_mode(bool p_enter) {
 	}
 }
 
-bool EditorNode::get_distraction_free_mode() const {
+bool EditorNode::is_distraction_free_mode_enabled() const {
 	return distraction_free->is_pressed();
 }
 
@@ -5636,8 +5657,12 @@ EditorNode::EditorNode() {
 		switch (display_scale) {
 			case 0: {
 				// Try applying a suitable display scale automatically
+#ifdef OSX_ENABLED
+				editor_set_scale(OS::get_singleton()->get_screen_max_scale());
+#else
 				const int screen = OS::get_singleton()->get_current_screen();
 				editor_set_scale(OS::get_singleton()->get_screen_dpi(screen) >= 192 && OS::get_singleton()->get_screen_size(screen).x > 2000 ? 2.0 : 1.0);
+#endif
 			} break;
 
 			case 1: {
@@ -6229,13 +6254,10 @@ EditorNode::EditorNode() {
 	p->add_check_shortcut(ED_SHORTCUT("editor/visible_navigation", TTR("Visible Navigation")), RUN_DEBUG_NAVIGATION);
 	p->set_item_tooltip(p->get_item_count() - 1, TTR("Navigation meshes and polygons will be visible on the running game if this option is turned on."));
 	p->add_separator();
-	//those are now on by default, since they are harmless
 	p->add_check_shortcut(ED_SHORTCUT("editor/sync_scene_changes", TTR("Sync Scene Changes")), RUN_LIVE_DEBUG);
 	p->set_item_tooltip(p->get_item_count() - 1, TTR("When this option is turned on, any changes made to the scene in the editor will be replicated in the running game.\nWhen used remotely on a device, this is more efficient with network filesystem."));
-	p->set_item_checked(p->get_item_count() - 1, true);
 	p->add_check_shortcut(ED_SHORTCUT("editor/sync_script_changes", TTR("Sync Script Changes")), RUN_RELOAD_SCRIPTS);
 	p->set_item_tooltip(p->get_item_count() - 1, TTR("When this option is turned on, any script that is saved will be reloaded on the running game.\nWhen used remotely on a device, this is more efficient with network filesystem."));
-	p->set_item_checked(p->get_item_count() - 1, true);
 	p->connect("id_pressed", this, "_menu_option");
 
 	menu_hb->add_spacer();
@@ -6702,6 +6724,7 @@ EditorNode::EditorNode() {
 	}
 
 	resource_preview->add_preview_generator(Ref<EditorTexturePreviewPlugin>(memnew(EditorTexturePreviewPlugin)));
+	resource_preview->add_preview_generator(Ref<EditorImagePreviewPlugin>(memnew(EditorImagePreviewPlugin)));
 	resource_preview->add_preview_generator(Ref<EditorPackedScenePreviewPlugin>(memnew(EditorPackedScenePreviewPlugin)));
 	resource_preview->add_preview_generator(Ref<EditorMaterialPreviewPlugin>(memnew(EditorMaterialPreviewPlugin)));
 	resource_preview->add_preview_generator(Ref<EditorScriptPreviewPlugin>(memnew(EditorScriptPreviewPlugin)));
@@ -6784,6 +6807,7 @@ EditorNode::EditorNode() {
 	gui_base->add_child(load_error_dialog);
 
 	execute_outputs = memnew(RichTextLabel);
+	execute_outputs->set_selection_enabled(true);
 	execute_output_dialog = memnew(AcceptDialog);
 	execute_output_dialog->add_child(execute_outputs);
 	execute_output_dialog->set_title("");

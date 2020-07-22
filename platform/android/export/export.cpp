@@ -257,6 +257,8 @@ class EditorExportPlatformAndroid : public EditorExportPlatform {
 	};
 
 	Vector<PluginConfig> plugins;
+	String last_plugin_names;
+	uint64_t last_custom_build_time = 0;
 	volatile bool plugins_changed;
 	Mutex *plugins_lock;
 	Vector<Device> devices;
@@ -784,6 +786,7 @@ class EditorExportPlatformAndroid : public EditorExportPlatform {
 		bool screen_support_xlarge = p_preset->get("screen/support_xlarge");
 
 		int xr_mode_index = p_preset->get("xr_features/xr_mode");
+		bool focus_awareness = p_preset->get("xr_features/focus_awareness");
 
 		String plugins_names = get_plugins_names(get_enabled_plugins(p_preset));
 
@@ -878,6 +881,7 @@ class EditorExportPlatformAndroid : public EditorExportPlatform {
 					String tname = string_table[name];
 					uint32_t attrcount = decode_uint32(&p_manifest[iofs + 20]);
 					iofs += 28;
+					bool is_focus_aware_metadata = false;
 
 					for (uint32_t i = 0; i < attrcount; i++) {
 						uint32_t attr_nspace = decode_uint32(&p_manifest[iofs]);
@@ -955,11 +959,17 @@ class EditorExportPlatformAndroid : public EditorExportPlatform {
 							}
 						}
 
+						if (tname == "meta-data" && attrname == "value" && is_focus_aware_metadata) {
+							// Update the focus awareness meta-data value
+							encode_uint32(xr_mode_index == /* XRMode.OVR */ 1 && focus_awareness ? 0xFFFFFFFF : 0, &p_manifest.write[iofs + 16]);
+						}
+
 						if (tname == "meta-data" && attrname == "value" && value == "plugins_value" && !plugins_names.empty()) {
 							// Update the meta-data 'android:value' attribute with the list of enabled plugins.
 							string_table.write[attr_value] = plugins_names;
 						}
 
+						is_focus_aware_metadata = tname == "meta-data" && attrname == "name" && value == "com.oculus.vr.focusaware";
 						iofs += 20;
 					}
 
@@ -1487,6 +1497,7 @@ public:
 		r_options->push_back(ExportOption(PropertyInfo(Variant::INT, "xr_features/xr_mode", PROPERTY_HINT_ENUM, "Regular,Oculus Mobile VR"), 0));
 		r_options->push_back(ExportOption(PropertyInfo(Variant::INT, "xr_features/degrees_of_freedom", PROPERTY_HINT_ENUM, "None,3DOF and 6DOF,6DOF"), 0));
 		r_options->push_back(ExportOption(PropertyInfo(Variant::INT, "xr_features/hand_tracking", PROPERTY_HINT_ENUM, "None,Optional,Required"), 0));
+		r_options->push_back(ExportOption(PropertyInfo(Variant::BOOL, "xr_features/focus_awareness"), false));
 		r_options->push_back(ExportOption(PropertyInfo(Variant::BOOL, "one_click_deploy/clear_previous_install"), false));
 		r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "custom_template/debug", PROPERTY_HINT_GLOBAL_FILE, "*.apk"), ""));
 		r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "custom_template/release", PROPERTY_HINT_GLOBAL_FILE, "*.apk"), ""));
@@ -1786,23 +1797,32 @@ public:
 		// Look for export templates (first official, and if defined custom templates).
 
 		if (!bool(p_preset->get("custom_template/use_custom_build"))) {
-			bool dvalid = exists_export_template("android_debug.apk", &err);
-			bool rvalid = exists_export_template("android_release.apk", &err);
+			String template_err;
+			bool dvalid = false;
+			bool rvalid = false;
 
 			if (p_preset->get("custom_template/debug") != "") {
 				dvalid = FileAccess::exists(p_preset->get("custom_template/debug"));
 				if (!dvalid) {
-					err += TTR("Custom debug template not found.") + "\n";
+					template_err += TTR("Custom debug template not found.") + "\n";
 				}
+			} else {
+				dvalid = exists_export_template("android_debug.apk", &template_err);
 			}
+
 			if (p_preset->get("custom_template/release") != "") {
 				rvalid = FileAccess::exists(p_preset->get("custom_template/release"));
 				if (!rvalid) {
-					err += TTR("Custom release template not found.") + "\n";
+					template_err += TTR("Custom release template not found.") + "\n";
 				}
+			} else {
+				rvalid = exists_export_template("android_release.apk", &template_err);
 			}
 
 			valid = dvalid || rvalid;
+			if (!valid) {
+				err += template_err;
+			}
 		} else {
 			valid = exists_export_template("android_source.zip", &err);
 		}
@@ -1835,6 +1855,13 @@ public:
 				valid = false;
 				err += TTR("Debug keystore not configured in the Editor Settings nor in the preset.") + "\n";
 			}
+		}
+
+		String rk = p_preset->get("keystore/release");
+
+		if (!rk.empty() && !FileAccess::exists(rk)) {
+			valid = false;
+			err += TTR("Release keystore incorrectly configured in the export preset.") + "\n";
 		}
 
 		if (bool(p_preset->get("custom_template/use_custom_build"))) {
@@ -1886,16 +1913,50 @@ public:
 			err += etc_error;
 		}
 
-		// The GodotPaymentV3 module was converted to the GodotPayment plugin in Godot 3.2.2,
+		// The GodotPaymentV3 module was converted to the external GodotGooglePlayBilling plugin in Godot 3.2.2,
 		// this check helps users to notice the change to ensure that they change their settings.
 		String modules = ProjectSettings::get_singleton()->get("android/modules");
 		if (modules.find("org/godotengine/godot/GodotPaymentV3") != -1) {
-			bool godot_payment_enabled = p_preset->get("plugins/" + GODOT_PAYMENT.name);
-			if (!godot_payment_enabled) {
+			bool godot_google_play_billing_enabled = p_preset->get("plugins/GodotGooglePlayBilling");
+			if (!godot_google_play_billing_enabled) {
 				valid = false;
 				err += TTR("Invalid \"GodotPaymentV3\" module included in the \"android/modules\" project setting (changed in Godot 3.2.2).\n"
-						   "Replace it by the \"GodotPayment\" plugin, which should be enabled in the \"Plugins\" preset section.\n"
-						   "Note that the singleton was also renamed from \"GodotPayments\" to \"GodotPayment\".");
+						   "Replace it with the first-party \"GodotGooglePlayBilling\" plugin.\n"
+						   "Note that the singleton was also renamed from \"GodotPayments\" to \"GodotGooglePlayBilling\".");
+				err += "\n";
+			}
+		}
+
+		// Ensure that `Use Custom Build` is enabled if a plugin is selected.
+		String enabled_plugins_names = get_plugins_names(get_enabled_plugins(p_preset));
+		bool custom_build_enabled = p_preset->get("custom_template/use_custom_build");
+		if (!enabled_plugins_names.empty() && !custom_build_enabled) {
+			valid = false;
+			err += TTR("\"Use Custom Build\" must be enabled to use the plugins.");
+			err += "\n";
+		}
+
+		// Validate the Xr features are properly populated
+		int xr_mode_index = p_preset->get("xr_features/xr_mode");
+		int degrees_of_freedom = p_preset->get("xr_features/degrees_of_freedom");
+		int hand_tracking = p_preset->get("xr_features/hand_tracking");
+		bool focus_awareness = p_preset->get("xr_features/focus_awareness");
+		if (xr_mode_index != /* XRMode.OVR*/ 1) {
+			if (degrees_of_freedom > 0) {
+				valid = false;
+				err += TTR("\"Degrees Of Freedom\" is only valid when \"Xr Mode\" is \"Oculus Mobile VR\".");
+				err += "\n";
+			}
+
+			if (hand_tracking > 0) {
+				valid = false;
+				err += TTR("\"Hand Tracking\" is only valid when \"Xr Mode\" is \"Oculus Mobile VR\".");
+				err += "\n";
+			}
+
+			if (focus_awareness) {
+				valid = false;
+				err += TTR("\"Focus Awareness\" is only valid when \"Xr Mode\" is \"Oculus Mobile VR\".");
 				err += "\n";
 			}
 		}
@@ -2192,6 +2253,29 @@ public:
 		}
 	}
 
+	inline bool is_clean_build_required(Vector<PluginConfig> enabled_plugins) {
+		String plugin_names = get_plugins_names(enabled_plugins);
+		bool first_build = last_custom_build_time == 0;
+		bool have_plugins_changed = false;
+
+		if (!first_build) {
+			have_plugins_changed = plugin_names != last_plugin_names;
+			if (!have_plugins_changed) {
+				for (int i = 0; i < enabled_plugins.size(); i++) {
+					if (enabled_plugins.get(i).last_updated > last_custom_build_time) {
+						have_plugins_changed = true;
+						break;
+					}
+				}
+			}
+		}
+
+		last_custom_build_time = OS::get_singleton()->get_unix_time();
+		last_plugin_names = plugin_names;
+
+		return have_plugins_changed || first_build;
+	}
+
 	virtual Error export_project(const Ref<EditorExportPreset> &p_preset, bool p_debug, const String &p_path, int p_flags = 0) {
 
 		ExportNotifier notifier(*this, p_preset, p_debug, p_path, p_flags);
@@ -2241,8 +2325,12 @@ public:
 			String local_plugins_binaries = get_plugins_binaries(BINARY_TYPE_LOCAL, enabled_plugins);
 			String remote_plugins_binaries = get_plugins_binaries(BINARY_TYPE_REMOTE, enabled_plugins);
 			String custom_maven_repos = get_plugins_custom_maven_repos(enabled_plugins);
+			bool clean_build_required = is_clean_build_required(enabled_plugins);
 
 			List<String> cmdline;
+			if (clean_build_required) {
+				cmdline.push_back("clean");
+			}
 			cmdline.push_back("build");
 			cmdline.push_back("-Pexport_package_name=" + package_name); // argument to specify the package name.
 			cmdline.push_back("-Pplugins_local_binaries=" + local_plugins_binaries); // argument to specify the list of plugins local dependencies.
